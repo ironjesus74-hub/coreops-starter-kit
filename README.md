@@ -19,6 +19,8 @@ Run network + TLS checks, quick diagnostics, and generate a system snapshot in s
 
 ---
 
+![CoreOps Audit Demo](audit-demo.png)
+
 ## 🚀 Quick Start (Termux)
 
 ```bash
