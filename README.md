@@ -30,7 +30,3 @@ chmod +x bin/* modules/*.sh lib/*.sh install.sh
 ./install.sh
 coreops help
 
-## 🚀 Example Output
-
-```bash
-coreops audit api.github.com
