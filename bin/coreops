@@ -1,0 +1,50 @@
+#!/data/data/com.termux/files/usr/bin/bash
+set -euo pipefail
+
+COREOPS_HOME="${COREOPS_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+
+# libs
+source "$COREOPS_HOME/lib/common.sh" 2>/dev/null || true
+source "$COREOPS_HOME/lib/log.sh" 2>/dev/null || true
+
+cmd="${1:-help}"
+shift || true
+
+run_module() {
+  local name="$1"; shift || true
+  local path="$COREOPS_HOME/modules/$name.sh"
+  if [ -f "$path" ]; then
+    bash "$path" "$@"
+  else
+    echo "[ERROR] Missing module: $name ($path)"
+    return 1
+  fi
+}
+
+case "$cmd" in
+  help|-h|--help)
+    cat <<USAGE
+CoreOps Starter Kit
+
+Usage:
+  coreops help
+  coreops deps
+  coreops doctor
+  coreops netcheck
+  coreops sslcheck <host> [port]
+  coreops portscan <host> <port>
+  coreops snapshot
+USAGE
+    ;;
+  deps)     run_module "deps" "$@" ;;
+  doctor)   run_module "doctor" "$@" ;;
+  netcheck) run_module "netcheck" "$@" ;;
+  sslcheck) run_module "sslcheck" "$@" ;;
+  portscan) run_module "portscan" "$@" ;;
+  snapshot) run_module "snapshot" "$@" ;;
+  *)
+    echo "[ERROR] Unknown command: $cmd"
+    echo "Try: coreops help"
+    exit 1
+    ;;
+esac
