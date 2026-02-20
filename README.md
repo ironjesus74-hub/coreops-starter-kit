@@ -1,5 +1,9 @@
 # CoreOps Starter Kit ⚡
 
+## 🔴 Live Monitor Dashboard
+
+![CoreOps Live Monitor](assets/coreops-live-dashboard.png)
+
 ![Shell](https://img.shields.io/badge/language-bash-blue)
 ![Platform](https://img.shields.io/badge/platform-Termux%20%7C%20Linux-green)
 ![License](https://img.shields.io/badge/license-MIT-yellow)
