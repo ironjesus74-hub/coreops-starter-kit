@@ -1,0 +1,39 @@
+name: ATLAS Triage (ShellCheck)
+
+on:
+  workflow_run:
+    workflows: ["ShellCheck"]
+    types: [completed]
+
+permissions:
+  issues: write
+  actions: read
+
+jobs:
+  triage:
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Open/refresh an issue with the failing run link
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const run = context.payload.workflow_run;
+            const title = "[ATLAS] ShellCheck failing";
+            const body =
+              `ShellCheck failed on **${run.head_branch}**\n\n` +
+              `Run: ${run.html_url}\n` +
+              `Commit: ${run.head_sha}\n` +
+              `When: ${run.updated_at}\n\n` +
+              `Fix the ShellCheck warnings in this repo, then re-run CI.`;
+
+            const issues = await github.rest.issues.listForRepo({ owner, repo, state: "open", per_page: 50 });
+            const existing = issues.data.find(i => i.title === title);
+
+            if (existing) {
+              await github.rest.issues.createComment({ owner, repo, issue_number: existing.number, body });
+            } else {
+              await github.rest.issues.create({ owner, repo, title, body });
+            }

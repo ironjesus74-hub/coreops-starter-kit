@@ -1,0 +1,136 @@
+name: ATLAS Status Feed
+
+on:
+  workflow_run:
+    workflows: ["ShellCheck", "ATLAS Guard", "pages-build-deployment", "Pages", "CI"]
+    types: [completed]
+  schedule:
+    - cron: "*/30 * * * *"  # every 30 minutes
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish status.json + status.svg to atlas-status branch
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const branch = "atlas-status";
+            const jsonPath = "ci/status.json";
+            const svgPath  = "ci/status.svg";
+
+            const desired = ["ShellCheck", "ATLAS Guard"];
+            const wfList = await github.rest.actions.listRepoWorkflows({ owner, repo, per_page: 100 });
+            const workflows = wfList.data.workflows || [];
+
+            async function latestRunForWorkflow(wf) {
+              const runs = await github.rest.actions.listWorkflowRuns({
+                owner, repo, workflow_id: wf.id, per_page: 1
+              });
+              return (runs.data.workflow_runs || [])[0] || null;
+            }
+
+            const out = {
+              repo: `${owner}/${repo}`,
+              generated_at: new Date().toISOString(),
+              workflows: {},
+            };
+
+            for (const name of desired) {
+              const wf = workflows.find(w => w.name === name);
+              if (!wf) {
+                out.workflows[name] = null;
+                continue;
+              }
+              const run = await latestRunForWorkflow(wf);
+              out.workflows[name] = run ? {
+                status: run.status,
+                conclusion: run.conclusion,
+                html_url: run.html_url,
+                run_number: run.run_number,
+                updated_at: run.updated_at,
+              } : null;
+            }
+
+            const candidates = Object.values(out.workflows).filter(Boolean);
+            let overall = { status: "unknown", conclusion: "unknown" };
+            if (candidates.length) {
+              const guard = out.workflows["ATLAS Guard"];
+              overall = (guard || candidates[0]);
+            }
+            out.overall = {
+              status: overall.status || "unknown",
+              conclusion: overall.conclusion || "unknown",
+            };
+
+            async function ensureBranch() {
+              try {
+                await github.rest.git.getRef({ owner, repo, ref: `heads/${branch}` });
+                return;
+              } catch (e) {
+                if (e.status !== 404) throw e;
+              }
+              const repoInfo = await github.rest.repos.get({ owner, repo });
+              const def = repoInfo.data.default_branch;
+              const defRef = await github.rest.git.getRef({ owner, repo, ref: `heads/${def}` });
+              await github.rest.git.createRef({
+                owner, repo,
+                ref: `refs/heads/${branch}`,
+                sha: defRef.data.object.sha
+              });
+            }
+
+            function b64(s) { return Buffer.from(s, "utf8").toString("base64"); }
+
+            function colorFor(conclusion) {
+              if (conclusion === "success") return "#2ea043";
+              if (conclusion === "failure") return "#d1242f";
+              if (conclusion === "cancelled") return "#6e7781";
+              if (conclusion === "skipped") return "#6e7781";
+              return "#6e7781";
+            }
+
+            function svgFor(status, conclusion, repoName) {
+              const c = colorFor(conclusion);
+              const label = "ATLAS";
+              const msg = conclusion || status || "unknown";
+              return `<?xml version="1.0" encoding="UTF-8"?>
+            <svg xmlns="http://www.w3.org/2000/svg" width="260" height="32" role="img" aria-label="${label}: ${msg}">
+              <rect width="90" height="32" fill="#161b22"/>
+              <rect x="90" width="170" height="32" fill="${c}"/>
+              <text x="45" y="21" fill="#ffffff" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace" font-size="12" text-anchor="middle">${label}</text>
+              <text x="175" y="21" fill="#ffffff" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace" font-size="12" text-anchor="middle">${msg}</text>
+              <title>${repoName}</title>
+            </svg>`;
+            }
+
+            await ensureBranch();
+
+            const jsonContent = JSON.stringify(out, null, 2);
+            const svgContent  = svgFor(out.overall.status, out.overall.conclusion, out.repo);
+
+            async function upsert(path, content, message) {
+              let sha = undefined;
+              try {
+                const existing = await github.rest.repos.getContent({ owner, repo, path, ref: branch });
+                sha = existing.data.sha;
+              } catch (e) {
+                if (e.status !== 404) throw e;
+              }
+              await github.rest.repos.createOrUpdateFileContents({
+                owner, repo, branch, path,
+                message,
+                content: b64(content),
+                sha
+              });
+            }
+
+            await upsert(jsonPath, jsonContent, "ATLAS: update status.json");
+            await upsert(svgPath,  svgContent,  "ATLAS: update status.svg");
