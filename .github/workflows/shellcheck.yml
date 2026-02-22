@@ -2,14 +2,17 @@ name: ShellCheck
 
 on:
   push:
+    branches: ["main"]
   pull_request:
 
 jobs:
-  shellcheck -S error:
+  shellcheck:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Install ShellCheck
-        run: sudo apt-get install -y shellcheck -S error
-      - name: Run ShellCheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+
+      - name: Run ShellCheck (errors only)
         run: shellcheck -S error bin/* modules/*.sh lib/*.sh
