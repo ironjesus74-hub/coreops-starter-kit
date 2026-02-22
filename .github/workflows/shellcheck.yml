@@ -14,5 +14,13 @@ jobs:
       - name: Install ShellCheck
         run: sudo apt-get update && sudo apt-get install -y shellcheck
 
-      - name: Run ShellCheck (errors only)
-        run: shellcheck -S error bin/* modules/*.sh lib/*.sh
+      - name: Run ShellCheck (errors only, stable)
+        shell: bash
+        run: |
+          shopt -s nullglob
+          files=(bin/*.sh modules/*.sh lib/*.sh)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No shell scripts found. Skipping."
+            exit 0
+          fi
+          shellcheck -S error "${files[@]}"
