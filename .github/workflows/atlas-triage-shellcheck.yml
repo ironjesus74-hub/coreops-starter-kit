@@ -6,34 +6,67 @@ on:
     types: [completed]
 
 permissions:
-  issues: write
   actions: read
+  contents: read
+  issues: write
 
 jobs:
   triage:
-    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Open/refresh an issue with the failing run link
+      - name: Open/update issue on failure OR close on recovery
         uses: actions/github-script@v7
         with:
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const run = context.payload.workflow_run;
+
             const title = "[ATLAS] ShellCheck failing";
-            const body =
-              `ShellCheck failed on **${run.head_branch}**\n\n` +
-              `Run: ${run.html_url}\n` +
-              `Commit: ${run.head_sha}\n` +
-              `When: ${run.updated_at}\n\n` +
-              `Fix the ShellCheck warnings in this repo, then re-run CI.`;
+            const labels = ["atlas", "triage", "shellcheck"];
 
-            const issues = await github.rest.issues.listForRepo({ owner, repo, state: "open", per_page: 50 });
-            const existing = issues.data.find(i => i.title === title);
+            const run = context.payload.workflow_run;
+            const conclusion = run?.conclusion || "unknown";
+            const runUrl = run?.html_url || `https://github.com/${owner}/${repo}/actions`;
+            const sha = run?.head_sha || "unknown";
+            const when = new Date().toISOString();
 
-            if (existing) {
-              await github.rest.issues.createComment({ owner, repo, issue_number: existing.number, body });
+            const failBody =
+`ATLAS detected a ShellCheck failure.
+
+- Time: ${when}
+- SHA: ${sha}
+- Run: ${runUrl}
+`;
+
+            const okBody =
+`ATLAS reports ShellCheck recovery ✅
+
+- Time: ${when}
+- SHA: ${sha}
+- Run: ${runUrl}
+`;
+
+            const { data: issues } = await github.rest.search.issuesAndPullRequests({
+              q: `repo:${owner}/${repo} is:issue is:open in:title "${title}"`
+            });
+
+            if (conclusion === "failure") {
+              if (issues.items.length > 0) {
+                const issue_number = issues.items[0].number;
+                await github.rest.issues.createComment({ owner, repo, issue_number, body: failBody });
+                core.info(`Updated existing issue #${issue_number}`);
+              } else {
+                const created = await github.rest.issues.create({ owner, repo, title, body: failBody, labels });
+                core.info(`Created issue #${created.data.number}`);
+              }
+            } else if (conclusion === "success") {
+              if (issues.items.length > 0) {
+                const issue_number = issues.items[0].number;
+                await github.rest.issues.createComment({ owner, repo, issue_number, body: okBody });
+                await github.rest.issues.update({ owner, repo, issue_number, state: "closed" });
+                core.info(`Closed issue #${issue_number} on recovery`);
+              } else {
+                core.info("No open ShellCheck issue to close.");
+              }
             } else {
-              await github.rest.issues.create({ owner, repo, title, body });
-            }
+              core.info(`Conclusion=${conclusion}; no action.`);
