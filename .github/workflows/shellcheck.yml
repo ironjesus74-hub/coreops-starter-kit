@@ -5,11 +5,11 @@ on:
   pull_request:
 
 jobs:
-  shellcheck:
+  shellcheck -S error:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Install ShellCheck
-        run: sudo apt-get install -y shellcheck
+        run: sudo apt-get install -y shellcheck -S error
       - name: Run ShellCheck
-        run: shellcheck bin/* modules/*.sh lib/*.sh
+        run: shellcheck -S error bin/* modules/*.sh lib/*.sh
