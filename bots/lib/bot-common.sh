@@ -185,5 +185,5 @@ bot_resource_ok() {
 
 # ── Graceful shutdown trap ────────────────────────────────────
 bot_trap_exit() {
-  trap 'bot_log_warn "Shutting down $BOT_NAME"; bot_clear_pid; exit 0' INT TERM EXIT
+  trap 'bot_log_warn "Shutting down $BOT_NAME"; bot_clear_pid; trap - EXIT' INT TERM
 }

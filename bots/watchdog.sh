@@ -16,12 +16,14 @@ source "$BOTS_HOME/lib/bot-common.sh"
 
 VERBOSE="${1:-}"   # pass -v for visible output
 
-RESTART_DELAY=10   # seconds before restarting a crashed bot
-CHECK_INTERVAL=30  # seconds between health sweeps
-MAX_RESTARTS=5     # max restarts per bot before alerting supervisor
+RESTART_DELAY=10    # seconds before restarting a crashed bot
+CHECK_INTERVAL=30   # seconds between health sweeps
+MAX_RESTARTS=5      # max restarts per bot before alerting supervisor
+STABILITY_THRESHOLD=300  # seconds a bot must stay up before resetting restart counter
 
-# ── Track restart counts ──────────────────────────────────────
+# ── Track restart counts and last-seen timestamps ─────────────
 declare -A restart_count=([supervisor]=0 [builder1]=0 [builder2]=0)
+declare -A last_seen_up=([supervisor]=0 [builder1]=0 [builder2]=0)
 
 bot_trap_exit
 bot_init_dirs
@@ -59,6 +61,7 @@ _ensure_bot() {
   local new_pid=$!
   echo "$new_pid" > "${PIDS_DIR}/${name}.pid"
   restart_count[$name]=$(( ${restart_count[$name]:-0} + 1 ))
+  last_seen_up[$name]=0  # reset stability timer on restart
   _log "✔ ${name} restarted (PID ${new_pid}, restart #${restart_count[$name]})"
 }
 
@@ -90,10 +93,22 @@ while true; do
     _ensure_bot "$bot" || true
   done
 
-  # Reset restart counters if bots have been stable
+  # Reset restart counters only after a bot has been stable for STABILITY_THRESHOLD seconds.
+  # This prevents rapid crash-restart cycles from slipping under the MAX_RESTARTS limit.
+  now=$(date +%s)
   for bot in supervisor builder1 builder2; do
     if bot_is_running "$bot"; then
-      restart_count[$bot]=0
+      if [ "${last_seen_up[$bot]:-0}" -eq 0 ]; then
+        last_seen_up[$bot]=$now
+      elif [ $(( now - last_seen_up[$bot] )) -ge "$STABILITY_THRESHOLD" ]; then
+        if [ "${restart_count[$bot]:-0}" -gt 0 ]; then
+          _log "${bot} stable for ${STABILITY_THRESHOLD}s — resetting restart counter"
+          restart_count[$bot]=0
+        fi
+        last_seen_up[$bot]=$now
+      fi
+    else
+      last_seen_up[$bot]=0
     fi
   done
 

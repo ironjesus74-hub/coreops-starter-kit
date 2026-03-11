@@ -139,11 +139,9 @@ while true; do
   done
 
   total_tools=$(registry_count 2>/dev/null || echo 0)
-  bot_log_stealth "Status: tools_built=${total_tools} bots_ok=$(
-    ok=0
-    for b in "${MANAGED_BOTS[@]}"; do bot_is_running "$b" && ((ok++)) || true; done
-    echo $ok
-  )/${#MANAGED_BOTS[@]}"
+  bots_ok=0
+  for b in "${MANAGED_BOTS[@]}"; do bot_is_running "$b" && ((bots_ok++)) || true; done
+  bot_log_stealth "Status: tools_built=${total_tools} bots_ok=${bots_ok}/${#MANAGED_BOTS[@]}"
 
   sleep "$HEALTH_INTERVAL"
 done

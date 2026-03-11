@@ -107,7 +107,7 @@ print(json.dumps(data, indent=2) if isinstance(data, (dict,list)) else data)
 format_with_jq() {
   if [ -n "$KEY" ]; then
     # convert dot notation to jq path
-    jq_path=$(echo "$KEY" | sed 's/\./\./g; s/^/./') 
+    jq_path=".${KEY}"
     jq "${jq_path}" 2>/dev/null || jq ".$KEY"
   else
     jq '.'
@@ -749,9 +749,12 @@ case "$CMD" in
     read_input | base64 | tr '+/' '-_' | tr -d '='
     ;;
   url-decode)
-    # Restore URL-safe to standard and decode
-    data=$(read_input | tr '-_' '+/' )
-    pad=$(( (4 - ${#data} % 4) % 4 ))
+    # Restore URL-safe base64 to standard and decode.
+    # Re-add stripped '=' padding. Padding is based on string length mod 4
+    # (works correctly for ASCII/Base64 encoded data).
+    data=$(read_input | tr '-_' '+/' | tr -d '\n')
+    len=${#data}
+    pad=$(( (4 - len % 4) % 4 ))
     for _ in $(seq 1 $pad); do data="${data}="; done
     printf "%s" "$data" | base64 -d
     ;;
