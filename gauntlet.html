@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Atlas Gauntlet — Battle Protocol</title>
+
+  <!-- Inline SVG favicon: Atlas lightning bolt on dark bg -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='5' fill='%230d1117'/%3E%3Cpolygon points='18,3 10,17 15,17 13,29 22,14 17,14' fill='%2300e5ff'/%3E%3C/svg%3E" />
+
+  <style>
+    /* ─── Reset & Base ─────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-deep:       #060b10;
+      --bg-panel:      #0d1520;
+      --bg-card:       #111d2e;
+      --border-subtle: #1e2d42;
+      --border-glow-c: #00e5ff44;
+      --border-glow-m: #ff00aa44;
+
+      --cyan:          #00e5ff;
+      --cyan-dim:      #00a8c0;
+      --cyan-glow:     #00e5ff66;
+      --magenta:       #ff00cc;
+      --magenta-dim:   #bb0099;
+      --magenta-glow:  #ff00cc66;
+      --white:         #e8f4ff;
+      --muted:         #5a7a99;
+      --accent-gold:   #ffd700;
+
+      --font-mono: 'Courier New', Courier, monospace;
+      --font-ui:   'Segoe UI', system-ui, sans-serif;
+
+      --card-width: clamp(240px, 28vw, 360px);
+      --vs-size:    clamp(160px, 18vw, 240px);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg-deep);
+      color: var(--white);
+      font-family: var(--font-ui);
+      min-height: 100vh;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ─── Scanline overlay ─────────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 229, 255, 0.018) 2px,
+        rgba(0, 229, 255, 0.018) 4px
+      );
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    /* ─── Header ───────────────────────────────────────────── */
+    .gauntlet-header {
+      width: 100%;
+      text-align: center;
+      padding: 2.4rem 1.5rem 1rem;
+      position: relative;
+    }
+
+    .atlas-wordmark {
+      font-family: var(--font-mono);
+      font-size: clamp(0.65rem, 1.4vw, 0.85rem);
+      letter-spacing: 0.45em;
+      color: var(--cyan-dim);
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+
+    .gauntlet-title {
+      font-size: clamp(1.6rem, 4.5vw, 3rem);
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      background: linear-gradient(90deg, var(--cyan) 0%, #80f0ff 45%, var(--white) 55%, #ff80dd 80%, var(--magenta) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.1;
+    }
+
+    .gauntlet-tagline {
+      margin-top: 0.6rem;
+      font-family: var(--font-mono);
+      font-size: clamp(0.55rem, 1.2vw, 0.72rem);
+      letter-spacing: 0.3em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    /* divider */
+    .header-rule {
+      margin: 1.4rem auto 0;
+      width: min(600px, 80vw);
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--cyan-dim), transparent);
+    }
+
+    /* ─── Battle Stage ─────────────────────────────────────── */
+    .battle-stage {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(1rem, 3vw, 2.5rem);
+      padding: clamp(2rem, 4vw, 3.5rem) clamp(1rem, 3vw, 2rem);
+      width: 100%;
+      max-width: 1200px;
+      flex-wrap: wrap;
+    }
+
+    /* ─── Competitor Cards ─────────────────────────────────── */
+    .competitor-card {
+      width: var(--card-width);
+      flex-shrink: 0;
+      background: var(--bg-card);
+      border-radius: 12px;
+      padding: 1.8rem 1.5rem 1.6rem;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .competitor-card:hover {
+      transform: translateY(-4px);
+    }
+
+    /* card edge beam */
+    .competitor-card::before {
+      content: '';
+      position: absolute;
+      top: 0; bottom: 0;
+      width: 3px;
+    }
+
+    .card-cyan {
+      border: 1px solid var(--border-glow-c);
+      box-shadow: 0 0 30px rgba(0, 229, 255, 0.10),
+                  0 0 80px rgba(0, 229, 255, 0.04),
+                  inset 0 0 20px rgba(0, 229, 255, 0.04);
+    }
+    .card-cyan::before {
+      left: 0;
+      background: linear-gradient(180deg, transparent, var(--cyan), transparent);
+      box-shadow: 0 0 14px var(--cyan);
+    }
+
+    .card-magenta {
+      border: 1px solid var(--border-glow-m);
+      box-shadow: 0 0 30px rgba(255, 0, 204, 0.10),
+                  0 0 80px rgba(255, 0, 204, 0.04),
+                  inset 0 0 20px rgba(255, 0, 204, 0.04);
+    }
+    .card-magenta::before {
+      right: 0;
+      background: linear-gradient(180deg, transparent, var(--magenta), transparent);
+      box-shadow: 0 0 14px var(--magenta);
+    }
+
+    /* card content */
+    .card-callsign {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.5em;
+      text-transform: uppercase;
+      margin-bottom: 0.3rem;
+    }
+    .card-cyan .card-callsign  { color: var(--cyan-dim); }
+    .card-magenta .card-callsign { color: var(--magenta-dim); }
+
+    .competitor-name {
+      font-size: clamp(1.1rem, 2.2vw, 1.5rem);
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 1.4rem;
+      line-height: 1.15;
+    }
+    .card-cyan .competitor-name  { color: var(--cyan); }
+    .card-magenta .competitor-name { color: var(--magenta); }
+
+    /* stat rows */
+    .battle-stats {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .stat {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .stat-label {
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.25em;
+      color: var(--muted);
+      text-transform: uppercase;
+      width: 4rem;
+      flex-shrink: 0;
+    }
+
+    .stat-bar-track {
+      flex: 1;
+      height: 4px;
+      background: var(--bg-panel);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .stat-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      animation: barGrow 1s ease forwards;
+      transform-origin: left;
+    }
+    .card-cyan  .stat-bar-fill { background: linear-gradient(90deg, var(--cyan-dim), var(--cyan)); box-shadow: 0 0 6px var(--cyan); }
+    .card-magenta .stat-bar-fill { background: linear-gradient(90deg, var(--magenta-dim), var(--magenta)); box-shadow: 0 0 6px var(--magenta); }
+
+    .stat-value {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 700;
+      width: 2.2rem;
+      text-align: right;
+    }
+    .card-cyan  .stat-value { color: var(--cyan); }
+    .card-magenta .stat-value { color: var(--magenta); }
+
+    @keyframes barGrow {
+      from { width: 0; }
+      to   { width: var(--bar-pct); }
+    }
+
+    /* card badge */
+    .card-badge {
+      margin-top: 1.6rem;
+      padding: 0.35rem 0.8rem;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.58rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      display: inline-block;
+    }
+    .card-cyan .card-badge {
+      background: rgba(0, 229, 255, 0.10);
+      color: var(--cyan);
+      border: 1px solid rgba(0, 229, 255, 0.3);
+    }
+    .card-magenta .card-badge {
+      background: rgba(255, 0, 204, 0.10);
+      color: var(--magenta);
+      border: 1px solid rgba(255, 0, 204, 0.3);
+    }
+
+    /* ─── VS Core ──────────────────────────────────────────── */
+    .vs-core-wrapper {
+      flex-shrink: 0;
+      width: var(--vs-size);
+      height: var(--vs-size);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .vs-svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    /* SVG animation keyframes (used via animateTransform / CSS) */
+    @keyframes spinCW  { to { transform: rotate(360deg); } }
+    @keyframes spinCCW { to { transform: rotate(-360deg); } }
+    @keyframes pulse   {
+      0%, 100% { opacity: 0.7; }
+      50%       { opacity: 1;   }
+    }
+    @keyframes corePulse {
+      0%, 100% { r: 28px; opacity: 0.85; }
+      50%       { r: 32px; opacity: 1;   }
+    }
+    @keyframes beamPulse {
+      0%, 100% { opacity: 0.55; }
+      50%       { opacity: 1;   }
+    }
+    @keyframes sparkFloat {
+      0%   { transform: translate(0, 0) scale(1); opacity: 1; }
+      100% { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; }
+    }
+
+    .ring-outer { animation: spinCW  12s linear infinite; transform-origin: 100px 100px; }
+    .ring-inner { animation: spinCCW  8s linear infinite; transform-origin: 100px 100px; }
+    .vs-glow    { animation: pulse   2.4s ease-in-out infinite; }
+    .beam-cyan  { animation: beamPulse 1.8s ease-in-out infinite; }
+    .beam-mag   { animation: beamPulse 1.8s ease-in-out infinite 0.9s; }
+
+    /* ─── Battle Status Bar ────────────────────────────────── */
+    .battle-status {
+      width: min(700px, 90vw);
+      margin: 0 auto 2rem;
+      text-align: center;
+    }
+
+    .status-label {
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.4em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+
+    .clash-meter {
+      width: 100%;
+      height: 6px;
+      background: var(--bg-panel);
+      border-radius: 3px;
+      overflow: hidden;
+      border: 1px solid var(--border-subtle);
+      display: flex;
+    }
+
+    .clash-left {
+      background: linear-gradient(90deg, var(--cyan), var(--cyan-dim));
+      box-shadow: 0 0 10px var(--cyan-glow);
+      animation: clashLeft 3s ease-in-out infinite alternate;
+    }
+    .clash-right {
+      background: linear-gradient(90deg, var(--magenta-dim), var(--magenta));
+      box-shadow: 0 0 10px var(--magenta-glow);
+      animation: clashRight 3s ease-in-out infinite alternate;
+    }
+
+    @keyframes clashLeft  { from { flex: 0.62; } to { flex: 0.38; } }
+    @keyframes clashRight { from { flex: 0.38; } to { flex: 0.62; } }
+
+    /* ─── Footer ───────────────────────────────────────────── */
+    .gauntlet-footer {
+      margin-top: auto;
+      padding: 1.5rem 1.5rem 2rem;
+      text-align: center;
+      font-family: var(--font-mono);
+      font-size: 0.58rem;
+      letter-spacing: 0.4em;
+      color: var(--muted);
+      text-transform: uppercase;
+      border-top: 1px solid var(--border-subtle);
+      width: 100%;
+    }
+
+    .footer-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 8px var(--cyan);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    /* ─── Responsive ───────────────────────────────────────── */
+    @media (max-width: 700px) {
+      :root {
+        --card-width: min(360px, 90vw);
+        --vs-size: 140px;
+      }
+
+      .battle-stage {
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1.5rem 1rem;
+      }
+
+      /* On mobile, stack: card → VS → card */
+      .card-cyan   { order: 1; }
+      .vs-core-wrapper { order: 2; }
+      .card-magenta { order: 3; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ─── Header ─────────────────────────────────────────── -->
+  <header class="gauntlet-header">
+    <p class="atlas-wordmark">⚡ Atlas System &nbsp;·&nbsp; Battle Protocol</p>
+    <h1 class="gauntlet-title">Gauntlet</h1>
+    <p class="gauntlet-tagline">Collision imminent &nbsp;·&nbsp; Signal locked &nbsp;·&nbsp; Initiating clash sequence</p>
+    <div class="header-rule"></div>
+  </header>
+
+  <!-- ─── Battle Stage ───────────────────────────────────── -->
+  <main>
+    <section class="battle-stage" aria-label="Battle arena">
+
+      <!-- ── Competitor Alpha (Cyan) ── -->
+      <article class="competitor-card card-cyan" aria-label="Competitor Alpha">
+        <div class="card-callsign">Alpha Unit</div>
+        <div class="competitor-name">Cipher<br/>Protocol</div>
+
+        <div class="battle-stats">
+          <div class="stat">
+            <span class="stat-label">Power</span>
+            <div class="stat-bar-track" role="progressbar" aria-valuenow="97" aria-valuemin="0" aria-valuemax="100">
+              <div class="stat-bar-fill" style="--bar-pct: 97%"></div>
+            </div>
+            <span class="stat-value">97</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Speed</span>
+            <div class="stat-bar-track" role="progressbar" aria-valuenow="88" aria-valuemin="0" aria-valuemax="100">
+              <div class="stat-bar-fill" style="--bar-pct: 88%"></div>
+            </div>
+            <span class="stat-value">88</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Intel</span>
+            <div class="stat-bar-track" role="progressbar" aria-valuenow="94" aria-valuemin="0" aria-valuemax="100">
+              <div class="stat-bar-fill" style="--bar-pct: 94%"></div>
+            </div>
+            <span class="stat-value">94</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Signal</span>
+            <div class="stat-bar-track" role="progressbar" aria-valuenow="79" aria-valuemin="0" aria-valuemax="100">
+              <div class="stat-bar-fill" style="--bar-pct: 79%"></div>
+            </div>
+            <span class="stat-value">79</span>
+          </div>
+        </div>
+
+        <span class="card-badge">STATUS: READY</span>
+      </article>
+
+      <!-- ── VS Core (inline SVG) ── -->
+      <div class="vs-core-wrapper" aria-hidden="true">
+        <svg class="vs-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <!-- Cyan radial glow -->
+            <radialGradient id="cyanGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%"   stop-color="#00e5ff" stop-opacity="0.9"/>
+              <stop offset="60%"  stop-color="#00e5ff" stop-opacity="0.3"/>
+              <stop offset="100%" stop-color="#00e5ff" stop-opacity="0"/>
+            </radialGradient>
+            <!-- Magenta radial glow -->
+            <radialGradient id="magGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%"   stop-color="#ff00cc" stop-opacity="0.9"/>
+              <stop offset="60%"  stop-color="#ff00cc" stop-opacity="0.3"/>
+              <stop offset="100%" stop-color="#ff00cc" stop-opacity="0"/>
+            </radialGradient>
+            <!-- Core gradient -->
+            <radialGradient id="coreGrad" cx="50%" cy="50%" r="50%">
+              <stop offset="0%"   stop-color="#ffffff" stop-opacity="1"/>
+              <stop offset="30%"  stop-color="#a0f8ff" stop-opacity="0.9"/>
+              <stop offset="70%"  stop-color="#0d1520" stop-opacity="0.7"/>
+              <stop offset="100%" stop-color="#060b10" stop-opacity="1"/>
+            </radialGradient>
+            <!-- Cyan beam gradient (left to centre) -->
+            <linearGradient id="beamCyan" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%"   stop-color="#00e5ff" stop-opacity="0"/>
+              <stop offset="60%"  stop-color="#00e5ff" stop-opacity="0.8"/>
+              <stop offset="100%" stop-color="#00e5ff" stop-opacity="1"/>
+            </linearGradient>
+            <!-- Magenta beam gradient (right to centre) -->
+            <linearGradient id="beamMag" x1="100%" y1="0%" x2="0%" y2="0%">
+              <stop offset="0%"   stop-color="#ff00cc" stop-opacity="0"/>
+              <stop offset="60%"  stop-color="#ff00cc" stop-opacity="0.8"/>
+              <stop offset="100%" stop-color="#ff00cc" stop-opacity="1"/>
+            </linearGradient>
+            <!-- VS text glow filter -->
+            <filter id="vsGlow" x="-40%" y="-40%" width="180%" height="180%">
+              <feGaussianBlur stdDeviation="3" result="blur"/>
+              <feMerge>
+                <feMergeNode in="blur"/>
+                <feMergeNode in="blur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+            <!-- Outer ring glow filter -->
+            <filter id="ringGlow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="2" result="blur"/>
+              <feMerge>
+                <feMergeNode in="blur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+          </defs>
+
+          <!-- ── Ambient background halo ── -->
+          <ellipse cx="100" cy="100" rx="90" ry="90"
+                   fill="url(#cyanGlow)" opacity="0.12"/>
+
+          <!-- ── Cyan energy beam (left side) ── -->
+          <rect class="beam-cyan" x="5" y="97" width="70" height="6" rx="3"
+                fill="url(#beamCyan)"/>
+          <!-- Beam sub-ray (thinner, offset) -->
+          <rect class="beam-cyan" x="5" y="94" width="60" height="2" rx="1"
+                fill="#00e5ff" opacity="0.35"/>
+          <rect class="beam-cyan" x="5" y="104" width="55" height="2" rx="1"
+                fill="#00e5ff" opacity="0.25"/>
+
+          <!-- ── Magenta energy beam (right side) ── -->
+          <rect class="beam-mag" x="125" y="97" width="70" height="6" rx="3"
+                fill="url(#beamMag)"/>
+          <rect class="beam-mag" x="135" y="94" width="60" height="2" rx="1"
+                fill="#ff00cc" opacity="0.35"/>
+          <rect class="beam-mag" x="140" y="104" width="55" height="2" rx="1"
+                fill="#ff00cc" opacity="0.25"/>
+
+          <!-- ── Outer rotating ring ── -->
+          <g class="ring-outer">
+            <circle cx="100" cy="100" r="58"
+                    fill="none" stroke="#00e5ff" stroke-width="0.8"
+                    stroke-dasharray="18 8 4 8"
+                    opacity="0.55"
+                    filter="url(#ringGlow)"/>
+          </g>
+
+          <!-- ── Inner counter-rotating ring ── -->
+          <g class="ring-inner">
+            <circle cx="100" cy="100" r="46"
+                    fill="none" stroke="#ff00cc" stroke-width="0.8"
+                    stroke-dasharray="10 6 3 6"
+                    opacity="0.55"
+                    filter="url(#ringGlow)"/>
+          </g>
+
+          <!-- ── Collision halos (cyan & mag overlap at core) ── -->
+          <circle cx="100" cy="100" r="36"
+                  fill="none" stroke="#00e5ff" stroke-width="1.5"
+                  opacity="0.18"/>
+          <circle cx="100" cy="100" r="36"
+                  fill="none" stroke="#ff00cc" stroke-width="1.5"
+                  stroke-dasharray="8 8"
+                  opacity="0.18"/>
+
+          <!-- ── Core solid backdrop ── -->
+          <circle cx="100" cy="100" r="30"
+                  fill="#0d1520"/>
+
+          <!-- ── Core gradient orb ── -->
+          <circle class="vs-glow" cx="100" cy="100" r="28"
+                  fill="url(#coreGrad)"
+                  filter="url(#vsGlow)"/>
+
+          <!-- ── Core rim light ── -->
+          <circle cx="100" cy="100" r="28"
+                  fill="none" stroke="url(#cyanGlow)" stroke-width="2"
+                  opacity="0.5"/>
+
+          <!-- ── Diagonal cross-blades (clash mark) ── -->
+          <line x1="82" y1="84" x2="118" y2="116"
+                stroke="#00e5ff" stroke-width="1" opacity="0.4"
+                stroke-linecap="round"/>
+          <line x1="118" y1="84" x2="82" y2="116"
+                stroke="#ff00cc" stroke-width="1" opacity="0.4"
+                stroke-linecap="round"/>
+
+          <!-- ── VS text ── -->
+          <text x="100" y="107"
+                text-anchor="middle"
+                font-family="'Courier New', monospace"
+                font-size="22"
+                font-weight="900"
+                letter-spacing="-1"
+                fill="#ffffff"
+                filter="url(#vsGlow)"
+                opacity="0.96">VS</text>
+
+          <!-- ── Cyan half-label "V" tint ── -->
+          <text x="92" y="107"
+                text-anchor="middle"
+                font-family="'Courier New', monospace"
+                font-size="22"
+                font-weight="900"
+                fill="#00e5ff"
+                opacity="0.55">V</text>
+
+          <!-- ── Magenta half-label "S" tint ── -->
+          <text x="110" y="107"
+                text-anchor="middle"
+                font-family="'Courier New', monospace"
+                font-size="22"
+                font-weight="900"
+                fill="#ff00cc"
+                opacity="0.55">S</text>
+
+          <!-- ── Outer halo dots at cardinal points ── -->
+          <circle cx="100" cy="38" r="3" fill="#00e5ff" opacity="0.7"/>
+          <circle cx="162" cy="100" r="3" fill="#ff00cc" opacity="0.7"/>
+          <circle cx="100" cy="162" r="3" fill="#ff00cc" opacity="0.7"/>
+          <circle cx="38"  cy="100" r="3" fill="#00e5ff" opacity="0.7"/>
+
+          <!-- ── Tick marks on outer ring circumference ── -->
+          <g stroke="#00e5ff" stroke-width="1" opacity="0.4">
+            <line x1="100" y1="6"   x2="100" y2="16"/>
+            <line x1="194" y1="100" x2="184" y2="100"/>
+            <line x1="100" y1="194" x2="100" y2="184"/>
+            <line x1="6"   y1="100" x2="16"  y2="100"/>
+          </g>
+        </svg>
+      </div>
+
+      <!-- ── Competitor Beta (Magenta) ── -->
+      <article class="competitor-card card-magenta" aria-label="Competitor Beta">
+        <div class="card-callsign">Beta Unit</div>
+        <div class="competitor-name">Phantom<br/>Vector</div>
+
+        <div class="battle-stats">
+          <div class="stat">
+            <span class="stat-label">Power</span>
+            <div class="stat-bar-track" role="progressbar" aria-valuenow="91" aria-valuemin="0" aria-valuemax="100">
+              <div class="stat-bar-fill" style="--bar-pct: 91%"></div>
+            </div>
+            <span class="stat-value">91</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Speed</span>
+            <div class="stat-bar-track" role="progressbar" aria-valuenow="96" aria-valuemin="0" aria-valuemax="100">
+              <div class="stat-bar-fill" style="--bar-pct: 96%"></div>
+            </div>
+            <span class="stat-value">96</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Intel</span>
+            <div class="stat-bar-track" role="progressbar" aria-valuenow="85" aria-valuemin="0" aria-valuemax="100">
+              <div class="stat-bar-fill" style="--bar-pct: 85%"></div>
+            </div>
+            <span class="stat-value">85</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Signal</span>
+            <div class="stat-bar-track" role="progressbar" aria-valuenow="93" aria-valuemin="0" aria-valuemax="100">
+              <div class="stat-bar-fill" style="--bar-pct: 93%"></div>
+            </div>
+            <span class="stat-value">93</span>
+          </div>
+        </div>
+
+        <span class="card-badge">STATUS: READY</span>
+      </article>
+
+    </section><!-- /battle-stage -->
+
+    <!-- ── Clash power meter ── -->
+    <div class="battle-status">
+      <p class="status-label">Clash intensity</p>
+      <div class="clash-meter" role="meter" aria-label="Clash intensity meter">
+        <div class="clash-left"  style="flex: 0.52"></div>
+        <div class="clash-right" style="flex: 0.48"></div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ─── Footer ─────────────────────────────────────────── -->
+  <footer class="gauntlet-footer">
+    <span class="footer-status">
+      <span class="status-dot" aria-hidden="true"></span>
+      Atlas System Online &nbsp;·&nbsp; Gauntlet v1.0 &nbsp;·&nbsp; CoreOps
+    </span>
+  </footer>
+
+</body>
+</html>
