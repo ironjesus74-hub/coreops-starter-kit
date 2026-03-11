@@ -11,9 +11,9 @@ if [ -z "$host" ] || [ -z "$port" ]; then
   exit 1
 fi
 
-# bash /dev/tcp trick
+# bash /dev/tcp trick with timeout
 timeout_sec=3
-if (echo >/dev/tcp/"$host"/"$port") >/dev/null 2>&1; then
+if timeout "$timeout_sec" bash -c "echo >/dev/tcp/$host/$port" >/dev/null 2>&1; then
   log_ok "OPEN: $host:$port"
 else
   log_warn "CLOSED/FAIL: $host:$port"

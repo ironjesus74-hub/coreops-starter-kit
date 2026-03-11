@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/bash
 
 # CoreOps Hybrid Theme: enterprise-clean + neon edge
+# shellcheck disable=SC2034  # Variables are used by scripts that source this file
 C_RESET="\033[0m"
 C_DIM="\033[2m"
 C_BOLD="\033[1m"
