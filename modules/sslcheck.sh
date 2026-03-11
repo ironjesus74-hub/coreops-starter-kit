@@ -11,21 +11,19 @@ if [ -z "$host" ]; then
   exit 1
 fi
 
-tmp="$(mktemp)"
-# Fetch cert chain; take leaf cert
-if ! echo | openssl s_client -servername "$host" -connect "$host:$port" 2>/dev/null \
-  | openssl x509 -noout -enddate -issuer -subject >"$tmp" 2>/dev/null; then
+# Fetch cert chain; take leaf cert — captured directly into a variable
+cert_info=""
+if ! cert_info="$(echo | openssl s_client -servername "$host" -connect "$host:$port" 2>/dev/null \
+  | openssl x509 -noout -enddate -issuer -subject 2>/dev/null)"; then
   log_error "Could not fetch certificate for $host:$port"
-  rm -f "$tmp"
   exit 1
 fi
 
-enddate="$(grep -i '^notAfter=' "$tmp" | sed 's/notAfter=//')"
-issuer="$(grep -i '^issuer=' "$tmp" | sed 's/issuer=//')"
-subject="$(grep -i '^subject=' "$tmp" | sed 's/subject=//')"
+enddate="$(printf '%s\n' "$cert_info" | grep -i '^notAfter=' | sed 's/notAfter=//')"
+issuer="$(printf '%s\n' "$cert_info" | grep -i '^issuer=' | sed 's/issuer=//')"
+subject="$(printf '%s\n' "$cert_info" | grep -i '^subject=' | sed 's/subject=//')"
 
 log_ok "SSL OK: $host:$port"
 log_info "notAfter: $enddate"
 log_info "issuer:  $issuer"
 log_info "subject: $subject"
-rm -f "$tmp"
