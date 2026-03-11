@@ -13,7 +13,8 @@ fi
 
 # bash /dev/tcp trick
 timeout_sec=3
-if (echo >/dev/tcp/"$host"/"$port") >/dev/null 2>&1; then
+# shellcheck disable=SC2016  # $1/$2 expand in the child bash subprocess, not here
+if timeout "$timeout_sec" bash -c 'echo >/dev/tcp/$1/$2' _ "$host" "$port" >/dev/null 2>&1; then
   log_ok "OPEN: $host:$port"
 else
   log_warn "CLOSED/FAIL: $host:$port"
