@@ -1,0 +1,23 @@
+# Cloudflare Pages / Workers configuration
+# Atlas Platform — coreops-starter-kit
+
+name = "atlas-platform"
+compatibility_date = "2025-01-01"
+
+[env.production]
+name = "atlas-platform"
+
+# Cloudflare Pages build settings
+[site]
+bucket = "."
+
+# KV namespace for match state and scoreboard caching
+# Bind with: wrangler kv:namespace create "ATLAS_STATE"
+# [[kv_namespaces]]
+# binding = "ATLAS_STATE"
+# id = ""  # set after creating namespace
+
+# Analytics Engine for usage insights (free tier)
+# [[analytics_engine_datasets]]
+# binding = "ATLAS_ANALYTICS"
+# dataset = "atlas_events"

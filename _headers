@@ -1,0 +1,28 @@
+# Cloudflare Pages — HTTP response headers
+# Optimizes caching and security for all static assets.
+
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=()
+
+/*.html
+  Cache-Control: public, max-age=300, stale-while-revalidate=600
+
+/*.css
+  Cache-Control: public, max-age=86400, stale-while-revalidate=3600
+
+/*.js
+  Cache-Control: public, max-age=86400, stale-while-revalidate=3600
+
+/*.svg
+  Cache-Control: public, max-age=86400, stale-while-revalidate=3600
+  Content-Type: image/svg+xml
+
+/*.png
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+
+/ci/status.json
+  Cache-Control: public, max-age=60, stale-while-revalidate=300
+  Access-Control-Allow-Origin: *
