@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="CoreOps Starter Kit — professional CLI tools for ops, security, and network auditing." />
+  <title>CoreOps — Command Center for Ops &amp; Security</title>
+  <link rel="preconnect" href="https://www.paypalobjects.com" />
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+
+  <!-- ── Header / Nav ──────────────────────────────────────────────── -->
+  <header class="site-header">
+    <nav class="container site-nav" aria-label="Main navigation">
+      <a href="#" class="nav-brand">
+        <span class="bolt">⚡</span> CoreOps
+      </a>
+      <ul class="nav-links">
+        <li><a href="#products">Pricing</a></li>
+        <li><a href="https://github.com/ironjesus74-hub/coreops-starter-kit" rel="noopener">GitHub</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- ── Hero ──────────────────────────────────────────────────────── -->
+  <section class="hero">
+    <div class="hero-badge">Open-source ops toolkit</div>
+    <h1>The <span class="accent">CoreOps</span> Command Center</h1>
+    <p>
+      Professional-grade CLI tools for network auditing, SSL checks, port scanning,
+      live monitoring, and system diagnostics — built for Termux and Linux.
+    </p>
+    <div class="hero-actions">
+      <a href="https://github.com/ironjesus74-hub/coreops-starter-kit"
+         class="btn btn-primary" rel="noopener">
+        ⚡ Get Started Free
+      </a>
+      <a href="#products" class="btn btn-ghost">View Pricing</a>
+    </div>
+  </section>
+
+  <!-- ── Products ──────────────────────────────────────────────────── -->
+  <section class="section" id="products">
+    <div class="container">
+      <h2 class="section-title">Choose Your Plan</h2>
+      <p class="section-subtitle">
+        The core toolkit is always free. Upgrade for premium modules and dedicated support.
+      </p>
+
+      <div class="products-grid">
+
+        <!-- ── Starter (Free) ───────────────────────────────── -->
+        <article class="product-card" aria-label="Starter plan">
+          <h3 class="product-title">Starter</h3>
+          <div class="product-price">
+            <span class="currency">$</span>0
+            <span class="period"> / forever</span>
+          </div>
+          <p class="product-description">
+            The full open-source toolkit. Everything you need to audit, monitor,
+            and diagnose networks from your terminal.
+          </p>
+          <ul class="product-features">
+            <li>Network &amp; DNS check</li>
+            <li>SSL certificate inspector</li>
+            <li>Port scanner</li>
+            <li>Live monitor dashboard</li>
+            <li>System snapshot</li>
+          </ul>
+          <a href="https://github.com/ironjesus74-hub/coreops-starter-kit"
+             class="btn btn-ghost" rel="noopener">
+            Download Free
+          </a>
+        </article>
+
+        <!-- ── Pro ─────────────────────────────────────────── -->
+        <!--
+          PayPal hosted button — Pro plan ($9/mo)
+          To change price or product: log in to PayPal → Tools → PayPal Buttons,
+          edit the hosted button there, then replace hosted_button_id below.
+          The title/price/description shown on this page are site-controlled only;
+          the actual checkout amount is set inside the PayPal hosted button.
+        -->
+        <article class="product-card featured" aria-label="Pro plan">
+          <span class="product-badge">Most Popular</span>
+          <h3 class="product-title">Pro</h3>
+          <div class="product-price">
+            <span class="currency">$</span>9
+            <span class="period"> / month</span>
+          </div>
+          <p class="product-description">
+            Unlock advanced scan modules, priority email support, and live alerting
+            for your infrastructure — powered by the CoreOps audit engine.
+          </p>
+          <ul class="product-features">
+            <li>Everything in Starter</li>
+            <li>Advanced scan &amp; audit modules</li>
+            <li>Live alerting &amp; history</li>
+            <li>Priority email support</li>
+            <li>Early access to new modules</li>
+          </ul>
+          <!-- PayPal standard hosted Buy Now button (replace HOSTED_BUTTON_ID_PRO) -->
+          <div class="paypal-btn-wrap">
+            <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
+              <input type="hidden" name="cmd" value="_s-xclick" />
+              <input type="hidden" name="hosted_button_id" value="HOSTED_BUTTON_ID_PRO" />
+              <input
+                type="image"
+                src="https://www.paypalobjects.com/en_US/i/btn/btn_subscribeCC_LG.gif"
+                border="0"
+                name="submit"
+                alt="Subscribe — CoreOps Pro via PayPal"
+                title="PayPal — the safer, easier way to pay online"
+              />
+              <img
+                alt=""
+                border="0"
+                src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif"
+                width="1"
+                height="1"
+              />
+            </form>
+          </div>
+        </article>
+
+        <!-- ── Team ────────────────────────────────────────── -->
+        <!--
+          PayPal hosted button — Team plan ($29/mo)
+          Same pattern: update HOSTED_BUTTON_ID_TEAM in your PayPal dashboard
+          to change the checkout price or description.
+        -->
+        <article class="product-card" aria-label="Team plan">
+          <h3 class="product-title">Team</h3>
+          <div class="product-price">
+            <span class="currency">$</span>29
+            <span class="period"> / month</span>
+          </div>
+          <p class="product-description">
+            Full team access, custom branding, private module hosting, and
+            dedicated support for your whole operations team.
+          </p>
+          <ul class="product-features">
+            <li>Everything in Pro</li>
+            <li>Up to 10 team seats</li>
+            <li>Private module repository</li>
+            <li>Custom branding</li>
+            <li>Dedicated support channel</li>
+          </ul>
+          <!-- PayPal standard hosted Buy Now button (replace HOSTED_BUTTON_ID_TEAM) -->
+          <div class="paypal-btn-wrap">
+            <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
+              <input type="hidden" name="cmd" value="_s-xclick" />
+              <input type="hidden" name="hosted_button_id" value="HOSTED_BUTTON_ID_TEAM" />
+              <input
+                type="image"
+                src="https://www.paypalobjects.com/en_US/i/btn/btn_subscribeCC_LG.gif"
+                border="0"
+                name="submit"
+                alt="Subscribe — CoreOps Team via PayPal"
+                title="PayPal — the safer, easier way to pay online"
+              />
+              <img
+                alt=""
+                border="0"
+                src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif"
+                width="1"
+                height="1"
+              />
+            </form>
+          </div>
+        </article>
+
+      </div><!-- /products-grid -->
+    </div>
+  </section>
+
+  <!-- ── Footer ────────────────────────────────────────────────────── -->
+  <footer class="site-footer">
+    <div class="container">
+      ⚡ CoreOps Starter Kit •
+      <a href="https://github.com/ironjesus74-hub/coreops-starter-kit" rel="noopener">GitHub</a>
+      • MIT License
+    </div>
+  </footer>
+
+  <script src="assets/main.js" defer></script>
+</body>
+</html>
