@@ -1,0 +1,51 @@
+/* ===== CoreOps Platform — Shared Styles ===== */
+/* Shared across all platform pages (index.html, gauntlet.html, …) */
+
+/* ===== Platform nav bar ===== */
+.platform-nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--bg-dark);
+  border-bottom: 1px solid var(--border);
+  padding: 0 2rem;
+}
+
+.platform-nav ul {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  list-style: none;
+  max-width: 1200px;
+  margin: 0 auto;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.platform-nav ul::-webkit-scrollbar { display: none; }
+
+.platform-nav li a {
+  display: block;
+  padding: 0.7rem 1rem;
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--faint);
+  white-space: nowrap;
+  transition: color 0.2s;
+}
+.platform-nav li a:hover { color: var(--muted); }
+.platform-nav li a[aria-current="page"] {
+  color: var(--cyan);
+  border-bottom: 2px solid var(--cyan);
+}
+.platform-nav li a[aria-disabled="true"] {
+  pointer-events: none;
+  opacity: 0.4;
+}
+.platform-nav .sep {
+  color: var(--border);
+  font-size: 0.65rem;
+  padding: 0 0.1rem;
+  user-select: none;
+}
