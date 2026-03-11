@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<!--
+  CoreOps PayPal Product Card Component
+  ======================================
+  Reusable product-card template with a standardized PayPal checkout button.
+
+  Usage
+  -----
+  1. Copy this file (or include it via a server-side template engine) wherever
+     a product card is needed.
+  2. Replace the placeholder values marked with [[ ... ]] with your own data:
+       [[PRODUCT_NAME]]   – display name of the product
+       [[PRODUCT_DESC]]   – short description (1–2 sentences)
+       [[PRODUCT_PRICE]]  – price string, e.g. "19.99"
+       [[CURRENCY_CODE]]  – ISO 4217 currency, e.g. "USD"
+       [[PAYPAL_CLIENT_ID]] – your PayPal REST API client ID
+       [[PAYPAL_ITEM_NAME]]  – item name sent to PayPal (URL-safe string)
+       [[PRODUCT_IMAGE_SRC]] – path/URL to product image (or "" to omit)
+       [[PRODUCT_IMAGE_ALT]] – alt text for the product image
+  3. Ensure the shared CSS (assets/css/shared.css) and shared JS
+     (assets/js/shared.js) are loaded in the parent page's <head>.
+
+  Shared assets expected by this component
+  -----------------------------------------
+  <link rel="stylesheet" href="/assets/css/shared.css">
+  <script src="/assets/js/shared.js" defer></script>
+
+  PayPal JS SDK is loaded inline below – no additional <head> tag needed.
+-->
+
+<div class="coreops-product-card" data-product="[[PAYPAL_ITEM_NAME]]">
+
+  <!-- Product image (optional) -->
+  <div class="product-card__image-wrap">
+    <img
+      class="product-card__image"
+      src="[[PRODUCT_IMAGE_SRC]]"
+      alt="[[PRODUCT_IMAGE_ALT]]"
+      loading="lazy"
+      onerror="this.setAttribute('aria-hidden','true'); this.style.display='none';"
+    >
+  </div>
+
+  <!-- Product information -->
+  <div class="product-card__body">
+    <h2 class="product-card__name">[[PRODUCT_NAME]]</h2>
+    <p  class="product-card__desc">[[PRODUCT_DESC]]</p>
+    <p  class="product-card__price">
+      <span class="product-card__currency">[[CURRENCY_CODE]]</span>
+      <span class="product-card__amount">[[PRODUCT_PRICE]]</span>
+    </p>
+  </div>
+
+  <!-- ── PayPal checkout button (standardised) ──────────────────────────
+       All product cards use this exact block so the button style, SDK
+       version, and error handling are consistent across every page.
+  ──────────────────────────────────────────────────────────────────── -->
+  <div class="product-card__checkout" id="paypal-button-[[PAYPAL_ITEM_NAME]]">
+
+    <!-- PayPal JS SDK – loaded per card so the card is fully self-contained.
+         If multiple cards appear on the same page the SDK deduplicates itself.
+         This <script> tag has no async/defer attribute so it blocks rendering
+         of the inline <script> below, guaranteeing `paypal` is defined before
+         the initialisation code runs.  -->
+    <script
+      src="https://www.paypal.com/sdk/js?client-id=[[PAYPAL_CLIENT_ID]]&currency=[[CURRENCY_CODE]]"
+      data-sdk-integration-source="coreops-product-card"
+    ></script>
+
+    <script>
+    (function () {
+      'use strict';
+
+      var containerId = 'paypal-button-[[PAYPAL_ITEM_NAME]]';
+      var itemName    = '[[PAYPAL_ITEM_NAME]]';
+      var amount      = '[[PRODUCT_PRICE]]';
+      var currency    = '[[CURRENCY_CODE]]';
+
+      /* Guard: the SDK script above is synchronous (no async/defer), so
+         `paypal` is available at this point unless the network request failed. */
+      if (typeof paypal === 'undefined') {
+        document.getElementById(containerId).innerHTML =
+          '<p class="product-card__error">PayPal could not be loaded. ' +
+          'Please check your connection and try again.</p>';
+        return;
+      }
+
+      paypal.Buttons({
+        style: {
+          layout : 'vertical',
+          color  : 'gold',
+          shape  : 'rect',
+          label  : 'paypal',
+          height : 40
+        },
+
+        createOrder: function (data, actions) {
+          return actions.order.create({
+            purchase_units: [{
+              description: itemName,
+              amount: {
+                currency_code: currency,
+                value: amount
+              }
+            }]
+          });
+        },
+
+        onApprove: function (data, actions) {
+          return actions.order.capture().then(function (details) {
+            /* Dispatch a custom event so the parent page can react */
+            var event = new CustomEvent('coreops:paypal:success', {
+              bubbles: true,
+              detail: {
+                orderId   : details.id,
+                payerName : details.payer.name.given_name,
+                itemName  : itemName,
+                amount    : amount,
+                currency  : currency
+              }
+            });
+            document.getElementById(containerId).dispatchEvent(event);
+
+            /* Default success message – override via event listener if needed */
+            document.getElementById(containerId).innerHTML =
+              '<p class="product-card__success">' +
+              'Thank you, ' + details.payer.name.given_name + '! ' +
+              'Your order has been placed.</p>';
+          });
+        },
+
+        onError: function (err) {
+          /* Dispatch a custom event for the parent page */
+          var event = new CustomEvent('coreops:paypal:error', {
+            bubbles: true,
+            detail: { error: err, itemName: itemName }
+          });
+          document.getElementById(containerId).dispatchEvent(event);
+
+          document.getElementById(containerId).innerHTML =
+            '<p class="product-card__error">' +
+            'Payment could not be completed. Please try again.</p>';
+        }
+
+      }).render('#' + containerId);
+    }());
+    </script>
+
+  </div>
+  <!-- /PayPal checkout button -->
+
+</div>
+<!-- /coreops-product-card -->

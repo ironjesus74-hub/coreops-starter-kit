@@ -38,6 +38,7 @@ Usage:
   coreops scan <host>
   coreops live <host> [interval_seconds]
   coreops snapshot
+  coreops webaudit <url>
 USAGE
     ;;
   deps)     run_module "deps" "$@" ;;
@@ -49,6 +50,7 @@ USAGE
   scan)     run_module "scan" "$@" ;;
   live)     run_module "live" "$@" ;;
   snapshot) run_module "snapshot" "$@" ;;
+  webaudit) run_module "webaudit" "$@" ;;
   *)
     echo "[ERROR] Unknown command: $cmd" >&2
     echo "Try: coreops help" >&2
