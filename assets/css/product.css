@@ -1,0 +1,75 @@
+.product-grid {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  margin: 32px 0;
+}
+
+.product-card {
+  background: linear-gradient(180deg, rgba(18, 22, 36, 0.95), rgba(10, 12, 20, 0.98));
+  border: 1px solid rgba(110, 136, 255, 0.18);
+  border-radius: 22px;
+  padding: 24px;
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  position: relative;
+  overflow: hidden;
+}
+
+.product-card::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(86, 203, 255, 0.35), rgba(255, 77, 166, 0.25));
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.product-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9fdcff;
+  background: rgba(79, 189, 255, 0.08);
+  border: 1px solid rgba(79, 189, 255, 0.18);
+  margin-bottom: 14px;
+}
+
+.product-title {
+  margin: 0 0 8px;
+  color: #f4f7ff;
+  font-size: 1.5rem;
+  line-height: 1.1;
+}
+
+.product-price {
+  margin: 0 0 12px;
+  color: #79d7ff;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.product-desc {
+  margin: 0 0 22px;
+  color: rgba(226, 232, 255, 0.78);
+  line-height: 1.55;
+}
+
+.paypal-hosted-button {
+  min-height: 45px;
+}
