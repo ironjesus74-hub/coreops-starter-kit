@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CoreOps Starter Kit — Mobile-first DevOps CLI</title>
+  <meta name="description" content="CoreOps: fast, portable DevOps CLI for Termux and Linux. Network checks, TLS, diagnostics, snapshots — no bloat.">
+
+  <!--
+    Favicon: self-contained inline SVG data URI — no external file dependency.
+    Refresh-safe: zero external asset fetches on any page load.
+  -->
+  <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23060d1a'/%3E%3Ctext x='16' y='22' text-anchor='middle' fill='%231a6fff' font-family='monospace' font-size='16' font-weight='900'%3ECO%3C/text%3E%3C/svg%3E">
+
+  <style>
+    /* ===== Reset & base ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ===== Color Palette: Dark Navy Blue + Hot-Rod Red + White ===== */
+    :root {
+      --bg-deep:     #04080f;
+      --bg-dark:     #060d1a;
+      --bg-card:     #0b1525;
+      --bg-panel:    #091020;
+      --border:      #152040;
+      --border-sub:  #0f1c35;
+      --blue:        #1a6fff;
+      --blue-dim:    rgba(26, 111, 255, 0.2);
+      --red:         #e62020;
+      --red-dim:     rgba(230, 32, 32, 0.2);
+      --gold:        #f0a32a;
+      --white:       #e8f0ff;
+      --muted:       #6888aa;
+      --faint:       #304060;
+      --radius:      12px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+                   "Liberation Mono", monospace;
+      background: var(--bg-deep);
+      color: var(--white);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ===== Page Label Bar (above hero banner) ===== */
+    .page-label-bar {
+      background: var(--bg-dark);
+      border-bottom: 1px solid var(--border);
+      padding: 0.45rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .page-label-left {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--faint);
+    }
+
+    .page-label-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--blue);
+      animation: pulse-dot 3s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.4; transform: scale(0.7); }
+    }
+
+    .page-label-right {
+      font-size: 0.58rem;
+      letter-spacing: 0.14em;
+      color: var(--faint);
+    }
+
+    .page-label-right a {
+      color: var(--red);
+      text-decoration: none;
+    }
+    .page-label-right a:hover { text-decoration: underline; }
+
+    /* ===== Hero / Header Banner ===== */
+    .hero {
+      position: relative;
+      text-align: center;
+      padding: 5rem 2rem 4.5rem;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, var(--bg-dark) 0%, var(--bg-deep) 100%);
+      overflow: hidden;
+    }
+
+    /* Decorative grid lines */
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--border-sub) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border-sub) 1px, transparent 1px);
+      background-size: 60px 60px;
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
+    .hero-eyebrow {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.6rem;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: var(--blue);
+      border: 1px solid rgba(26, 111, 255, 0.3);
+      background: rgba(26, 111, 255, 0.06);
+      padding: 0.3rem 0.9rem;
+      border-radius: 2em;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-eyebrow::before {
+      content: '';
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--blue);
+    }
+
+    .hero-title {
+      position: relative;
+      font-size: clamp(2.5rem, 7vw, 5rem);
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      line-height: 1.0;
+      margin-bottom: 0.6rem;
+    }
+
+    .hero-title .core { color: var(--blue); }
+    .hero-title .ops  { color: var(--red); }
+
+    .hero-subtitle {
+      position: relative;
+      font-size: clamp(0.85rem, 2vw, 1rem);
+      color: var(--muted);
+      max-width: 540px;
+      margin: 0 auto 2.5rem;
+      line-height: 1.6;
+    }
+
+    .hero-actions {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.6rem 1.4rem;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      text-decoration: none;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: var(--blue);
+      color: #ffffff;
+      border-color: var(--blue);
+    }
+    .btn-primary:hover {
+      background: #2878ff;
+      box-shadow: 0 0 18px rgba(26, 111, 255, 0.4);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--white);
+      border-color: var(--border);
+    }
+    .btn-secondary:hover {
+      border-color: var(--blue);
+      color: var(--blue);
+    }
+
+    .btn-danger {
+      background: transparent;
+      color: var(--red);
+      border-color: rgba(230, 32, 32, 0.4);
+    }
+    .btn-danger:hover {
+      background: var(--red-dim);
+      border-color: var(--red);
+      box-shadow: 0 0 14px rgba(230, 32, 32, 0.3);
+    }
+
+    /* ===== Stats strip ===== */
+    .stats-strip {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 2rem;
+      padding: 1.5rem 2rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-dark);
+    }
+
+    .strip-stat {
+      text-align: center;
+    }
+
+    .strip-val {
+      font-size: 1.4rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .strip-val.blue { color: var(--blue); }
+    .strip-val.red  { color: var(--red); }
+    .strip-val.gold { color: var(--gold); }
+
+    .strip-label {
+      font-size: 0.56rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--faint);
+      margin-top: 0.2rem;
+    }
+
+    .strip-divider {
+      width: 1px;
+      height: 28px;
+      background: var(--border);
+    }
+
+    /* ===== Section common ===== */
+    .section {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 3.5rem 2rem;
+    }
+
+    .section-label {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 2rem;
+    }
+
+    .section-label span {
+      font-size: 0.6rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--faint);
+    }
+
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ===== Features grid ===== */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-sub);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      transition: border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .feature-card:hover {
+      border-color: var(--blue);
+      box-shadow: 0 0 16px rgba(26, 111, 255, 0.12);
+    }
+
+    .feature-icon {
+      font-size: 1.4rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .feature-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--white);
+      margin-bottom: 0.35rem;
+    }
+
+    .feature-desc {
+      font-size: 0.65rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .feature-cmd {
+      margin-top: 0.75rem;
+      font-size: 0.62rem;
+      color: var(--blue);
+      background: rgba(26, 111, 255, 0.06);
+      border: 1px solid rgba(26, 111, 255, 0.15);
+      border-radius: 4px;
+      padding: 0.2rem 0.5rem;
+      display: inline-block;
+    }
+
+    /* ===== Quick start block ===== */
+    .quickstart {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+    }
+
+    .quickstart-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+
+    .code-block {
+      background: var(--bg-deep);
+      border: 1px solid var(--border-sub);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      overflow-x: auto;
+    }
+
+    .code-block pre {
+      font-family: inherit;
+      font-size: 0.72rem;
+      line-height: 1.7;
+      color: var(--white);
+      white-space: pre;
+    }
+
+    .code-block .cm { color: var(--faint); }
+    .code-block .kw { color: var(--blue); }
+    .code-block .st { color: var(--muted); }
+    .code-block .cmd { color: var(--red); }
+
+    /* ===== Cloudflare resources ===== */
+    .cf-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .cf-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-sub);
+      border-radius: 8px;
+      padding: 1rem 1.1rem;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      transition: border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .cf-card:hover {
+      border-color: var(--blue);
+      box-shadow: 0 0 12px rgba(26, 111, 255, 0.15);
+    }
+
+    .cf-icon {
+      font-size: 1.1rem;
+      line-height: 1;
+      flex-shrink: 0;
+      margin-top: 0.1rem;
+    }
+
+    .cf-info-name {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--white);
+      margin-bottom: 0.2rem;
+    }
+
+    .cf-info-desc {
+      font-size: 0.6rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    /* ===== Arena promo card ===== */
+    .arena-promo {
+      background: linear-gradient(135deg, rgba(26,111,255,0.08) 0%, rgba(230,32,32,0.08) 100%);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2.5rem;
+      text-align: center;
+    }
+
+    .arena-promo-badge {
+      display: inline-block;
+      font-size: 0.58rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--red);
+      border: 1px solid rgba(230, 32, 32, 0.3);
+      background: rgba(230, 32, 32, 0.06);
+      padding: 0.25rem 0.8rem;
+      border-radius: 2em;
+      margin-bottom: 1rem;
+    }
+
+    .arena-promo-title {
+      font-size: clamp(1.4rem, 4vw, 2.2rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.5rem;
+    }
+
+    .arena-promo-title .blue { color: var(--blue); }
+    .arena-promo-title .red  { color: var(--red); }
+
+    .arena-promo-sub {
+      font-size: 0.7rem;
+      color: var(--muted);
+      margin-bottom: 1.5rem;
+    }
+
+    /* ===== Divider ===== */
+    .divider {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+
+    .divider-line {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border), transparent);
+    }
+
+    /* ===== Footer ===== */
+    .footer {
+      border-top: 1px solid var(--border);
+      padding: 1.5rem 2rem;
+      text-align: center;
+      font-size: 0.62rem;
+      color: var(--faint);
+      letter-spacing: 0.1em;
+    }
+
+    .footer a { color: var(--faint); text-decoration: none; }
+    .footer a:hover { color: var(--blue); }
+
+    /* ===== Screen-reader only utility ===== */
+    .sr-only {
+      position: absolute;
+      width: 1px; height: 1px;
+      padding: 0; margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 860px) {
+      .page-label-right { display: none; }
+      .strip-divider { display: none; }
+    }
+
+    @media (max-width: 640px) {
+      .hero { padding: 3.5rem 1rem 3rem; }
+      .section { padding: 2.5rem 1rem; }
+      .hero-actions { flex-direction: column; align-items: stretch; }
+      .btn { justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== PAGE LABEL BAR (above hero banner) ===== -->
+  <div class="page-label-bar" role="banner" aria-label="Page identifier">
+    <div class="page-label-left">
+      <span class="page-label-dot" aria-hidden="true"></span>
+      <span>CoreOps Starter Kit &nbsp;/&nbsp; Home</span>
+    </div>
+    <div class="page-label-right">
+      <a href="gauntlet.html">The Arena →</a>
+      &nbsp;·&nbsp; v1.0 · Termux &amp; Linux
+    </div>
+  </div>
+
+  <!-- ===== HERO BANNER ===== -->
+  <header class="hero">
+    <div class="hero-eyebrow">Mobile-first DevOps CLI</div>
+    <h1 class="hero-title">
+      <span class="core">Core</span><span class="ops">Ops</span>
+    </h1>
+    <p class="hero-subtitle">
+      Fast, portable DevOps toolkit for Termux &amp; Linux.<br>
+      Network checks · TLS audit · Diagnostics · Snapshots — no bloat.
+    </p>
+    <div class="hero-actions">
+      <a class="btn btn-primary"
+         href="https://github.com/ironjesus74-hub/coreops-starter-kit"
+         target="_blank" rel="noopener noreferrer">
+        ↓ Get Started
+      </a>
+      <a class="btn btn-secondary" href="gauntlet.html">
+        ⚔ Enter the Arena
+      </a>
+      <a class="btn btn-danger"
+         href="https://github.com/ironjesus74-hub/coreops-starter-kit/blob/main/README.md"
+         target="_blank" rel="noopener noreferrer">
+        📖 Docs
+      </a>
+    </div>
+  </header>
+
+  <!-- ===== STATS STRIP ===== -->
+  <div class="stats-strip" role="region" aria-label="Quick stats">
+    <div class="strip-stat">
+      <div class="strip-val blue">9</div>
+      <div class="strip-label">Modules</div>
+    </div>
+    <div class="strip-divider" aria-hidden="true"></div>
+    <div class="strip-stat">
+      <div class="strip-val red">0</div>
+      <div class="strip-label">Ext. Dependencies</div>
+    </div>
+    <div class="strip-divider" aria-hidden="true"></div>
+    <div class="strip-stat">
+      <div class="strip-val gold">100%</div>
+      <div class="strip-label">Bash Native</div>
+    </div>
+    <div class="strip-divider" aria-hidden="true"></div>
+    <div class="strip-stat">
+      <div class="strip-val blue">MIT</div>
+      <div class="strip-label">License</div>
+    </div>
+  </div>
+
+  <!-- ===== FEATURES ===== -->
+  <section class="section" aria-labelledby="features-heading">
+    <h2 id="features-heading" class="sr-only">Features</h2>
+    <div class="section-label">
+      <span>Core Modules</span>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon" aria-hidden="true">🩺</div>
+        <div class="feature-title">Doctor</div>
+        <div class="feature-desc">System health check — validates environment, shell dependencies, and tool availability.</div>
+        <span class="feature-cmd">coreops doctor</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" aria-hidden="true">🌐</div>
+        <div class="feature-title">Net Check</div>
+        <div class="feature-desc">Connectivity, latency, and DNS resolution tests in one shot.</div>
+        <span class="feature-cmd">coreops netcheck</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" aria-hidden="true">🔍</div>
+        <div class="feature-title">Port Scan</div>
+        <div class="feature-desc">Light-weight local port scanner — identify open services without nmap.</div>
+        <span class="feature-cmd">coreops portscan</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" aria-hidden="true">🔐</div>
+        <div class="feature-title">SSL Check</div>
+        <div class="feature-desc">TLS certificate validation, expiry warnings, and cipher inspection.</div>
+        <span class="feature-cmd">coreops sslcheck</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" aria-hidden="true">📸</div>
+        <div class="feature-title">Snapshot</div>
+        <div class="feature-desc">Capture full system state — env, processes, network, disk — as a timestamped report.</div>
+        <span class="feature-cmd">coreops snapshot</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" aria-hidden="true">🔎</div>
+        <div class="feature-title">Security Scan</div>
+        <div class="feature-desc">Surface common misconfigurations and world-writable paths in seconds.</div>
+        <span class="feature-cmd">coreops scan</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" aria-hidden="true">📦</div>
+        <div class="feature-title">Deps Audit</div>
+        <div class="feature-desc">Check installed packages and version hygiene across your environment.</div>
+        <span class="feature-cmd">coreops deps</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" aria-hidden="true">📊</div>
+        <div class="feature-title">Live Dashboard</div>
+        <div class="feature-desc">Real-time system monitor — CPU, memory, network, and process watch.</div>
+        <span class="feature-cmd">coreops live</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" aria-hidden="true">🛡️</div>
+        <div class="feature-title">Audit Log</div>
+        <div class="feature-desc">Structured audit trail of all CoreOps commands run on this system.</div>
+        <span class="feature-cmd">coreops audit</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== DIVIDER ===== -->
+  <div class="divider" role="separator"><div class="divider-line"></div></div>
+
+  <!-- ===== QUICK START ===== -->
+  <section class="section" aria-labelledby="quickstart-heading">
+    <h2 id="quickstart-heading" class="sr-only">Quick Start</h2>
+    <div class="section-label">
+      <span>Quick Start (Termux / Linux)</span>
+    </div>
+    <div class="quickstart">
+      <div class="quickstart-title">Install &amp; Run</div>
+      <div class="code-block">
+        <pre><span class="cm"># Termux bootstrap</span>
+<span class="kw">pkg</span> <span class="st">update -y &amp;&amp; pkg install -y git</span>
+
+<span class="cm"># Clone the repo</span>
+<span class="kw">git</span> <span class="st">clone https://github.com/ironjesus74-hub/coreops-starter-kit.git</span>
+<span class="kw">cd</span> <span class="st">coreops-starter-kit</span>
+
+<span class="cm"># Make executable &amp; install</span>
+<span class="kw">chmod</span> <span class="st">+x bin/* modules/*.sh lib/*.sh install.sh</span>
+<span class="cmd">./install.sh</span>
+
+<span class="cm"># Run a check</span>
+<span class="cmd">coreops doctor</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== DIVIDER ===== -->
+  <div class="divider" role="separator"><div class="divider-line"></div></div>
+
+  <!-- ===== CLOUDFLARE RESOURCES ===== -->
+  <section class="section" aria-labelledby="cf-heading">
+    <h2 id="cf-heading" class="sr-only">Cloudflare Resources</h2>
+    <div class="section-label">
+      <span>Cloudflare Infrastructure</span>
+    </div>
+    <div class="cf-grid">
+      <a class="cf-card" href="https://workers.cloudflare.com/" target="_blank" rel="noopener noreferrer"
+         aria-label="Cloudflare Workers — serverless edge functions">
+        <span class="cf-icon" aria-hidden="true">⚡</span>
+        <div>
+          <div class="cf-info-name">Workers</div>
+          <div class="cf-info-desc">Serverless functions at the edge — deploy CLI hooks &amp; webhooks globally</div>
+        </div>
+      </a>
+      <a class="cf-card" href="https://pages.cloudflare.com/" target="_blank" rel="noopener noreferrer"
+         aria-label="Cloudflare Pages — static site hosting">
+        <span class="cf-icon" aria-hidden="true">📄</span>
+        <div>
+          <div class="cf-info-name">Pages</div>
+          <div class="cf-info-desc">Host this dashboard &amp; static assets — free tier with global CDN</div>
+        </div>
+      </a>
+      <a class="cf-card" href="https://www.cloudflare.com/products/tunnel/" target="_blank" rel="noopener noreferrer"
+         aria-label="Cloudflare Tunnel — secure private network exposure">
+        <span class="cf-icon" aria-hidden="true">🔒</span>
+        <div>
+          <div class="cf-info-name">Tunnel</div>
+          <div class="cf-info-desc">Expose local services securely — ideal for Termux dev environments</div>
+        </div>
+      </a>
+      <a class="cf-card" href="https://1.1.1.1/" target="_blank" rel="noopener noreferrer"
+         aria-label="Cloudflare 1.1.1.1 — fast DNS resolver">
+        <span class="cf-icon" aria-hidden="true">🌐</span>
+        <div>
+          <div class="cf-info-name">1.1.1.1 DNS</div>
+          <div class="cf-info-desc">Fastest public DNS resolver — pairs with netcheck &amp; sslcheck modules</div>
+        </div>
+      </a>
+      <a class="cf-card" href="https://www.cloudflare.com/products/zero-trust/" target="_blank" rel="noopener noreferrer"
+         aria-label="Cloudflare Zero Trust — security platform">
+        <span class="cf-icon" aria-hidden="true">🛡️</span>
+        <div>
+          <div class="cf-info-name">Zero Trust</div>
+          <div class="cf-info-desc">Secure access gateway — protect CoreOps endpoints without a VPN</div>
+        </div>
+      </a>
+      <a class="cf-card" href="https://radar.cloudflare.com/" target="_blank" rel="noopener noreferrer"
+         aria-label="Cloudflare Radar — internet traffic insights">
+        <span class="cf-icon" aria-hidden="true">📡</span>
+        <div>
+          <div class="cf-info-name">Radar</div>
+          <div class="cf-info-desc">Real-time internet traffic &amp; outage data — context for diagnostics</div>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <!-- ===== DIVIDER ===== -->
+  <div class="divider" role="separator"><div class="divider-line"></div></div>
+
+  <!-- ===== ARENA PROMO ===== -->
+  <section class="section" aria-labelledby="arena-heading">
+    <h2 id="arena-heading" class="sr-only">Atlas Gauntlet Arena</h2>
+    <div class="arena-promo">
+      <div class="arena-promo-badge">⚔ Live Event</div>
+      <div class="arena-promo-title">
+        <span class="blue">Atlas</span> <span class="red">Gauntlet</span>
+      </div>
+      <div class="arena-promo-sub">
+        CoreOps vs Atlas Guard · Season 1 · Battle Protocol Active
+      </div>
+      <a class="btn btn-danger" href="gauntlet.html">
+        Enter the Arena
+      </a>
+    </div>
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="footer">
+    <a href="https://github.com/ironjesus74-hub/coreops-starter-kit">
+      ironjesus74-hub/coreops-starter-kit
+    </a>
+    &nbsp;·&nbsp; CoreOps Starter Kit
+    &nbsp;·&nbsp; <a href="gauntlet.html">Gauntlet Arena</a>
+  </footer>
+
+</body>
+</html>
