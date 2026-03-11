@@ -12,34 +12,32 @@
     so they will never produce a broken 404 request.
   -->
   <link rel="icon" type="image/svg+xml"
-        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%23060810' stroke='%231d6bfc' stroke-width='1.5'/%3E%3Cpath d='M16 1A15 15 0 0 0 16 31' fill='none' stroke='%23d42200' stroke-width='1.2' opacity='.4'/%3E%3Cpath d='M16 1A15 15 0 0 1 16 31' fill='none' stroke='%231d6bfc' stroke-width='1.2' opacity='.4'/%3E%3Ctext x='16' y='20' text-anchor='middle' fill='%23ffffff' font-family='monospace' font-size='11' font-weight='900'%3EVS%3C/text%3E%3C/svg%3E">
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%230d1117' stroke='%2300d4ff' stroke-width='1.5'/%3E%3Cpath d='M16 1A15 15 0 0 0 16 31' fill='none' stroke='%2300d4ff' stroke-width='1.2' opacity='.4'/%3E%3Cpath d='M16 1A15 15 0 0 1 16 31' fill='none' stroke='%23ff2d78' stroke-width='1.2' opacity='.4'/%3E%3Ctext x='16' y='20' text-anchor='middle' fill='%23ffffff' font-family='monospace' font-size='11' font-weight='900'%3EVS%3C/text%3E%3C/svg%3E">
   <link rel="alternate icon" type="image/svg+xml"
-        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%23060810' stroke='%231d6bfc' stroke-width='1.5'/%3E%3Ctext x='16' y='20' text-anchor='middle' fill='%23ffffff' font-family='monospace' font-size='11' font-weight='900'%3EVS%3C/text%3E%3C/svg%3E">
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%230d1117' stroke='%2300d4ff' stroke-width='1.5'/%3E%3Ctext x='16' y='20' text-anchor='middle' fill='%23ffffff' font-family='monospace' font-size='11' font-weight='900'%3EVS%3C/text%3E%3C/svg%3E">
 
   <style>
     /* ===== Reset & base ===== */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg-deep:      #060810;
-      --bg-dark:      #090d18;
-      --bg-card:      #0d1525;
-      --bg-panel:     #111a2e;
-      --border:       #1a2540;
-      --border-sub:   #141e38;
-      /* Primary accent: hot-rod red */
-      --cyan:         #d42200;
-      --cyan-dim:     rgba(212, 34, 0, 0.22);
-      /* Secondary accent: steel blue glow */
-      --magenta:      #1d6bfc;
-      --magenta-dim:  rgba(29, 107, 252, 0.22);
+      --bg-deep:      #080a0e;
+      --bg-dark:      #0d1117;
+      --bg-card:      #111620;
+      --bg-panel:     #161b22;
+      --border:       #1e2633;
+      --border-sub:   #161c27;
+      --cyan:         #00d4ff;
+      --cyan-dim:     rgba(0, 212, 255, 0.25);
+      --magenta:      #ff2d78;
+      --magenta-dim:  rgba(255, 45, 120, 0.25);
       --gold:         #f0a32a;
       --white:        #e6edf3;
       --muted:        #8b949e;
-      --faint:        #4a5568;
+      --faint:        #484f58;
       --radius:       12px;
-      --glow-c:       0 0 20px rgba(212, 34, 0, 0.45), 0 0 40px rgba(212, 34, 0, 0.15);
-      --glow-m:       0 0 20px rgba(29, 107, 252, 0.4), 0 0 40px rgba(29, 107, 252, 0.12);
+      --glow-c:       0 0 20px rgba(0, 212, 255, 0.4), 0 0 40px rgba(0, 212, 255, 0.12);
+      --glow-m:       0 0 20px rgba(255, 45, 120, 0.4), 0 0 40px rgba(255, 45, 120, 0.12);
     }
 
     html { scroll-behavior: smooth; }
@@ -80,7 +78,7 @@
       letter-spacing: -0.02em;
       line-height: 1.05;
       margin-bottom: 0.5rem;
-      text-shadow: 0 0 40px rgba(212, 34, 0, 0.12);
+      text-shadow: 0 0 40px rgba(0, 212, 255, 0.15);
     }
 
     .header-title .atlas { color: var(--cyan); }
@@ -391,65 +389,9 @@
       .card { padding: 1.25rem; }
       .vs-wrap { width: 120px; height: 120px; }
     }
-
-    /* ===== Page Nav Label ===== */
-    .page-nav {
-      background: var(--bg-dark);
-      border-bottom: 1px solid var(--border-sub);
-      overflow-x: auto;
-      scrollbar-width: none;
-    }
-    .page-nav::-webkit-scrollbar { display: none; }
-
-    .page-nav-list {
-      display: flex;
-      list-style: none;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 2rem;
-    }
-
-    .page-nav-item {
-      font-size: 0.56rem;
-      letter-spacing: 0.24em;
-      text-transform: uppercase;
-      border-bottom: 2px solid transparent;
-      transition: color 0.2s ease, border-color 0.2s ease;
-    }
-
-    .page-nav-item a {
-      display: block;
-      color: var(--faint);
-      text-decoration: none;
-      padding: 0.55rem 1.1rem;
-      white-space: nowrap;
-      transition: color 0.2s ease;
-    }
-
-    .page-nav-item a:hover { color: var(--white); }
-
-    .page-nav-item.active {
-      border-bottom-color: var(--cyan);
-    }
-
-    .page-nav-item.active a {
-      color: var(--cyan);
-    }
   </style>
 </head>
 <body>
-
-  <!-- ===== PAGE NAV LABEL ===== -->
-  <nav class="page-nav" aria-label="Platform navigation">
-    <ul class="page-nav-list">
-      <li class="page-nav-item"><a href="#">HOME</a></li>
-      <li class="page-nav-item active"><a href="gauntlet.html" aria-current="page">ATLAS GAUNTLET</a></li>
-      <li class="page-nav-item"><a href="#">SIGNAL FEED</a></li>
-      <li class="page-nav-item"><a href="#">MARKET</a></li>
-      <li class="page-nav-item"><a href="#">EXCHANGE</a></li>
-      <li class="page-nav-item"><a href="#">ATLAS ID</a></li>
-    </ul>
-  </nav>
 
   <!-- ===== HEADER ===== -->
   <header class="header">
@@ -511,32 +453,32 @@
       <svg class="vs-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"
            aria-hidden="true" focusable="false">
         <defs>
-          <!-- Left beam: fades in from left edge to core center -->
+          <!-- Cyan beam: fades in from left edge to core center -->
           <linearGradient id="gCyan" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%"   stop-color="#d42200" stop-opacity="0"/>
-            <stop offset="55%"  stop-color="#d42200" stop-opacity="0.85"/>
-            <stop offset="100%" stop-color="#d42200" stop-opacity="0"/>
+            <stop offset="0%"   stop-color="#00d4ff" stop-opacity="0"/>
+            <stop offset="55%"  stop-color="#00d4ff" stop-opacity="0.85"/>
+            <stop offset="100%" stop-color="#00d4ff" stop-opacity="0"/>
           </linearGradient>
 
-          <!-- Right beam: fades in from right edge to core center -->
+          <!-- Magenta beam: fades in from right edge to core center -->
           <linearGradient id="gMag" x1="100%" y1="0%" x2="0%" y2="0%">
-            <stop offset="0%"   stop-color="#1d6bfc" stop-opacity="0"/>
-            <stop offset="55%"  stop-color="#1d6bfc" stop-opacity="0.85"/>
-            <stop offset="100%" stop-color="#1d6bfc" stop-opacity="0"/>
+            <stop offset="0%"   stop-color="#ff2d78" stop-opacity="0"/>
+            <stop offset="55%"  stop-color="#ff2d78" stop-opacity="0.85"/>
+            <stop offset="100%" stop-color="#ff2d78" stop-opacity="0"/>
           </linearGradient>
 
-          <!-- Outer ring: red-to-blue sweep -->
+          <!-- Outer ring: cyan-to-magenta sweep -->
           <linearGradient id="gRing" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%"   stop-color="#d42200" stop-opacity="0.55"/>
+            <stop offset="0%"   stop-color="#00d4ff" stop-opacity="0.55"/>
             <stop offset="50%"  stop-color="#ffffff" stop-opacity="0.08"/>
-            <stop offset="100%" stop-color="#1d6bfc" stop-opacity="0.55"/>
+            <stop offset="100%" stop-color="#ff2d78" stop-opacity="0.55"/>
           </linearGradient>
 
           <!-- Core radial glow (collision bloom) -->
           <radialGradient id="gBloom" cx="50%" cy="50%" r="50%">
             <stop offset="0%"   stop-color="#ffffff"  stop-opacity="0.12"/>
             <stop offset="40%"  stop-color="#f0c040"  stop-opacity="0.06"/>
-            <stop offset="100%" stop-color="#060810"  stop-opacity="0"/>
+            <stop offset="100%" stop-color="#080a0e"  stop-opacity="0"/>
           </radialGradient>
 
           <!-- Clip beam to a horizontal band through the core -->
@@ -559,13 +501,13 @@
         <g class="vs-ring-inner">
           <circle cx="100" cy="100" r="76"
                   fill="none"
-                  stroke="#d42200"
+                  stroke="#00d4ff"
                   stroke-width="0.6"
                   stroke-dasharray="5 14"
                   opacity="0.28"/>
           <circle cx="100" cy="100" r="76"
                   fill="none"
-                  stroke="#1d6bfc"
+                  stroke="#ff2d78"
                   stroke-width="0.6"
                   stroke-dasharray="5 14"
                   stroke-dashoffset="9"
@@ -575,22 +517,22 @@
         <!-- ── Bloom glow (behind beams) ── -->
         <circle cx="100" cy="100" r="48" fill="url(#gBloom)"/>
 
-        <!-- ── Left energy beam (CoreOps red) ── -->
+        <!-- ── Cyan energy beam (from left) ── -->
         <g class="vs-beam-l" clip-path="url(#cBeam)">
           <rect x="0" y="88" width="100" height="24"
                 fill="url(#gCyan)" rx="3"/>
           <!-- Thin bright core of the beam -->
           <rect x="0" y="96" width="96" height="8"
-                fill="#d42200" opacity="0.12" rx="1"/>
+                fill="#00d4ff" opacity="0.12" rx="1"/>
         </g>
 
-        <!-- ── Right energy beam (Atlas Guard blue) ── -->
+        <!-- ── Magenta energy beam (from right) ── -->
         <g class="vs-beam-r" clip-path="url(#cBeam)">
           <rect x="100" y="88" width="100" height="24"
                 fill="url(#gMag)" rx="3"/>
           <!-- Thin bright core of the beam -->
           <rect x="104" y="96" width="96" height="8"
-                fill="#1d6bfc" opacity="0.12" rx="1"/>
+                fill="#ff2d78" opacity="0.12" rx="1"/>
         </g>
 
         <!-- ── Core disc ── -->
@@ -603,15 +545,15 @@
                   opacity="0.18"/>
 
           <!-- Core background fill -->
-          <circle cx="100" cy="100" r="40" fill="#090d18"/>
+          <circle cx="100" cy="100" r="40" fill="#0d1117"/>
 
-          <!-- Red left-arc border (CoreOps) -->
+          <!-- Cyan left-arc border -->
           <path d="M100 60 A40 40 0 0 0 100 140"
-                fill="none" stroke="#d42200" stroke-width="2.5" opacity="0.9"/>
+                fill="none" stroke="#00d4ff" stroke-width="2.5" opacity="0.9"/>
 
-          <!-- Blue right-arc border (Atlas Guard) -->
+          <!-- Magenta right-arc border -->
           <path d="M100 60 A40 40 0 0 1 100 140"
-                fill="none" stroke="#1d6bfc" stroke-width="2.5" opacity="0.9"/>
+                fill="none" stroke="#ff2d78" stroke-width="2.5" opacity="0.9"/>
 
           <!-- VS text — the only text in the component -->
           <text x="100" y="107"
@@ -633,10 +575,10 @@
           <animate attributeName="opacity" values="0;1;0" dur="2.2s" begin="1.1s" repeatCount="indefinite"/>
           <animate attributeName="r"       values="1;3.5;1" dur="2.2s" begin="1.1s" repeatCount="indefinite"/>
         </circle>
-        <circle cx="76" cy="90" r="1.5" fill="#d42200" opacity="0">
+        <circle cx="76" cy="90" r="1.5" fill="#00d4ff" opacity="0">
           <animate attributeName="opacity" values="0;0.85;0" dur="1.6s" begin="0.6s" repeatCount="indefinite"/>
         </circle>
-        <circle cx="124" cy="110" r="1.5" fill="#1d6bfc" opacity="0">
+        <circle cx="124" cy="110" r="1.5" fill="#ff2d78" opacity="0">
           <animate attributeName="opacity" values="0;0.85;0" dur="1.6s" begin="1.4s" repeatCount="indefinite"/>
         </circle>
       </svg>
