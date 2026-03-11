@@ -34,7 +34,12 @@ check_ping() {
   # returns: "OK <ms>" or "FAIL NA"
   local out ms
   out="$(ping -c 1 -W 2 "$HOST" 2>/dev/null || true)"
-  ms="$(printf "%s" "$out" | sed -n 's/.*time=\([0-9.]*\).*/\1/p' | head -n1)"
+  # Use bash regex instead of a sed|head subshell pipeline
+  if [[ "$out" =~ time=([0-9]+(\.[0-9]+)?) ]]; then
+    ms="${BASH_REMATCH[1]}"
+  else
+    ms=""
+  fi
   if [ -n "$ms" ]; then
     echo "OK $ms"
   else
@@ -51,7 +56,7 @@ check_port_443() {
     fi
   fi
 
-  if command -v timeout >/dev/null 2>&1; then
+  if [ "$_HAS_TIMEOUT" -eq 1 ]; then
     timeout 2 bash -c "cat </dev/null >/dev/tcp/$HOST/443" >/dev/null 2>&1 && echo "OPEN" || echo "CLOSED"
   else
     bash -c "cat </dev/null >/dev/tcp/$HOST/443" >/dev/null 2>&1 && echo "OPEN" || echo "CLOSED"
@@ -68,11 +73,11 @@ check_tls() {
 
 check_dns() {
   # Prefer resolver lookups, avoid ping-flap
-  if command -v getent >/dev/null 2>&1; then
+  if [ "$_HAS_GETENT" -eq 1 ]; then
     getent hosts "$HOST" >/dev/null 2>&1 && echo "RESOLVED" || echo "FAILED"
     return
   fi
-  if command -v nslookup >/dev/null 2>&1; then
+  if [ "$_HAS_NSLOOKUP" -eq 1 ]; then
     nslookup "$HOST" >/dev/null 2>&1 && echo "RESOLVED" || echo "FAILED"
     return
   fi
@@ -102,18 +107,27 @@ bar_10() {
     return
   fi
 
+  # Truncate to integer for pure-bash comparison (avoids awk subshells)
+  local ms_int="${ms%%.*}"
+  # Guard against empty or non-numeric values (e.g., unusual ping output)
+  if [ -z "$ms_int" ] || ! [[ "$ms_int" =~ ^[0-9]+$ ]]; then
+    printf "Latency: --   %b[----------]%b\n" "$C_GRAY" "$C_RESET"
+    return
+  fi
   local blocks
-  if awk "BEGIN{exit !($ms<=20)}"; then blocks=10
-  elif awk "BEGIN{exit !($ms<=40)}"; then blocks=8
-  elif awk "BEGIN{exit !($ms<=80)}"; then blocks=6
-  elif awk "BEGIN{exit !($ms<=120)}"; then blocks=4
-  elif awk "BEGIN{exit !($ms<=200)}"; then blocks=2
+  if   [ "$ms_int" -le 20 ];  then blocks=10
+  elif [ "$ms_int" -le 40 ];  then blocks=8
+  elif [ "$ms_int" -le 80 ];  then blocks=6
+  elif [ "$ms_int" -le 120 ]; then blocks=4
+  elif [ "$ms_int" -le 200 ]; then blocks=2
   else blocks=1
   fi
 
-  local filled="" empty="" i color="$C_GREEN"
-  for i in $(seq 1 "$blocks"); do filled="${filled}█"; done
-  for i in $(seq 1 $((10-blocks))); do empty="${empty}░"; done
+  # Build bar strings with C-style loops (avoids seq subshells)
+  local filled="" empty="" color="$C_GREEN"
+  local i
+  for (( i=0; i<blocks; i++ )); do filled+="█"; done
+  for (( i=0; i<(10-blocks); i++ )); do empty+="░"; done
 
   if [ "$blocks" -le 2 ]; then color="$C_RED"
   elif [ "$blocks" -le 4 ]; then color="$C_YELLOW"
@@ -192,11 +206,27 @@ render() {
 
 prev_ping="" prev_port="" prev_tls="" prev_dns=""
 
+# Cache tool availability once before the loop to avoid repeated command -v calls
+_HAS_GETENT=0;   command -v getent   >/dev/null 2>&1 && _HAS_GETENT=1   || true
+_HAS_NSLOOKUP=0; command -v nslookup >/dev/null 2>&1 && _HAS_NSLOOKUP=1 || true
+_HAS_TIMEOUT=0;  command -v timeout  >/dev/null 2>&1 && _HAS_TIMEOUT=1  || true
+
+# Temp directory for collecting parallel check results
+_live_tmp="$(mktemp -d)"
+trap 'rm -rf "$_live_tmp"' EXIT INT TERM
+
 while true; do
-  read -r ping_s ms <<<"$(check_ping)"
-  port_s="$(check_port_443)"
-  tls_s="$(check_tls)"
-  dns_s="$(check_dns)"
+  # Run all network checks in parallel to cut per-cycle latency
+  check_ping     > "$_live_tmp/ping" &
+  check_port_443 > "$_live_tmp/port" &
+  check_tls      > "$_live_tmp/tls"  &
+  check_dns      > "$_live_tmp/dns"  &
+  wait
+
+  read -r ping_s ms < "$_live_tmp/ping"
+  port_s="$(<"$_live_tmp/port")"
+  tls_s="$(<"$_live_tmp/tls")"
+  dns_s="$(<"$_live_tmp/dns")"
 
   score=0; total=4
   [ "$ping_s" = "OK" ] && score=$((score+1))
