@@ -22,6 +22,65 @@ run_module() {
   bash "$path" "$@"
 }
 
+run_bots_cmd() {
+  local bots_home="$COREOPS_HOME/bots"
+  local subcmd="${1:-help}"
+  shift || true
+  case "$subcmd" in
+    start)
+      echo "[CoreOps Bots] Starting all bots via supervisor..."
+      export BOTS_HOME="$bots_home"
+      nohup bash "$bots_home/supervisor.sh" \
+        >> "${HOME}/Documents/CoreOps-Factory/logs/supervisor.log" 2>&1 &
+      echo "[OK] Supervisor started (PID $!)"
+      ;;
+    stop)
+      echo "[CoreOps Bots] Stopping all bots..."
+      for bot in supervisor builder1 builder2 watchdog; do
+        pidfile="${HOME}/Documents/CoreOps-Factory/.pids/${bot}.pid"
+        if [ -f "$pidfile" ]; then
+          pid=$(cat "$pidfile")
+          kill "$pid" 2>/dev/null && echo "[OK] Stopped $bot ($pid)" || true
+          rm -f "$pidfile"
+        fi
+      done
+      ;;
+    status)
+      echo "[CoreOps Bots] Bot status:"
+      for bot in supervisor builder1 builder2 watchdog; do
+        pidfile="${HOME}/Documents/CoreOps-Factory/.pids/${bot}.pid"
+        if [ -f "$pidfile" ]; then
+          pid=$(cat "$pidfile")
+          kill -0 "$pid" 2>/dev/null \
+            && echo "  RUNNING  $bot (PID $pid)" \
+            || echo "  STOPPED  $bot (stale PID $pid)"
+        else
+          echo "  STOPPED  $bot"
+        fi
+      done
+      ;;
+    factory)
+      echo "[CoreOps Bots] Factory output:"
+      factory="${HOME}/Documents/CoreOps-Factory"
+      [ -d "$factory" ] && find "$factory" -maxdepth 2 -name "*.sh" | sort \
+        || echo "  (no tools built yet — start bots first)"
+      ;;
+    help|*)
+      cat <<'BOTS_USAGE'
+CoreOps Bot System
+
+Usage:
+  coreops bots start    — start the supervisor (launches all bots)
+  coreops bots stop     — stop all running bots
+  coreops bots status   — show running/stopped status for each bot
+  coreops bots factory  — list all tools built so far
+
+  coreops panel         — open the interactive GUI control panel
+BOTS_USAGE
+      ;;
+  esac
+}
+
 case "$cmd" in
   help|-h|--help)
     cat <<'USAGE'
@@ -38,6 +97,9 @@ Usage:
   coreops scan <host>
   coreops live <host> [interval_seconds]
   coreops snapshot
+
+  coreops bots <start|stop|status|factory>
+  coreops panel
 USAGE
     ;;
   deps)     run_module "deps" "$@" ;;
@@ -49,6 +111,13 @@ USAGE
   scan)     run_module "scan" "$@" ;;
   live)     run_module "live" "$@" ;;
   snapshot) run_module "snapshot" "$@" ;;
+  bots)     run_bots_cmd "$@" ;;
+  panel)
+    panel_script="$COREOPS_HOME/bots/control-panel.sh"
+    [ -f "$panel_script" ] || die "Control panel not found: $panel_script"
+    export BOTS_HOME="$COREOPS_HOME/bots"
+    bash "$panel_script" "$@"
+    ;;
   *)
     echo "[ERROR] Unknown command: $cmd" >&2
     echo "Try: coreops help" >&2
