@@ -225,3 +225,48 @@
     return html;
   }
 })();
+
+// ── Mobile nav toggle ─────────────────────────────────────────────────────
+(function () {
+  "use strict";
+
+  const nav = document.querySelector(".platform-nav");
+  if (!nav) return;
+  const ul = nav.querySelector("ul");
+  if (!ul) return;
+
+  ul.id = "platform-nav-list";
+
+  const btn = document.createElement("button");
+  btn.className = "nav-toggle";
+  btn.setAttribute("aria-label", "Toggle navigation");
+  btn.setAttribute("aria-expanded", "false");
+  btn.setAttribute("aria-controls", "platform-nav-list");
+  btn.textContent = "\u2630"; // ☰
+  nav.insertBefore(btn, ul);
+
+  function closeMenu() {
+    ul.classList.remove("nav-open");
+    btn.setAttribute("aria-expanded", "false");
+    btn.textContent = "\u2630";
+  }
+
+  btn.addEventListener("click", function () {
+    const isOpen = ul.classList.toggle("nav-open");
+    btn.setAttribute("aria-expanded", String(isOpen));
+    btn.textContent = isOpen ? "\u2715" : "\u2630"; // ✕ or ☰
+  });
+
+  // Close menu and scroll to top when any nav link is clicked
+  nav.querySelectorAll("a").forEach(function (a) {
+    a.addEventListener("click", function () {
+      closeMenu();
+      window.scrollTo(0, 0);
+    });
+  });
+
+  // Close on Escape
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") closeMenu();
+  });
+})();

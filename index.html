@@ -329,6 +329,86 @@
       border: 0;
     }
 
+    /* ===== Featured product strip ===== */
+    .featured-strip {
+      background: var(--bg-panel);
+      border: 1px solid rgba(229, 32, 32, 0.2);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .fp-meta { flex: 1; min-width: 180px; }
+
+    .fp-badge {
+      display: inline-block;
+      font-size: 0.52rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #e52020;
+      border: 1px solid rgba(229, 32, 32, 0.32);
+      padding: 0.18rem 0.6rem;
+      border-radius: 2em;
+      margin-bottom: 0.45rem;
+    }
+
+    .fp-title {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--white);
+    }
+
+    .fp-desc {
+      font-size: 0.62rem;
+      color: var(--muted);
+      line-height: 1.6;
+      flex: 2;
+      min-width: 180px;
+    }
+
+    .fp-action {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-shrink: 0;
+    }
+
+    .fp-price {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: #e52020;
+    }
+
+    .fp-orig {
+      font-size: 0.68rem;
+      color: var(--faint);
+      text-decoration: line-through;
+    }
+
+    .fp-btn {
+      display: inline-block;
+      padding: 0.55rem 1.2rem;
+      background: #e52020;
+      color: var(--white);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      text-decoration: none;
+      transition: box-shadow 0.2s, opacity 0.2s;
+    }
+
+    .fp-btn:hover {
+      box-shadow: 0 0 20px rgba(229, 32, 32, 0.45);
+      opacity: 0.9;
+    }
+
     /* ===== Responsive ===== */
     @media (max-width: 640px) {
       .hero { padding: 3.5rem 1rem 3rem; }
@@ -386,6 +466,19 @@
     <div class="hl-item"><span class="hl-dot"></span>24-tool auto-build factory</div>
     <div class="hl-item"><span class="hl-dot"></span>Modular · easy to extend</div>
     <div class="hl-item"><span class="hl-dot"></span>MIT License</div>
+  </div>
+
+  <!-- ===== FEATURED PRODUCT ===== -->
+  <div id="featured-section" hidden>
+    <div class="divider" role="separator">
+      <div class="divider-line"></div>
+      <div class="divider-label"><span>Forge Atlas · Featured</span></div>
+    </div>
+
+    <section class="section" aria-labelledby="featured-heading" style="padding-bottom:2rem">
+      <h2 id="featured-heading" class="sr-only">Featured Product</h2>
+      <div id="featured-product"></div>
+    </section>
   </div>
 
   <!-- ===== QUICK START ===== -->
@@ -516,6 +609,51 @@ coreops help</code>
     &nbsp;·&nbsp; CoreOps Platform &nbsp;·&nbsp; MIT License
   </footer>
 
+  <script>
+    // Load featured product from API to stay aligned with PayPal product copy
+    (function () {
+      "use strict";
+      var container = document.getElementById("featured-product");
+      var section   = document.getElementById("featured-section");
+      if (!container || !section) return;
+
+      function esc(s) {
+        return String(s)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
+
+      fetch("/api/products")
+        .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+        .then(function (products) {
+          var featured = null;
+          for (var i = 0; i < products.length; i++) {
+            if (products[i].featured) { featured = products[i]; break; }
+          }
+          if (!featured) return;
+          var price = featured.salePrice !== null ? featured.salePrice : featured.basePrice;
+          var origMarkup = featured.salePrice !== null
+            ? "<span class='fp-orig'>$" + featured.basePrice.toFixed(2) + "</span>"
+            : "";
+          container.innerHTML =
+            "<div class='featured-strip'>" +
+              "<div class='fp-meta'>" +
+                "<span class='fp-badge'><span aria-hidden='true'>&#11088;</span> Featured</span>" +
+                "<span class='fp-title'>" + esc(featured.title) + "</span>" +
+              "</div>" +
+              "<div class='fp-desc'>" + esc(featured.description) + "</div>" +
+              "<div class='fp-action'>" +
+                "<span class='fp-price'>$" + price.toFixed(2) + "</span>" +
+                origMarkup +
+                "<a href='market.html' class='fp-btn'>Get It Now &#8594;</a>" +
+              "</div>" +
+            "</div>";
+          section.hidden = false;
+        })
+        .catch(function () { /* API unavailable — section stays hidden */ });
+    })();
+  </script>
   <script src="assets/atlas.js" defer></script>
 </body>
 </html>
