@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gallery — Atlas Showcase</title>
+  <meta name="description" content="The Atlas Gallery — see what's possible with the Atlas platform." />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230a0d12'/%3E%3Cpolygon points='16%2C4 28%2C10 28%2C22 16%2C28 4%2C22 4%2C10' fill='none' stroke='%2357a6ff' stroke-width='1.5'/%3E%3Ctext x='16' y='21' text-anchor='middle' fill='%2357a6ff' font-family='monospace' font-size='10' font-weight='900'%3EA%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/platform.css">
+  <link rel="stylesheet" href="assets/atlas.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --jet: #0a0d12;
+      --carbon: #11161d;
+      --obsidian: #05070b;
+      --blue-primary: #2f6bff;
+      --blue-electric: #57a6ff;
+      --blue-ice: #a9d4ff;
+      --text-high: #eef6ff;
+      --text-mid: #b7c6d9;
+      --text-low: #7d8da3;
+      --glass-bg: rgba(255,255,255,0.06);
+      --glass-border: rgba(255,255,255,0.14);
+      --radius: 16px;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--jet); color: var(--text-high);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, sans-serif;
+      line-height: 1.6; min-height: 100vh;
+    }
+    a { color: inherit; text-decoration: none; }
+    ul { list-style: none; }
+
+    /* ── NAV ── */
+    .site-nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(10,13,18,0.92); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--glass-border);
+    }
+    .nav-inner {
+      max-width: 1280px; margin: 0 auto; padding: 0 1.5rem;
+      display: flex; align-items: center; gap: 2rem; height: 64px;
+    }
+    .nav-brand { font-size: 1.4rem; font-weight: 800; color: var(--text-high); letter-spacing: -0.5px; flex-shrink: 0; }
+    .nav-brand span { color: var(--blue-primary); }
+    .nav-links { display: flex; align-items: center; gap: 0.25rem; flex: 1; flex-wrap: wrap; }
+    .nav-links a {
+      padding: 0.4rem 0.75rem; border-radius: 8px;
+      color: var(--text-mid); font-size: 0.875rem; font-weight: 500;
+      transition: color 0.2s, background 0.2s;
+    }
+    .nav-links a:hover { color: var(--text-high); background: var(--glass-bg); }
+    .nav-links a.active { color: var(--blue-electric); }
+    .nav-cta {
+      flex-shrink: 0; padding: 0.5rem 1.25rem;
+      background: var(--blue-primary); color: #fff;
+      border-radius: 8px; font-size: 0.875rem; font-weight: 600;
+      transition: background 0.2s, transform 0.15s;
+    }
+    .nav-cta:hover { background: #4a7fff; transform: translateY(-1px); }
+    .nav-hamburger {
+      display: none; flex-direction: column; justify-content: center;
+      gap: 5px; background: none; border: none; cursor: pointer;
+      padding: 0.5rem; margin-left: auto;
+    }
+    .nav-hamburger span { display: block; width: 22px; height: 2px; background: var(--text-mid); border-radius: 2px; transition: all 0.3s; }
+    @media (max-width: 900px) {
+      .nav-hamburger { display: flex; }
+      .nav-links {
+        display: none; position: absolute; top: 64px; left: 0; right: 0;
+        background: var(--carbon); flex-direction: column; align-items: flex-start;
+        padding: 1rem 1.5rem 1.5rem; gap: 0.25rem;
+        border-bottom: 1px solid var(--glass-border);
+      }
+      .nav-mobile-open .nav-links { display: flex; }
+      .nav-cta { display: none; }
+    }
+
+    /* ── LAYOUT ── */
+    .content-width { max-width: 1280px; margin: 0 auto; padding: 0 1.5rem; }
+    .section { padding: 5rem 0; }
+    .section-label {
+      display: inline-block; font-size: 0.7rem; font-weight: 700;
+      letter-spacing: 0.15em; color: var(--blue-electric);
+      text-transform: uppercase; margin-bottom: 1rem;
+    }
+    .gradient {
+      background: linear-gradient(135deg, var(--blue-primary), var(--blue-electric));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+
+    /* ── HERO ── */
+    .page-hero {
+      padding: 6rem 0 4rem; text-align: center;
+      background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(47,107,255,0.18) 0%, transparent 70%);
+    }
+    .page-hero h1 {
+      font-size: clamp(2.4rem, 5vw, 4rem); font-weight: 800; line-height: 1.1;
+      letter-spacing: -1px; margin-bottom: 1rem;
+    }
+    .page-hero p { font-size: 1.15rem; color: var(--text-mid); }
+
+    /* ── GALLERY GRID ── */
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.25rem;
+    }
+    @media (max-width: 1024px) { .gallery-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 560px)  { .gallery-grid { grid-template-columns: 1fr; } }
+
+    .gallery-card {
+      background: var(--glass-bg); border: 1px solid var(--glass-border);
+      border-radius: var(--radius); overflow: hidden;
+      transition: transform 0.25s, border-color 0.25s, box-shadow 0.25s;
+      cursor: pointer;
+    }
+    .gallery-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(47,107,255,0.4);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+    }
+    .gallery-visual {
+      aspect-ratio: 16 / 9; position: relative; overflow: hidden;
+    }
+    .gallery-visual-inner {
+      width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .gallery-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(180deg, transparent 40%, rgba(10,13,18,0.85) 100%);
+    }
+    .gallery-title-overlay {
+      position: absolute; bottom: 0.75rem; left: 0.75rem; right: 0.75rem;
+      font-size: 0.9rem; font-weight: 700; color: var(--text-high);
+      text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+    }
+    .gallery-body { padding: 1rem 1.1rem 1.25rem; }
+    .gallery-desc { font-size: 0.82rem; color: var(--text-mid); line-height: 1.55; }
+
+    /* ── VISUAL DECORATIONS ── */
+    .vis-dots {
+      display: grid; grid-template-columns: repeat(6,1fr); gap: 6px;
+      padding: 1rem; opacity: 0.35;
+    }
+    .vis-dots span {
+      display: block; width: 8px; height: 8px;
+      border-radius: 50%; background: var(--blue-electric);
+    }
+    .vis-bars {
+      display: flex; align-items: flex-end; gap: 4px; padding: 1.5rem 1rem; opacity: 0.5;
+    }
+    .vis-bars span {
+      flex: 1; border-radius: 3px 3px 0 0;
+      background: linear-gradient(180deg, var(--blue-primary), var(--blue-electric));
+    }
+    .vis-lines {
+      display: flex; flex-direction: column; gap: 6px; padding: 1.25rem; opacity: 0.4;
+    }
+    .vis-lines span {
+      display: block; height: 2px; background: var(--blue-electric); border-radius: 1px;
+    }
+
+    /* ── FOOTER ── */
+    .site-footer {
+      background: var(--obsidian); border-top: 1px solid var(--glass-border);
+      padding: 4rem 0 0; margin-top: 6rem;
+    }
+    .footer-inner {
+      max-width: 1280px; margin: 0 auto; padding: 0 1.5rem;
+      display: grid; grid-template-columns: 2fr 1fr 1fr;
+      gap: 3rem; padding-bottom: 3rem;
+    }
+    @media (max-width: 640px) { .footer-inner { grid-template-columns: 1fr; gap: 2rem; } }
+    .footer-logo { font-size: 1.4rem; font-weight: 800; color: var(--text-high); display: inline-block; margin-bottom: 0.75rem; }
+    .footer-logo span { color: var(--blue-primary); }
+    .footer-brand-col p { font-size: 0.875rem; color: var(--text-low); line-height: 1.6; max-width: 300px; }
+    .footer-col h4 { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-mid); margin-bottom: 1rem; }
+    .footer-col ul { display: flex; flex-direction: column; gap: 0.5rem; }
+    .footer-col a { font-size: 0.875rem; color: var(--text-low); transition: color 0.2s; }
+    .footer-col a:hover { color: var(--blue-electric); }
+    .footer-bottom {
+      border-top: 1px solid var(--glass-border); padding: 1.25rem 1.5rem;
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 0.5rem; font-size: 0.8rem; color: var(--text-low);
+    }
+    .footer-bottom a { color: var(--blue-electric); }
+    .footer-bottom a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<nav class="site-nav" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">Atlas<span>.</span></a>
+    <ul class="nav-links" id="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="market.html">Market</a></li>
+      <li><a href="forum.html">AI Forum</a></li>
+      <li><a href="debate.html">Debate Arena</a></li>
+      <li><a href="gauntlet.html">Gauntlet</a></li>
+      <li><a href="gallery.html" class="active" aria-current="page">Gallery</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a href="faq.html">FAQ</a></li>
+      <li><a href="contact.html">Contact</a></li>
+      <li><a href="atlas.html">Atlas</a></li>
+    </ul>
+    <a href="atlas.html" class="nav-cta">Open Atlas AI</a>
+    <button class="nav-hamburger" id="nav-hamburger" aria-label="Toggle menu" aria-expanded="false" aria-controls="nav-links">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<main>
+  <section class="page-hero">
+    <div class="content-width">
+      <span class="section-label">SHOWCASE</span>
+      <h1>Atlas <span class="gradient">Gallery</span></h1>
+      <p>See what's possible. Then build it.</p>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:2rem;">
+    <div class="content-width">
+      <div class="gallery-grid">
+
+        <!-- Card 1: Dashboard Preview -->
+        <div class="gallery-card">
+          <div class="gallery-visual">
+            <div class="gallery-visual-inner" style="background: linear-gradient(135deg, #0a1628 0%, #1a2d5a 50%, #0f1e3d 100%);">
+              <div class="vis-bars">
+                <span style="height:55%"></span><span style="height:80%"></span><span style="height:40%"></span>
+                <span style="height:90%"></span><span style="height:65%"></span><span style="height:75%"></span>
+                <span style="height:50%"></span><span style="height:85%"></span>
+              </div>
+            </div>
+            <div class="gallery-overlay"></div>
+            <div class="gallery-title-overlay">Dashboard Preview</div>
+          </div>
+          <div class="gallery-body">
+            <p class="gallery-desc">Live operator dashboard with real-time metrics, bot status, and system health monitoring.</p>
+          </div>
+        </div>
+
+        <!-- Card 2: Terminal Session -->
+        <div class="gallery-card">
+          <div class="gallery-visual">
+            <div class="gallery-visual-inner" style="background: linear-gradient(135deg, #05070b 0%, #0d1f0d 50%, #081208 100%);">
+              <div class="vis-lines">
+                <span style="width:85%"></span><span style="width:60%"></span><span style="width:95%"></span>
+                <span style="width:50%"></span><span style="width:75%"></span><span style="width:40%"></span>
+                <span style="width:90%"></span><span style="width:65%"></span>
+              </div>
+            </div>
+            <div class="gallery-overlay"></div>
+            <div class="gallery-title-overlay">Terminal Session</div>
+          </div>
+          <div class="gallery-body">
+            <p class="gallery-desc">CoreOps CLI in action — network audit, TLS check, snapshot capture in one session.</p>
+          </div>
+        </div>
+
+        <!-- Card 3: Bot Factory Output -->
+        <div class="gallery-card">
+          <div class="gallery-visual">
+            <div class="gallery-visual-inner" style="background: linear-gradient(135deg, #0f1220 0%, #1a1f40 50%, #0a0e1e 100%);">
+              <div class="vis-dots">
+                <span></span><span></span><span></span><span></span><span></span><span></span>
+                <span></span><span></span><span></span><span></span><span></span><span></span>
+                <span></span><span></span><span></span><span></span><span></span><span></span>
+              </div>
+            </div>
+            <div class="gallery-overlay"></div>
+            <div class="gallery-title-overlay">Bot Factory Output</div>
+          </div>
+          <div class="gallery-body">
+            <p class="gallery-desc">Four bots running in parallel. Builder, Watchdog, Supervisor, and Control Panel in harmony.</p>
+          </div>
+        </div>
+
+        <!-- Card 4: Network Audit -->
+        <div class="gallery-card">
+          <div class="gallery-visual">
+            <div class="gallery-visual-inner" style="background: linear-gradient(135deg, #080e1a 0%, #0d1a2e 50%, #060c18 100%);">
+              <div class="vis-lines">
+                <span style="width:100%"></span><span style="width:72%"></span><span style="width:88%"></span>
+                <span style="width:55%"></span><span style="width:95%"></span><span style="width:40%"></span>
+                <span style="width:80%"></span><span style="width:62%"></span>
+              </div>
+            </div>
+            <div class="gallery-overlay"></div>
+            <div class="gallery-title-overlay">Network Audit</div>
+          </div>
+          <div class="gallery-body">
+            <p class="gallery-desc">Full network reconnaissance report. Open ports, DNS records, latency, routing paths.</p>
+          </div>
+        </div>
+
+        <!-- Card 5: TLS Report -->
+        <div class="gallery-card">
+          <div class="gallery-visual">
+            <div class="gallery-visual-inner" style="background: linear-gradient(135deg, #091220 0%, #0f1f3a 50%, #070e1a 100%);">
+              <div class="vis-dots">
+                <span style="background:#a9d4ff"></span><span style="background:#a9d4ff"></span>
+                <span style="background:#57a6ff"></span><span style="background:#57a6ff"></span>
+                <span style="background:#2f6bff"></span><span style="background:#2f6bff"></span>
+                <span style="background:#a9d4ff"></span><span style="background:#57a6ff"></span>
+                <span style="background:#2f6bff"></span><span style="background:#a9d4ff"></span>
+                <span style="background:#57a6ff"></span><span style="background:#2f6bff"></span>
+              </div>
+            </div>
+            <div class="gallery-overlay"></div>
+            <div class="gallery-title-overlay">TLS Report</div>
+          </div>
+          <div class="gallery-body">
+            <p class="gallery-desc">Certificate chain validation, cipher suite analysis, and vulnerability assessment.</p>
+          </div>
+        </div>
+
+        <!-- Card 6: Gauntlet Arena -->
+        <div class="gallery-card">
+          <div class="gallery-visual">
+            <div class="gallery-visual-inner" style="background: linear-gradient(135deg, #0a0d12 0%, #1a2040 50%, #0d1028 100%);">
+              <div class="vis-bars">
+                <span style="height:90%"></span><span style="height:45%"></span><span style="height:80%"></span>
+                <span style="height:35%"></span><span style="height:95%"></span><span style="height:55%"></span>
+                <span style="height:70%"></span><span style="height:40%"></span>
+              </div>
+            </div>
+            <div class="gallery-overlay"></div>
+            <div class="gallery-title-overlay">Gauntlet Arena</div>
+          </div>
+          <div class="gallery-body">
+            <p class="gallery-desc">Live matchup arena showing CoreOps CLI vs Legacy Shell with real-time stat comparison.</p>
+          </div>
+        </div>
+
+        <!-- Card 7: Atlas AI Chat -->
+        <div class="gallery-card">
+          <div class="gallery-visual">
+            <div class="gallery-visual-inner" style="background: linear-gradient(135deg, #050810 0%, #0e1830 50%, #060a1a 100%);">
+              <div class="vis-lines">
+                <span style="width:90%"></span><span style="width:65%"></span><span style="width:80%"></span>
+                <span style="width:45%"></span><span style="width:100%"></span><span style="width:70%"></span>
+                <span style="width:55%"></span><span style="width:85%"></span>
+              </div>
+            </div>
+            <div class="gallery-overlay"></div>
+            <div class="gallery-title-overlay">Atlas AI Chat</div>
+          </div>
+          <div class="gallery-body">
+            <p class="gallery-desc">Atlas AI mid-conversation, explaining Cloudflare Worker architecture with code examples.</p>
+          </div>
+        </div>
+
+        <!-- Card 8: Platform Overview -->
+        <div class="gallery-card">
+          <div class="gallery-visual">
+            <div class="gallery-visual-inner" style="background: linear-gradient(135deg, #080c18 0%, #142040 50%, #0a1028 100%);">
+              <div class="vis-dots">
+                <span></span><span style="background:#57a6ff"></span><span></span>
+                <span style="background:#57a6ff"></span><span style="background:#a9d4ff"></span><span style="background:#57a6ff"></span>
+                <span></span><span style="background:#57a6ff"></span><span></span>
+                <span style="background:#a9d4ff"></span><span></span><span style="background:#a9d4ff"></span>
+              </div>
+            </div>
+            <div class="gallery-overlay"></div>
+            <div class="gallery-title-overlay">Platform Overview</div>
+          </div>
+          <div class="gallery-body">
+            <p class="gallery-desc">Full Atlas platform ecosystem view — all modules, all tools, all integrations connected.</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer" role="contentinfo">
+  <div class="footer-inner">
+    <div class="footer-brand-col">
+      <a href="index.html" class="footer-logo">Atlas<span>.</span></a>
+      <p>The elite technical platform for builders, operators, and engineers who ship. Built for Cloudflare. Designed to last.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Platform</h4>
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="market.html">Market</a></li>
+        <li><a href="gauntlet.html">Gauntlet</a></li>
+        <li><a href="gallery.html">Gallery</a></li>
+        <li><a href="atlas.html">Atlas AI</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Community</h4>
+      <ul>
+        <li><a href="forum.html">AI Forum</a></li>
+        <li><a href="debate.html">Debate Arena</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="faq.html">FAQ</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom content-width">
+    <p>&copy; 2025 Atlas Platform. MIT Licensed. <a href="https://github.com/DreadHeadHippy/coreops-starter-kit" target="_blank" rel="noopener">GitHub</a></p>
+    <p>Built Different. Built to Last.</p>
+  </div>
+</footer>
+
+<script>
+  (function(){
+    var btn = document.getElementById('nav-hamburger');
+    var nav = document.querySelector('.site-nav');
+    if(!btn || !nav) return;
+    btn.addEventListener('click', function(){
+      var open = nav.classList.toggle('nav-mobile-open');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    document.addEventListener('keydown', function(e){
+      if(e.key === 'Escape') {
+        nav.classList.remove('nav-mobile-open');
+        btn.setAttribute('aria-expanded','false');
+      }
+    });
+  })();
+</script>
+  <script src="assets/atlas.js" defer></script>
+</body>
+</html>

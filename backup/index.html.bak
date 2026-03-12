@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CoreOps — Mobile-First DevOps CLI</title>
+  <meta name="description" content="CoreOps: fast, portable DevOps and automation CLI for Termux and Linux. Network checks, TLS audits, snapshots, and a 4-bot automation factory.">
+
+  <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%230d1117' stroke='%2300d4ff' stroke-width='1.5'/%3E%3Ctext x='16' y='21' text-anchor='middle' fill='%2300d4ff' font-family='monospace' font-size='11' font-weight='900'%3ECO%3C/text%3E%3C/svg%3E">
+
+  <link rel="stylesheet" href="assets/platform.css">
+  <link rel="stylesheet" href="assets/atlas.css">
+
+  <style>
+    /* ===== Reset & base ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-deep:     #080a0e;
+      --bg-dark:     #0d1117;
+      --bg-card:     #111620;
+      --bg-panel:    #161b22;
+      --border:      #1e2633;
+      --border-sub:  #161c27;
+      --cyan:        #00d4ff;
+      --cyan-dim:    rgba(0, 212, 255, 0.18);
+      --magenta:     #ff2d78;
+      --gold:        #f0a32a;
+      --white:       #e6edf3;
+      --muted:       #8b949e;
+      --faint:       #484f58;
+      --radius:      12px;
+      --glow-c:      0 0 24px rgba(0, 212, 255, 0.35), 0 0 48px rgba(0, 212, 255, 0.10);
+    }
+
+    /* ===== Hero ===== */
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+                   "Liberation Mono", monospace;
+      background: var(--bg-deep);
+      color: var(--white);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .hero {
+      text-align: center;
+      padding: 5rem 2rem 4rem;
+      position: relative;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 70% 55% at 50% 0%,
+                  rgba(0, 212, 255, 0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      font-size: 0.58rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--faint);
+      border: 1px solid var(--border);
+      padding: 0.25rem 0.9rem;
+      border-radius: 2em;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-title {
+      font-size: clamp(2.5rem, 8vw, 5rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.0;
+      margin-bottom: 0.6rem;
+    }
+
+    .hero-title .core { color: var(--cyan); }
+
+    .hero-sub {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 2.5rem;
+      max-width: 540px;
+      margin-left: auto;
+      margin-right: auto;
+      line-height: 1.7;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 0.65rem 1.5rem;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      text-decoration: none;
+      cursor: pointer;
+      transition: box-shadow 0.25s, opacity 0.25s;
+    }
+
+    .btn-primary {
+      background: var(--cyan);
+      color: var(--bg-dark);
+      border: none;
+    }
+    .btn-primary:hover { box-shadow: var(--glow-c); opacity: 0.9; }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--cyan);
+      border: 1px solid rgba(0, 212, 255, 0.4);
+    }
+    .btn-outline:hover {
+      border-color: var(--cyan);
+      box-shadow: var(--glow-c);
+    }
+
+    /* ===== Highlights row ===== */
+    .highlights {
+      display: flex;
+      gap: 2rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      padding: 0 2rem 4rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .hl-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+
+    .hl-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--cyan);
+      flex-shrink: 0;
+    }
+
+    /* ===== Section label ===== */
+    .section-label {
+      text-align: center;
+      font-size: 0.58rem;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--faint);
+      margin-bottom: 2.5rem;
+    }
+
+    /* ===== Commands grid ===== */
+    .section {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 2rem 4rem;
+    }
+
+    .cmd-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+
+    .cmd-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-sub);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      transition: border-color 0.25s, box-shadow 0.25s;
+    }
+
+    .cmd-card:hover {
+      border-color: rgba(0, 212, 255, 0.3);
+      box-shadow: 0 0 16px rgba(0, 212, 255, 0.08);
+    }
+
+    .cmd-name {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--cyan);
+      margin-bottom: 0.35rem;
+    }
+
+    .cmd-desc {
+      font-size: 0.65rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    /* ===== Bot system table ===== */
+    .bot-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.7rem;
+    }
+
+    .bot-table th {
+      text-align: left;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.58rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--faint);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .bot-table td {
+      padding: 0.75rem;
+      border-bottom: 1px solid var(--border-sub);
+      vertical-align: top;
+    }
+
+    .bot-table tr:last-child td { border-bottom: none; }
+
+    .bot-name {
+      color: var(--white);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .bot-role { color: var(--muted); }
+
+    .bot-badge {
+      display: inline-block;
+      font-size: 0.55rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 0.15rem 0.5rem;
+      border-radius: 2em;
+      background: rgba(0, 212, 255, 0.08);
+      color: var(--cyan);
+      border: 1px solid rgba(0, 212, 255, 0.22);
+      white-space: nowrap;
+    }
+
+    /* ===== Quick-start block ===== */
+    .quickstart {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.75rem 2rem;
+    }
+
+    .qs-title {
+      font-size: 0.65rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--faint);
+      margin-bottom: 1rem;
+    }
+
+    .qs-code {
+      font-family: inherit;
+      font-size: 0.75rem;
+      color: var(--cyan);
+      line-height: 1.8;
+      white-space: pre;
+      overflow-x: auto;
+    }
+
+    /* ===== Divider ===== */
+    .divider {
+      max-width: 1200px;
+      margin: 0 auto 3rem;
+      padding: 0 2rem;
+    }
+
+    .divider-line {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border), transparent);
+    }
+
+    .divider-label {
+      text-align: center;
+      margin-top: -0.55rem;
+    }
+
+    .divider-label span {
+      background: var(--bg-deep);
+      padding: 0 0.75rem;
+      font-size: 0.58rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--faint);
+    }
+
+    /* ===== Footer ===== */
+    .footer {
+      border-top: 1px solid var(--border);
+      padding: 1.5rem 2rem;
+      text-align: center;
+      font-size: 0.62rem;
+      color: var(--faint);
+      letter-spacing: 0.1em;
+    }
+
+    .footer a { color: var(--faint); text-decoration: none; }
+    .footer a:hover { color: var(--cyan); }
+
+    /* ===== Screen-reader only utility ===== */
+    .sr-only {
+      position: absolute;
+      width: 1px; height: 1px;
+      padding: 0; margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 640px) {
+      .hero { padding: 3.5rem 1rem 3rem; }
+      .highlights { padding: 0 1rem 3rem; }
+      .section { padding: 0 1rem 3rem; }
+      .divider { padding: 0 1rem; }
+      .cmd-grid { grid-template-columns: 1fr 1fr; }
+      .qs-code { font-size: 0.68rem; }
+    }
+
+    @media (max-width: 400px) {
+      .hero-title { font-size: 2.2rem; }
+      .cmd-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== PLATFORM NAV ===== -->
+  <nav class="platform-nav" aria-label="Platform sections">
+    <ul>
+      <li><a href="index.html" aria-current="page">Home</a></li>
+      <li class="sep" aria-hidden="true">›</li>
+      <li><a href="gauntlet.html">Atlas Gauntlet</a></li>
+      <li class="sep" aria-hidden="true">›</li>
+      <li><a href="#" aria-disabled="true">Signal Feed</a></li>
+      <li class="sep" aria-hidden="true">›</li>
+      <li><a href="#" aria-disabled="true">Market</a></li>
+      <li class="sep" aria-hidden="true">›</li>
+      <li><a href="#" aria-disabled="true">Exchange</a></li>
+      <li class="sep" aria-hidden="true">›</li>
+      <li><a href="#" aria-disabled="true">Atlas ID</a></li>
+    </ul>
+  </nav>
+
+  <!-- ===== HERO ===== -->
+  <header class="hero">
+    <div class="hero-badge">⚡ CoreOps Platform · v1.0</div>
+    <h1 class="hero-title"><span class="core">Core</span>Ops</h1>
+    <p class="hero-sub">
+      Mobile-first DevOps &amp; automation CLI.<br>
+      Network checks · TLS audits · System snapshots · 4-bot factory.
+    </p>
+    <div class="hero-actions">
+      <a href="https://github.com/ironjesus74-hub/coreops-starter-kit"
+         class="btn btn-primary">Get Started</a>
+      <a href="gauntlet.html" class="btn btn-outline">Atlas Gauntlet →</a>
+    </div>
+  </header>
+
+  <!-- ===== HIGHLIGHTS ===== -->
+  <div class="highlights" aria-label="Key features">
+    <div class="hl-item"><span class="hl-dot"></span>Runs on Android (Termux) + Linux</div>
+    <div class="hl-item"><span class="hl-dot"></span>Zero bloat · minimal deps</div>
+    <div class="hl-item"><span class="hl-dot"></span>24-tool auto-build factory</div>
+    <div class="hl-item"><span class="hl-dot"></span>Modular · easy to extend</div>
+    <div class="hl-item"><span class="hl-dot"></span>MIT License</div>
+  </div>
+
+  <!-- ===== QUICK START ===== -->
+  <div class="divider" role="separator">
+    <div class="divider-line"></div>
+    <div class="divider-label"><span>Quick Start</span></div>
+  </div>
+
+  <section class="section" aria-labelledby="qs-heading">
+    <h2 id="qs-heading" class="section-label">Termux / Linux Setup</h2>
+    <div class="quickstart">
+      <div class="qs-title">Install in seconds</div>
+      <code class="qs-code">pkg update -y &amp;&amp; pkg install -y git
+git clone https://github.com/ironjesus74-hub/coreops-starter-kit.git
+cd coreops-starter-kit
+chmod +x bin/* modules/*.sh lib/*.sh bots/*.sh install.sh
+./install.sh
+coreops help</code>
+    </div>
+  </section>
+
+  <!-- ===== CLI COMMANDS ===== -->
+  <div class="divider" role="separator">
+    <div class="divider-line"></div>
+    <div class="divider-label"><span>CLI Commands</span></div>
+  </div>
+
+  <section class="section" aria-labelledby="cmds-heading">
+    <h2 id="cmds-heading" class="section-label">All Commands</h2>
+    <div class="cmd-grid">
+      <div class="cmd-card">
+        <div class="cmd-name">coreops doctor</div>
+        <div class="cmd-desc">System health check — verify all dependencies are present.</div>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">coreops netcheck</div>
+        <div class="cmd-desc">DNS + HTTP connectivity test with pass/fail reporting.</div>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">coreops sslcheck &lt;host&gt;</div>
+        <div class="cmd-desc">Inspect TLS certificate: expiry, issuer, SANs.</div>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">coreops portscan &lt;host&gt;</div>
+        <div class="cmd-desc">TCP port range scan — find open ports quickly.</div>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">coreops audit &lt;host&gt;</div>
+        <div class="cmd-desc">Full HTTP/TLS/DNS audit of a target host.</div>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">coreops scan &lt;host&gt;</div>
+        <div class="cmd-desc">Quick security scan combining port + TLS checks.</div>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">coreops live &lt;host&gt;</div>
+        <div class="cmd-desc">Live monitor — continuous polling with refresh interval.</div>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">coreops snapshot</div>
+        <div class="cmd-desc">Capture system state: IPs, open ports, running services.</div>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">coreops deps</div>
+        <div class="cmd-desc">Check and install missing tool dependencies.</div>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">coreops panel</div>
+        <div class="cmd-desc">Interactive GUI control panel for the bot factory.</div>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">coreops bots start</div>
+        <div class="cmd-desc">Launch all 4 automation bots via the supervisor.</div>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">coreops bots status</div>
+        <div class="cmd-desc">Show running/stopped status of all bots.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== BOT SYSTEM ===== -->
+  <div class="divider" role="separator">
+    <div class="divider-line"></div>
+    <div class="divider-label"><span>Bot Factory</span></div>
+  </div>
+
+  <section class="section" aria-labelledby="bots-heading">
+    <h2 id="bots-heading" class="section-label">4-Bot Automation System</h2>
+    <table class="bot-table">
+      <thead>
+        <tr>
+          <th>Bot</th>
+          <th>Role</th>
+          <th>Output</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="bot-name">Supervisor</td>
+          <td class="bot-role">Launches and polices the other 3 bots. Pauses rogue bots.</td>
+          <td><span class="bot-badge">Admin</span></td>
+        </tr>
+        <tr>
+          <td class="bot-name">Builder Bot 1</td>
+          <td class="bot-role">Builds networking tools: HTTP testers, DNS, port scanners.</td>
+          <td><span class="bot-badge">networking/</span></td>
+        </tr>
+        <tr>
+          <td class="bot-name">Builder Bot 2</td>
+          <td class="bot-role">Builds wrapper scripts: curl-smart, git-quick, json-formatter.</td>
+          <td><span class="bot-badge">wrappers/</span></td>
+        </tr>
+        <tr>
+          <td class="bot-name">Watchdog</td>
+          <td class="bot-role">Silently monitors all bots, auto-restarts on crash.</td>
+          <td><span class="bot-badge">background</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="footer">
+    <a href="https://github.com/ironjesus74-hub/coreops-starter-kit">
+      ironjesus74-hub/coreops-starter-kit
+    </a>
+    &nbsp;·&nbsp; CoreOps Platform &nbsp;·&nbsp; MIT License
+  </footer>
+
+  <script src="assets/atlas.js" defer></script>
+</body>
+</html>

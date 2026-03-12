@@ -33,3 +33,4 @@ node_modules/
 *.png
 audit-demo.png
 coreops-live-dashboard.png
+backup/
