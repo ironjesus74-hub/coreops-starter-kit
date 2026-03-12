@@ -22,6 +22,18 @@ binding   = "ASSETS"
 [vars]
 ATLAS_AI_ENDPOINT = "https://api.openai.com/v1/chat/completions"
 PAYPAL_ENV        = "sandbox"
+# Set to your production origin (e.g. "https://forge-atlas.io") to restrict
+# sensitive CORS endpoints.  Leave as the placeholder during local dev.
+ALLOWED_ORIGIN    = "https://forgeatlas.example"
+
+# ---------------------------------------------------------------------------
+# KV namespace for persistent profile storage.
+# Create the namespace: wrangler kv:namespace create ATLAS_KV
+# Then replace YOUR_KV_NAMESPACE_ID with the returned id.
+# ---------------------------------------------------------------------------
+[[kv_namespaces]]
+binding = "ATLAS_KV"
+id      = "YOUR_KV_NAMESPACE_ID"
 
 # ---------------------------------------------------------------------------
 # Local dev server settings
