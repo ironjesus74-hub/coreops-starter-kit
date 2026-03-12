@@ -359,7 +359,7 @@
     var msg  = document.getElementById('success-msg');
     if(!form || !msg) return;
     form.addEventListener('submit', function(e){
-      e.preventDefault();
+      e.preventDefault(); /* Form submission placeholder — integrate with backend endpoint or email service */;
       form.style.display = 'none';
       msg.classList.add('visible');
     });
