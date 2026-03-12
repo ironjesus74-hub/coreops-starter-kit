@@ -1,14 +1,18 @@
 {
-  "name": "coreops-starter-kit",
+  "name": "atlas-engine",
   "version": "1.0.0",
-  "description": "CoreOps Platform — Cloudflare Workers + Pages deployment",
+  "description": "CoreOps Platform — atlas-engine Cloudflare Worker + static site",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "deploy:pages": "wrangler pages deploy .",
-    "secrets:set-atlas-key": "wrangler secret put ATLAS_AI_API_KEY"
+    "secrets:set-atlas-key":      "wrangler secret put ATLAS_AI_API_KEY",
+    "secrets:set-paypal-id":      "wrangler secret put PAYPAL_CLIENT_ID",
+    "secrets:set-paypal-secret":  "wrangler secret put PAYPAL_CLIENT_SECRET",
+    "secrets:set-paypal-webhook": "wrangler secret put PAYPAL_WEBHOOK_ID",
+    "secrets:set-contact-hook":   "wrangler secret put CONTACT_WEBHOOK_URL"
   },
   "devDependencies": {
     "wrangler": "^3.101.0"

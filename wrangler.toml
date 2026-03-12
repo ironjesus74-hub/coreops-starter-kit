@@ -1,8 +1,9 @@
 # CoreOps — Cloudflare Workers + Static Assets configuration
+# Worker name: atlas-engine
 # Deploy:  npm run deploy
 # Dev:     npm run dev
 
-name            = "coreops"
+name            = "atlas-engine"
 main            = "src/worker.js"
 compatibility_date = "2024-09-23"
 
@@ -17,10 +18,22 @@ binding   = "ASSETS"
 
 # ---------------------------------------------------------------------------
 # Environment variable placeholders.
-# Set real secrets via:  wrangler secret put ATLAS_AI_API_KEY
+# Set real secrets via:  wrangler secret put <VAR_NAME>
+#
+# Atlas AI:
+#   wrangler secret put ATLAS_AI_API_KEY
+#
+# PayPal:
+#   wrangler secret put PAYPAL_CLIENT_ID
+#   wrangler secret put PAYPAL_CLIENT_SECRET
+#   wrangler secret put PAYPAL_WEBHOOK_ID
+#
+# Contact:
+#   wrangler secret put CONTACT_WEBHOOK_URL
 # ---------------------------------------------------------------------------
 [vars]
-ATLAS_AI_ENDPOINT = "https://api.openai.com/v1/chat/completions"
+ATLAS_AI_ENDPOINT  = "https://api.openai.com/v1/chat/completions"
+PAYPAL_ENV         = "sandbox"
 
 # ---------------------------------------------------------------------------
 # Local dev server settings
