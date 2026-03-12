@@ -1,6 +1,11 @@
 snapshot_*.txt
 *.zip
 
+# Backup / scratch files
+*.backup
+*.backup.html
+*.bak
+
 # Cloudflare / Wrangler build artifacts
 .wrangler/
 dist/
@@ -8,3 +13,13 @@ worker-configuration.d.ts
 
 # Node
 node_modules/
+
+# CoreOps bot factory output (Termux runtime artifact — not source)
+# This directory is LITERALLY named "${HOME}" (the characters $, {, H, O, M, E, })
+# due to an unexpanded shell variable in a bot script. gitignore does not expand
+# variables, so this pattern matches the literal directory name.
+${HOME}/
+
+# Generated CI status files (written by ATLAS Status Feed workflow)
+ci/status.json
+ci/status.svg
