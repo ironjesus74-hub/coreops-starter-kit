@@ -1,0 +1,435 @@
+name: Repo Audit
+
+on:
+  push:
+    branches: ["main"]
+  pull_request: {}
+  schedule:
+    - cron: "0 6 * * 1"  # weekly Monday 06:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1 · Repository health files
+  # ---------------------------------------------------------------------------
+  health-files:
+    name: Health Files
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check required health files
+        shell: bash
+        run: |
+          set -euo pipefail
+          fail=0
+          for f in \
+            README.md \
+            LICENSE \
+            SECURITY.md \
+            SUPPORT.md \
+            CODE_OF_CONDUCT.md \
+            CONTRIBUTING.md \
+            .github/PULL_REQUEST_TEMPLATE.md \
+            .github/ISSUE_TEMPLATE/bug_report.md \
+            .github/ISSUE_TEMPLATE/feature_request.md; do
+            if [ -f "$f" ]; then
+              echo "  ✔  $f"
+            else
+              echo "  ✖  MISSING: $f"
+              fail=1
+            fi
+          done
+          if [ "$fail" -eq 1 ]; then
+            echo "::error::One or more required health files are missing."
+            exit 1
+          fi
+          echo "All required health files present."
+
+  # ---------------------------------------------------------------------------
+  # 2 · ShellCheck — errors only (matches the dedicated ShellCheck workflow)
+  # ---------------------------------------------------------------------------
+  shellcheck:
+    name: ShellCheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ShellCheck
+        run: sudo apt-get update -y && sudo apt-get install -y shellcheck
+
+      - name: Run ShellCheck (errors only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          files=(
+            bin/*.sh
+            modules/*.sh
+            lib/*.sh
+            bots/*.sh
+            bots/lib/*.sh
+            bots/tools/*.sh
+          )
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "No shell scripts found — skipping."
+            exit 0
+          fi
+          echo "Checking ${#files[@]} script(s): ${files[*]}"
+          shellcheck -S error "${files[@]}"
+          echo "ShellCheck passed."
+
+  # ---------------------------------------------------------------------------
+  # 3 · CodeQL language config — must only scan languages present in the repo
+  # ---------------------------------------------------------------------------
+  codeql-config:
+    name: CodeQL Config
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify CodeQL scans only JavaScript
+        shell: bash
+        run: |
+          set -euo pipefail
+          codeql_file=".github/workflows/codeql.yml"
+          [ -f "$codeql_file" ] || { echo "::error::$codeql_file not found."; exit 1; }
+
+          # Use quoted patterns so 'java' does not match 'javascript'
+          if grep -qE "('python'|\"python\"|'go'|\"go\"|'ruby'|\"ruby\"|'java'|\"java\"|'cpp'|\"cpp\"|'csharp'|\"csharp\"|'swift'|\"swift\")" "$codeql_file"; then
+            echo "::error::$codeql_file scans language(s) not present in this repo."
+            grep -E "('python'|\"python\"|'go'|\"go\"|'ruby'|\"ruby\"|'java'|\"java\"|'cpp'|\"cpp\"|'csharp'|\"csharp\"|'swift'|\"swift\")" "$codeql_file" || true
+            exit 1
+          fi
+
+          if ! grep -q "javascript" "$codeql_file"; then
+            echo "::error::$codeql_file does not scan JavaScript."
+            exit 1
+          fi
+
+          echo "CodeQL config scans only JavaScript — OK."
+
+  # ---------------------------------------------------------------------------
+  # 4 · Worker security audit — CORS, headers, rate limiting, origin check
+  # ---------------------------------------------------------------------------
+  worker-security:
+    name: Worker Security
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: CORS — no wildcard on sensitive endpoints
+        shell: bash
+        run: |
+          set -euo pipefail
+          worker="src/worker.js"
+          [ -f "$worker" ] || { echo "::warning::$worker not found — skipping."; exit 0; }
+          fail=0
+
+          # SENSITIVE_CORS_HEADERS must not use a wildcard origin
+          if grep -A5 "SENSITIVE_CORS_HEADERS" "$worker" \
+               | grep -q '"Access-Control-Allow-Origin"[[:space:]]*:[[:space:]]*"\*"'; then
+            echo "::error::SENSITIVE_CORS_HEADERS uses wildcard Access-Control-Allow-Origin."
+            fail=1
+          else
+            echo "  ✔  SENSITIVE_CORS_HEADERS does not use wildcard origin."
+          fi
+
+          # PayPal create-order must use SENSITIVE_CORS_HEADERS.
+          # -A5 is sufficient: the response-header object is always defined within
+          # the first 5 lines of each handler body, right after guardSensitiveRequest.
+          if grep -A5 "async function handlePayPalCreateOrder" "$worker" \
+               | grep -q "SENSITIVE_CORS_HEADERS"; then
+            echo "  ✔  handlePayPalCreateOrder uses SENSITIVE_CORS_HEADERS."
+          else
+            echo "::error::handlePayPalCreateOrder does not use SENSITIVE_CORS_HEADERS."
+            fail=1
+          fi
+
+          # PayPal capture-order must use SENSITIVE_CORS_HEADERS
+          if grep -A5 "async function handlePayPalCaptureOrder" "$worker" \
+               | grep -q "SENSITIVE_CORS_HEADERS"; then
+            echo "  ✔  handlePayPalCaptureOrder uses SENSITIVE_CORS_HEADERS."
+          else
+            echo "::error::handlePayPalCaptureOrder does not use SENSITIVE_CORS_HEADERS."
+            fail=1
+          fi
+
+          [ "$fail" -eq 0 ] || exit 1
+
+      - name: Security headers — CSP and HSTS present
+        shell: bash
+        run: |
+          set -euo pipefail
+          worker="src/worker.js"
+          [ -f "$worker" ] || { echo "::warning::$worker not found — skipping."; exit 0; }
+          fail=0
+
+          for header in \
+            "Content-Security-Policy" \
+            "Strict-Transport-Security" \
+            "X-Frame-Options" \
+            "X-Content-Type-Options" \
+            "Referrer-Policy"; do
+            if grep -q "\"${header}\"" "$worker"; then
+              echo "  ✔  $header"
+            else
+              echo "::error::Missing security header: $header"
+              fail=1
+            fi
+          done
+
+          [ "$fail" -eq 0 ] || exit 1
+
+      - name: Rate limiting — payment and AI endpoints guarded
+        shell: bash
+        run: |
+          set -euo pipefail
+          worker="src/worker.js"
+          [ -f "$worker" ] || { echo "::warning::$worker not found — skipping."; exit 0; }
+          fail=0
+
+          for symbol in checkRateLimit guardSensitiveRequest validateOrigin; do
+            if grep -q "$symbol" "$worker"; then
+              echo "  ✔  $symbol defined"
+            else
+              echo "::error::Rate-limit symbol not found in worker: $symbol"
+              fail=1
+            fi
+          done
+
+          # Verify the guard is called by payment and AI handlers
+          for handler in handlePayPalCreateOrder handlePayPalCaptureOrder handleDebateGenerate; do
+            if grep -A3 "$handler" "$worker" | grep -q "guardSensitiveRequest"; then
+              echo "  ✔  $handler calls guardSensitiveRequest"
+            else
+              echo "::error::$handler does not call guardSensitiveRequest"
+              fail=1
+            fi
+          done
+
+          [ "$fail" -eq 0 ] || exit 1
+
+      - name: Request method validation — POST-only endpoints enforced
+        shell: bash
+        run: |
+          set -euo pipefail
+          worker="src/worker.js"
+          [ -f "$worker" ] || { echo "::warning::$worker not found — skipping."; exit 0; }
+
+          if grep -q "Method not allowed" "$worker"; then
+            echo "  ✔  Method validation present in worker."
+          else
+            echo "::error::No method validation found in worker (expected 405 handler)."
+            exit 1
+          fi
+
+  # ---------------------------------------------------------------------------
+  # 5 · Wrangler config — no placeholder values
+  # ---------------------------------------------------------------------------
+  wrangler-config:
+    name: Wrangler Config
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for placeholder values in wrangler.toml
+        shell: bash
+        run: |
+          set -euo pipefail
+          [ -f "wrangler.toml" ] || { echo "::warning::wrangler.toml not found — skipping."; exit 0; }
+
+          if grep -qE "YOUR_CLOUDFLARE_ACCOUNT_ID|YOUR_KV_NAMESPACE_ID|YOUR_ZONE_ID|YOUR_DOMAIN" wrangler.toml; then
+            echo "::warning::wrangler.toml contains placeholder values — set real values before deploying."
+            grep -nE "YOUR_CLOUDFLARE_ACCOUNT_ID|YOUR_KV_NAMESPACE_ID|YOUR_ZONE_ID|YOUR_DOMAIN" wrangler.toml || true
+          else
+            echo "  ✔  wrangler.toml: no placeholder values."
+          fi
+
+  # ---------------------------------------------------------------------------
+  # 6 · Dependabot — github-actions and npm ecosystems must both be present
+  # ---------------------------------------------------------------------------
+  dependabot-config:
+    name: Dependabot Config
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify dependabot.yml covers required ecosystems
+        shell: bash
+        run: |
+          set -euo pipefail
+          dep=".github/dependabot.yml"
+          [ -f "$dep" ] || { echo "::error::$dep not found."; exit 1; }
+          fail=0
+
+          for ecosystem in github-actions npm; do
+            # Match the ecosystem value in quoted form as it appears in YAML
+            if grep -qE "\"${ecosystem}\"|'${ecosystem}'" "$dep"; then
+              echo "  ✔  dependabot.yml covers: $ecosystem"
+            else
+              echo "::error::dependabot.yml does not cover ecosystem: $ecosystem"
+              fail=1
+            fi
+          done
+
+          [ "$fail" -eq 0 ] || exit 1
+
+  # ---------------------------------------------------------------------------
+  # 7 · Required CI/CD workflows present
+  # ---------------------------------------------------------------------------
+  required-workflows:
+    name: Required Workflows
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for required workflow files
+        shell: bash
+        run: |
+          set -euo pipefail
+          fail=0
+          for wf in \
+            ".github/workflows/codeql.yml" \
+            ".github/workflows/shellcheck.yml" \
+            ".github/workflows/repo-guard.yml" \
+            ".github/workflows/deploy.yml"; do
+            if [ -f "$wf" ]; then
+              echo "  ✔  $wf"
+            else
+              echo "  ✖  MISSING: $wf"
+              fail=1
+            fi
+          done
+          [ "$fail" -eq 0 ] || { echo "::error::One or more required workflows are missing."; exit 1; }
+
+  # ---------------------------------------------------------------------------
+  # 8 · Repo clutter — empty directories and duplicate/stale files
+  # ---------------------------------------------------------------------------
+  clutter-check:
+    name: Clutter Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect empty directories
+        shell: bash
+        run: |
+          set -euo pipefail
+          empty_dirs=$(find . -not -path './.git/*' -type d -empty 2>/dev/null || true)
+          if [ -n "$empty_dirs" ]; then
+            echo "::warning::Empty directories found (consider removing):"
+            echo "$empty_dirs"
+          else
+            echo "  ✔  No empty directories."
+          fi
+
+      - name: Detect duplicate workflow names
+        shell: bash
+        run: |
+          set -euo pipefail
+          wf_dir=".github/workflows"
+          [ -d "$wf_dir" ] || exit 0
+
+          # Extract workflow name: values and check for duplicates
+          names=$(grep -rh "^name:" "$wf_dir"/*.yml 2>/dev/null | sort || true)
+          dupes=$(echo "$names" | sort | uniq -d || true)
+          if [ -n "$dupes" ]; then
+            echo "::warning::Duplicate workflow name(s) found:"
+            echo "$dupes"
+          else
+            echo "  ✔  No duplicate workflow names."
+          fi
+
+      - name: List unexpected root-level files
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Known roots — warn on anything not expected.
+          # Files starting with a dot are excluded separately by grep -v "^\./\."
+          allowed_extensions="html|js|css|json|toml|md|sh|png|svg|txt|yml|yaml|lock"
+          unexpected=$(find . -maxdepth 1 -type f \
+            | grep -vE "\.($allowed_extensions)$" \
+            | grep -v "^\./\." \
+            || true)
+          if [ -n "$unexpected" ]; then
+            echo "::warning::Unexpected file type(s) in repo root:"
+            echo "$unexpected"
+          else
+            echo "  ✔  No unexpected file types in root."
+          fi
+
+  # ---------------------------------------------------------------------------
+  # 9 · Summary — print overall audit result
+  # ---------------------------------------------------------------------------
+  audit-summary:
+    name: Audit Summary
+    runs-on: ubuntu-latest
+    needs:
+      - health-files
+      - shellcheck
+      - codeql-config
+      - worker-security
+      - wrangler-config
+      - dependabot-config
+      - required-workflows
+      - clutter-check
+    if: always()
+    steps:
+      - name: Print audit result
+        shell: bash
+        env:
+          HEALTH: ${{ needs.health-files.result }}
+          SHELLCHECK: ${{ needs.shellcheck.result }}
+          CODEQL: ${{ needs.codeql-config.result }}
+          WORKER: ${{ needs.worker-security.result }}
+          WRANGLER: ${{ needs.wrangler-config.result }}
+          DEPENDABOT: ${{ needs.dependabot-config.result }}
+          WORKFLOWS: ${{ needs.required-workflows.result }}
+          CLUTTER: ${{ needs.clutter-check.result }}
+        run: |
+          set -euo pipefail
+          fail=0
+          # Explicit ordered list so the table is always printed in a consistent sequence
+          check_names=(
+            "Health Files"
+            "ShellCheck"
+            "CodeQL Config"
+            "Worker Security"
+            "Wrangler Config"
+            "Dependabot Config"
+            "Required Workflows"
+            "Clutter Check"
+          )
+          check_results=(
+            "$HEALTH"
+            "$SHELLCHECK"
+            "$CODEQL"
+            "$WORKER"
+            "$WRANGLER"
+            "$DEPENDABOT"
+            "$WORKFLOWS"
+            "$CLUTTER"
+          )
+          echo "┌──────────────────────────────────┬──────────┐"
+          echo "│ Check                            │ Result   │"
+          echo "├──────────────────────────────────┼──────────┤"
+          for i in "${!check_names[@]}"; do
+            result="${check_results[$i]}"
+            if [ "$result" = "success" ]; then
+              icon="✔ PASS"
+            elif [ "$result" = "skipped" ]; then
+              icon="- SKIP"
+            else
+              icon="✖ FAIL"
+              fail=1
+            fi
+            printf "│ %-32s │ %-8s │\n" "${check_names[$i]}" "$icon"
+          done
+          echo "└──────────────────────────────────┴──────────┘"
+          [ "$fail" -eq 0 ] || { echo "::error::One or more audit checks failed."; exit 1; }
+          echo "All audit checks passed."
