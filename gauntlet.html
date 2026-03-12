@@ -6,6 +6,22 @@
   <title>Atlas Gauntlet — The Arena</title>
   <meta name="description" content="Atlas Gauntlet — where CoreOps tools meet their match in the arena.">
 
+  <!-- Open Graph / Social Preview -->
+  <meta property="og:type"        content="website">
+  <meta property="og:url"         content="https://ironjesus74-hub.github.io/coreops-starter-kit/gauntlet.html">
+  <meta property="og:title"       content="Atlas Gauntlet — CoreOps vs Atlas Guard">
+  <meta property="og:description" content="Live performance arena. CoreOps CLI vs Atlas Guard repo sentinel — head-to-head diagnostic and automation stats. Season 1.">
+  <meta property="og:image"       content="https://ironjesus74-hub.github.io/coreops-starter-kit/assets/coreops-live-dashboard.png">
+  <!-- Twitter Card -->
+  <meta name="twitter:card"        content="summary_large_image">
+  <meta name="twitter:title"       content="Atlas Gauntlet — CoreOps vs Atlas Guard">
+  <meta name="twitter:description" content="Live performance arena. CoreOps vs Atlas Guard — head-to-head Season 1 stats.">
+  <meta name="twitter:image"       content="https://ironjesus74-hub.github.io/coreops-starter-kit/assets/coreops-live-dashboard.png">
+  <!-- Mobile browser theme -->
+  <meta name="theme-color" content="#0d1117">
+  <!-- Canonical -->
+  <link rel="canonical" href="https://ironjesus74-hub.github.io/coreops-starter-kit/gauntlet.html">
+
   <!--
     Favicon: self-contained inline SVG data URI — no external file dependency.
     Verified paths: both <link> tags below reference data URIs only,
@@ -367,6 +383,30 @@
       border: 0;
     }
 
+    /* ===== Skip navigation ===== */
+    .skip-nav {
+      position: absolute;
+      top: -100%;
+      left: 1rem;
+      background: var(--cyan);
+      color: var(--bg-dark);
+      padding: 0.5rem 1rem;
+      border-radius: 0 0 8px 8px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-decoration: none;
+      z-index: 200;
+      transition: top 0.15s;
+    }
+    .skip-nav:focus { top: 0; }
+
+    /* ===== Focus ring ===== */
+    :focus-visible {
+      outline: 2px solid var(--cyan);
+      outline-offset: 3px;
+      border-radius: 4px;
+    }
+
     /* ===== Responsive — Mobile ===== */
     @media (max-width: 640px) {
       .arena {
@@ -395,6 +435,9 @@
 </head>
 <body>
 
+  <!-- Skip navigation for accessibility -->
+  <a href="#main-content" class="skip-nav">Skip to content</a>
+
   <!-- ===== PLATFORM NAV ===== -->
   <nav class="platform-nav" aria-label="Platform sections">
     <ul>
@@ -414,10 +457,12 @@
 
   <!-- ===== HEADER ===== -->
   <header class="header">
-    <div class="header-badge">Atlas · Season 1 · Open Event</div>
+    <div class="header-badge">Atlas · Season 1 · Live</div>
     <h1 class="header-title"><span class="atlas">ATLAS</span> GAUNTLET</h1>
-    <p class="header-sub">The Arena · Battle Protocol Active</p>
+    <p class="header-sub">CoreOps vs Atlas Guard · Head-to-head performance arena</p>
   </header>
+
+  <div id="main-content">
 
   <!-- ===== MAIN ARENA ===== -->
   <main class="arena" aria-label="Battle Arena">
@@ -675,9 +720,11 @@
     </div>
   </section>
 
+  </div><!-- /#main-content -->
+
   <!-- ===== FOOTER ===== -->
   <footer class="footer">
-    <a href="https://github.com/ironjesus74-hub/coreops-starter-kit">
+    <a href="https://github.com/ironjesus74-hub/coreops-starter-kit" rel="noopener">
       ironjesus74-hub/coreops-starter-kit
     </a>
     &nbsp;·&nbsp; Atlas Gauntlet &nbsp;·&nbsp; Season 1
