@@ -5,6 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Atlas Gauntlet — The Arena</title>
   <meta name="description" content="Atlas Gauntlet — where CoreOps tools meet their match in the arena.">
+  <link rel="canonical" href="https://ironjesus74-hub.github.io/coreops-starter-kit/gauntlet.html">
+
+  <!-- Open Graph -->
+  <meta property="og:type"        content="website">
+  <meta property="og:url"         content="https://ironjesus74-hub.github.io/coreops-starter-kit/gauntlet.html">
+  <meta property="og:title"       content="Atlas Gauntlet — CoreOps vs Atlas Guard">
+  <meta property="og:description" content="Head-to-head benchmark: CoreOps CLI vs Atlas Guard. Speed, portability, diagnostics, and automation power — rated and visualised.">
+  <meta property="og:image"       content="https://raw.githubusercontent.com/ironjesus74-hub/coreops-starter-kit/main/assets/coreops-live-dashboard.png">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card"        content="summary_large_image">
+  <meta name="twitter:title"       content="Atlas Gauntlet — CoreOps vs Atlas Guard">
+  <meta name="twitter:description" content="Head-to-head benchmark: CoreOps CLI vs Atlas Guard.">
+  <meta name="twitter:image"       content="https://raw.githubusercontent.com/ironjesus74-hub/coreops-starter-kit/main/assets/coreops-live-dashboard.png">
 
   <!--
     Favicon: self-contained inline SVG data URI — no external file dependency.
@@ -335,6 +349,68 @@
       margin-top: 0.2rem;
     }
 
+    /* ===== CTA strip ===== */
+    .cta-strip {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 2rem 4rem;
+      text-align: center;
+    }
+
+    .cta-strip-inner {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .cta-strip-copy {
+      text-align: left;
+    }
+
+    .cta-strip-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--white);
+      margin-bottom: 0.3rem;
+    }
+
+    .cta-strip-sub {
+      font-size: 0.68rem;
+      color: var(--muted);
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 0.65rem 1.5rem;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      text-decoration: none;
+      cursor: pointer;
+      transition: box-shadow 0.25s, opacity 0.25s;
+    }
+
+    .btn-primary {
+      background: var(--cyan);
+      color: var(--bg-dark);
+      border: none;
+    }
+    .btn-primary:hover { box-shadow: var(--glow-c); opacity: 0.9; }
+
+    @media (max-width: 640px) {
+      .cta-strip-inner { flex-direction: column; text-align: center; }
+      .cta-strip-copy { text-align: center; }
+    }
+
     /* ===== Footer ===== */
     .footer {
       border-top: 1px solid var(--border);
@@ -416,7 +492,7 @@
   <header class="header">
     <div class="header-badge">Atlas · Season 1 · Open Event</div>
     <h1 class="header-title"><span class="atlas">ATLAS</span> GAUNTLET</h1>
-    <p class="header-sub">The Arena · Battle Protocol Active</p>
+    <p class="header-sub">CoreOps vs Atlas Guard – Head-to-Head Benchmark · Battle Protocol Active</p>
   </header>
 
   <!-- ===== MAIN ARENA ===== -->
@@ -675,12 +751,29 @@
     </div>
   </section>
 
+  <!-- ===== CTA STRIP ===== -->
+  <div class="divider" role="separator">
+    <div class="divider-line"></div>
+    <div class="divider-label"><span>Get the CLI</span></div>
+  </div>
+
+  <div class="cta-strip">
+    <div class="cta-strip-inner">
+      <div class="cta-strip-copy">
+        <div class="cta-strip-title">CoreOps wins the Gauntlet. Want the toolkit?</div>
+        <div class="cta-strip-sub">Free, open source, works on your phone. Install in under a minute.</div>
+      </div>
+      <a href="index.html" class="btn btn-primary">Get CoreOps →</a>
+    </div>
+  </div>
+
   <!-- ===== FOOTER ===== -->
   <footer class="footer">
     <a href="https://github.com/ironjesus74-hub/coreops-starter-kit">
       ironjesus74-hub/coreops-starter-kit
     </a>
     &nbsp;·&nbsp; Atlas Gauntlet &nbsp;·&nbsp; Season 1
+    &nbsp;·&nbsp; <a href="index.html">← Back to CoreOps</a>
   </footer>
 
 </body>

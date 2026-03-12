@@ -5,6 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CoreOps — Mobile-First DevOps CLI</title>
   <meta name="description" content="CoreOps: fast, portable DevOps and automation CLI for Termux and Linux. Network checks, TLS audits, snapshots, and a 4-bot automation factory.">
+  <link rel="canonical" href="https://ironjesus74-hub.github.io/coreops-starter-kit/">
+
+  <!-- Open Graph -->
+  <meta property="og:type"        content="website">
+  <meta property="og:url"         content="https://ironjesus74-hub.github.io/coreops-starter-kit/">
+  <meta property="og:title"       content="CoreOps — Mobile-First DevOps CLI">
+  <meta property="og:description" content="Portable DevOps toolkit for Termux &amp; Linux. Network diagnostics, TLS audits, system snapshots, and a self-building 4-bot automation factory.">
+  <meta property="og:image"       content="https://raw.githubusercontent.com/ironjesus74-hub/coreops-starter-kit/main/assets/coreops-live-dashboard.png">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card"        content="summary_large_image">
+  <meta name="twitter:title"       content="CoreOps — Mobile-First DevOps CLI">
+  <meta name="twitter:description" content="Portable DevOps toolkit for Termux &amp; Linux. Network diagnostics, TLS audits, snapshots, and a self-building bot factory.">
+  <meta name="twitter:image"       content="https://raw.githubusercontent.com/ironjesus74-hub/coreops-starter-kit/main/assets/coreops-live-dashboard.png">
 
   <link rel="icon" type="image/svg+xml"
         href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%230d1117' stroke='%2300d4ff' stroke-width='1.5'/%3E%3Ctext x='16' y='21' text-anchor='middle' fill='%2300d4ff' font-family='monospace' font-size='11' font-weight='900'%3ECO%3C/text%3E%3C/svg%3E">
@@ -317,6 +331,92 @@
     .footer a { color: var(--faint); text-decoration: none; }
     .footer a:hover { color: var(--cyan); }
 
+    /* ===== Features grid ===== */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-sub);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      transition: border-color 0.25s, box-shadow 0.25s;
+    }
+
+    .feature-card:hover {
+      border-color: rgba(0, 212, 255, 0.25);
+      box-shadow: 0 0 20px rgba(0, 212, 255, 0.06);
+    }
+
+    .feature-icon {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 212, 255, 0.06);
+      border: 1px solid rgba(0, 212, 255, 0.15);
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      flex-shrink: 0;
+    }
+
+    .feature-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--white);
+      margin-bottom: 0.4rem;
+    }
+
+    .feature-desc {
+      font-size: 0.67rem;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    /* ===== Quickstart copy button ===== */
+    .qs-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    .copy-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-family: inherit;
+      font-size: 0.58rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--faint);
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.3rem 0.65rem;
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .copy-btn:hover {
+      color: var(--cyan);
+      border-color: rgba(0, 212, 255, 0.3);
+    }
+
+    .copy-btn:focus-visible {
+      outline: 2px solid var(--cyan);
+      outline-offset: 2px;
+    }
+
+    /* ===== Section accent background ===== */
+    .section-alt {
+      background: linear-gradient(180deg, transparent 0%, rgba(0, 212, 255, 0.02) 50%, transparent 100%);
+    }
+
     /* ===== Screen-reader only utility ===== */
     .sr-only {
       position: absolute;
@@ -365,11 +465,11 @@
 
   <!-- ===== HERO ===== -->
   <header class="hero">
-    <div class="hero-badge">⚡ CoreOps Platform · v1.0</div>
+    <div class="hero-badge">⚡ Open Source · MIT License · v1.0</div>
     <h1 class="hero-title"><span class="core">Core</span>Ops</h1>
     <p class="hero-sub">
-      Mobile-first DevOps &amp; automation CLI.<br>
-      Network checks · TLS audits · System snapshots · 4-bot factory.
+      The portable DevOps toolkit built for Termux &amp; Linux.<br>
+      Network diagnostics, TLS audits, system snapshots — and a self-building automation factory.
     </p>
     <div class="hero-actions">
       <a href="https://github.com/ironjesus74-hub/coreops-starter-kit"
@@ -387,6 +487,64 @@
     <div class="hl-item"><span class="hl-dot"></span>MIT License</div>
   </div>
 
+  <!-- ===== WHY COREOPS ===== -->
+  <div class="divider" role="separator">
+    <div class="divider-line"></div>
+    <div class="divider-label"><span>Why CoreOps</span></div>
+  </div>
+
+  <section class="section section-alt" aria-labelledby="features-heading">
+    <h2 id="features-heading" class="section-label">Built Different</h2>
+    <div class="features-grid">
+
+      <div class="feature-card">
+        <div class="feature-icon" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="5" y="2" width="14" height="20" rx="2" stroke="#00d4ff" stroke-width="1.5"/>
+            <line x1="9" y1="18" x2="15" y2="18" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round"/>
+            <rect x="8" y="6" width="8" height="6" rx="1" stroke="#00d4ff" stroke-width="1.2" opacity=".6"/>
+          </svg>
+        </div>
+        <h3 class="feature-title">Runs Anywhere</h3>
+        <p class="feature-desc">Android (Termux), Debian, Ubuntu, Alpine — same CLI, same commands. No Docker, no cloud dependency.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z" stroke="#00d4ff" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h3 class="feature-title">Zero Bloat</h3>
+        <p class="feature-desc">Pure POSIX shell — no runtimes, no heavy packages. Installs in seconds, responds in milliseconds.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="3" stroke="#00d4ff" stroke-width="1.5"/>
+            <path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M4.93 4.93l2.12 2.12M16.95 16.95l2.12 2.12M4.93 19.07l2.12-2.12M16.95 7.05l2.12-2.12" stroke="#00d4ff" stroke-width="1.2" stroke-linecap="round" opacity=".7"/>
+          </svg>
+        </div>
+        <h3 class="feature-title">Self-Building</h3>
+        <p class="feature-desc">The 4-bot factory auto-generates 24 networking and utility tools — no manual setup needed.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z" stroke="#00d4ff" stroke-width="1.5" stroke-linejoin="round"/>
+            <path d="M9 12l2 2 4-4" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h3 class="feature-title">Fully Open</h3>
+        <p class="feature-desc">MIT licensed. Read it, audit it, fork it. No subscriptions, no telemetry, no lock-in of any kind.</p>
+      </div>
+
+    </div>
+  </section>
+
   <!-- ===== QUICK START ===== -->
   <div class="divider" role="separator">
     <div class="divider-line"></div>
@@ -396,8 +554,17 @@
   <section class="section" aria-labelledby="qs-heading">
     <h2 id="qs-heading" class="section-label">Termux / Linux Setup</h2>
     <div class="quickstart">
-      <div class="qs-title">Install in seconds</div>
-      <code class="qs-code">pkg update -y &amp;&amp; pkg install -y git
+      <div class="qs-header">
+        <div class="qs-title">Install in seconds</div>
+        <button class="copy-btn" aria-label="Copy install commands" onclick="copyInstall(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="2"/>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="2"/>
+          </svg>
+          Copy
+        </button>
+      </div>
+      <code class="qs-code" id="install-code">pkg update -y &amp;&amp; pkg install -y git
 git clone https://github.com/ironjesus74-hub/coreops-starter-kit.git
 cd coreops-starter-kit
 chmod +x bin/* modules/*.sh lib/*.sh bots/*.sh install.sh
@@ -413,7 +580,7 @@ coreops help</code>
   </div>
 
   <section class="section" aria-labelledby="cmds-heading">
-    <h2 id="cmds-heading" class="section-label">All Commands</h2>
+    <h2 id="cmds-heading" class="section-label">Command Reference</h2>
     <div class="cmd-grid">
       <div class="cmd-card">
         <div class="cmd-name">coreops doctor</div>
@@ -513,7 +680,43 @@ coreops help</code>
       ironjesus74-hub/coreops-starter-kit
     </a>
     &nbsp;·&nbsp; CoreOps Platform &nbsp;·&nbsp; MIT License
+    &nbsp;·&nbsp; <a href="gauntlet.html">Atlas Gauntlet</a>
   </footer>
+
+  <script>
+    function copyInstall(btn) {
+      var code = document.getElementById('install-code');
+      var text = code.textContent;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function() {
+          var orig = btn.innerHTML;
+          btn.textContent = '✓ Copied';
+          btn.style.color = 'var(--cyan)';
+          setTimeout(function() { btn.innerHTML = orig; btn.style.color = ''; }, 2000);
+        }).catch(function() { fallbackCopy(btn, code); });
+      } else {
+        fallbackCopy(btn, code);
+      }
+    }
+    function fallbackCopy(btn, el) {
+      var range = document.createRange();
+      range.selectNode(el);
+      var sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      try {
+        document.execCommand('copy');
+        btn.textContent = '✓ Copied';
+        btn.style.color = 'var(--cyan)';
+        setTimeout(function() {
+          btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="2"/></svg> Copy';
+          btn.style.color = '';
+        }, 2000);
+      } catch (e) {
+        /* Selection remains highlighted as visual feedback */
+      }
+    }
+  </script>
 
 </body>
 </html>
