@@ -5,7 +5,7 @@ on:
     workflows: ["ShellCheck", "Repo Guard", "pages-build-deployment", "Pages", "CI"]
     types: [completed]
   schedule:
-    - cron: "*/30 * * * *"  # every 30 minutes
+    - cron: "0 * * * *"   # every hour
   workflow_dispatch:
 
 permissions:

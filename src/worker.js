@@ -17,7 +17,8 @@
  *   POST  /api/debate/generate       — Generate AI debate transcript
  *   GET   /api/forum/threads         — Get seeded forum threads list
  *   POST  /api/forum/generate        — Generate AI forum post/thread
- *   GET   /api/profile               — Profile structure
+ *   GET   /api/profile               — Read profile (KV-backed; ?userId=)
+ *   POST  /api/profile               — Write/merge profile patch (KV-backed)
  *   OPTIONS *                        — CORS preflight
  *   *                                — Static assets via ASSETS binding
  *
@@ -31,6 +32,10 @@
  * Vars (wrangler.toml [vars]):
  *   ATLAS_AI_ENDPOINT     — AI chat completions endpoint
  *   PAYPAL_ENV            — "sandbox" | "live"
+ *   ALLOWED_ORIGIN        — Restricts sensitive CORS endpoints (e.g. "https://forge-atlas.io")
+ *
+ * KV Namespaces:
+ *   ATLAS_KV              — Persistent profile storage
  */
 
 // ---------------------------------------------------------------------------
@@ -47,9 +52,9 @@ const DEBATE_BASE_CIPHER_DELAY_MS = 800;
 const DEBATE_CIPHER_JITTER_MS = 400;
 const DEBATE_ROUND_BASE_MS = 2000;
 const DEBATE_ROUND_JITTER_MS = 1000;
+const PROFILE_TTL_SECONDS = 60 * 60 * 24 * 365; // 1 year
 
-// Deployed origin — restrict sensitive endpoints to this domain.
-// Override via the ALLOWED_ORIGIN wrangler var if needed.
+// Fallback deployed origin — override via the ALLOWED_ORIGIN wrangler var.
 const DEPLOYED_ORIGIN = "https://forgeatlas.example";
 
 const CORS_HEADERS = {
@@ -58,14 +63,17 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Headers": "Content-Type",
 };
 
-// Stricter CORS used for payment and AI endpoints.
-const SENSITIVE_CORS_HEADERS = {
-  "Access-Control-Allow-Origin": DEPLOYED_ORIGIN,
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-  "Access-Control-Allow-Credentials": "true",
-  "Vary": "Origin",
-};
+// Dynamic CORS headers for sensitive endpoints — reads ALLOWED_ORIGIN from env.
+function sensitiveHeaders(env) {
+  const origin = env?.ALLOWED_ORIGIN || DEPLOYED_ORIGIN;
+  return {
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Credentials": "true",
+    "Vary": "Origin",
+  };
+}
 
 const SECURITY_HEADERS = {
   "X-Content-Type-Options": "nosniff",
@@ -122,9 +130,10 @@ function clientIp(request) {
  * Returns a Response with status 403 if the origin is not allowed, or null
  * if the origin is acceptable.
  */
-function validateOrigin(request) {
+function validateOrigin(request, env) {
+  const allowed = env?.ALLOWED_ORIGIN || DEPLOYED_ORIGIN;
   const origin = request.headers.get("Origin");
-  if (origin && origin !== DEPLOYED_ORIGIN) {
+  if (origin && origin !== allowed) {
     return Response.json(
       { error: "Origin not allowed" },
       { status: 403, headers: { "Content-Type": "application/json" } },
@@ -138,15 +147,16 @@ function validateOrigin(request) {
  * Returns a Response if the request should be rejected, or null to proceed.
  * @param {Request} request
  * @param {"payment"|"ai"} type
+ * @param {object} env
  */
-function guardSensitiveRequest(request, type) {
+function guardSensitiveRequest(request, type, env) {
   if (request.method !== "POST") {
     return Response.json(
       { error: "Method not allowed" },
       { status: 405, headers: { Allow: "POST, OPTIONS", "Content-Type": "application/json" } },
     );
   }
-  const originError = validateOrigin(request);
+  const originError = validateOrigin(request, env);
   if (originError) return originError;
 
   const ip = clientIp(request);
@@ -159,7 +169,7 @@ function guardSensitiveRequest(request, type) {
         headers: {
           "Content-Type": "application/json",
           "Retry-After": "60",
-          ...SENSITIVE_CORS_HEADERS,
+          ...sensitiveHeaders(env),
         },
       },
     );
@@ -297,9 +307,10 @@ export default {
         "/api/paypal/capture-order",
         "/api/debate/generate",
         "/api/forum/generate",
+        "/api/profile",
       ]);
       const preflightHeaders = sensitivePaths.has(url.pathname)
-        ? SENSITIVE_CORS_HEADERS
+        ? sensitiveHeaders(env)
         : CORS_HEADERS;
       return new Response(null, { status: 204, headers: preflightHeaders });
     }
@@ -348,8 +359,9 @@ export default {
     }
 
     // ── Profile route ────────────────────────────────────────────────────────
-    if (url.pathname === "/api/profile" && request.method === "GET") {
-      return handleProfile();
+    if (url.pathname === "/api/profile") {
+      if (request.method === "GET") return handleProfile(request, env);
+      if (request.method === "POST") return handleProfileSave(request, env);
     }
 
     // ── Static assets via ASSETS binding ────────────────────────────────────
@@ -362,12 +374,12 @@ export default {
 // Atlas AI endpoint — POST /api/atlas
 // ---------------------------------------------------------------------------
 async function handleAtlas(request, env) {
-  const guard = guardSensitiveRequest(request, "ai");
+  const guard = guardSensitiveRequest(request, "ai", env);
   if (guard) return guard;
 
   const responseHeaders = {
     "Content-Type": "application/json",
-    ...SENSITIVE_CORS_HEADERS,
+    ...sensitiveHeaders(env),
   };
 
   let body;
@@ -408,10 +420,11 @@ async function handleAtlas(request, env) {
     env.ATLAS_AI_ENDPOINT ||
     "https://api.openai.com/v1/chat/completions";
 
-  // Optional: account-specific prompt context (ASCII-safe; trimmed server-side)
+  // Optional account-specific prompt context — strip control/zero-width chars
+  // to prevent prompt-injection before appending to the system message.
   const systemExtra =
     typeof body?.systemContext === "string"
-      ? " " + body.systemContext.slice(0, MAX_SYSTEM_CONTEXT_LENGTH)
+      ? " " + sanitizeSystemContext(body.systemContext.slice(0, MAX_SYSTEM_CONTEXT_LENGTH))
       : "";
 
   try {
@@ -485,6 +498,13 @@ async function handleContact(request, env) {
   if (!name || !email || !message) {
     return Response.json(
       { error: "name, email, and message are required" },
+      { status: 400, headers: responseHeaders },
+    );
+  }
+
+  if (!isValidEmail(email)) {
+    return Response.json(
+      { error: "A valid email address is required" },
       { status: 400, headers: responseHeaders },
     );
   }
@@ -609,10 +629,10 @@ function handlePayPalConfig(env) {
 // Server resolves price from catalog — browser cannot override it.
 // ---------------------------------------------------------------------------
 async function handlePayPalCreateOrder(request, env) {
-  const guard = guardSensitiveRequest(request, "payment");
+  const guard = guardSensitiveRequest(request, "payment", env);
   if (guard) return guard;
 
-  const rh = { "Content-Type": "application/json", ...SENSITIVE_CORS_HEADERS };
+  const rh = { "Content-Type": "application/json", ...sensitiveHeaders(env) };
   let body;
   try { body = await request.json(); } catch {
     return Response.json({ error: "Invalid JSON body" }, { status: 400, headers: rh });
@@ -655,7 +675,7 @@ async function handlePayPalCreateOrder(request, env) {
       headers: {
         "Content-Type": "application/json",
         Authorization: "Bearer " + token,
-        "PayPal-Request-Id": "atlas-" + product.id + "-" + Date.now(),
+        "PayPal-Request-Id": crypto.randomUUID(),
       },
       body: JSON.stringify(orderPayload),
     });
@@ -677,10 +697,10 @@ async function handlePayPalCreateOrder(request, env) {
 // Body: { orderId: string }
 // ---------------------------------------------------------------------------
 async function handlePayPalCaptureOrder(request, env) {
-  const guard = guardSensitiveRequest(request, "payment");
+  const guard = guardSensitiveRequest(request, "payment", env);
   if (guard) return guard;
 
-  const rh = { "Content-Type": "application/json", ...SENSITIVE_CORS_HEADERS };
+  const rh = { "Content-Type": "application/json", ...sensitiveHeaders(env) };
   let body;
   try { body = await request.json(); } catch {
     return Response.json({ error: "Invalid JSON body" }, { status: 400, headers: rh });
@@ -751,6 +771,12 @@ async function handlePayPalWebhook(request, env) {
   const authAlgo         = request.headers.get("paypal-auth-algo")         || "";
   const transmissionSig  = request.headers.get("paypal-transmission-sig")  || "";
 
+  // Reject requests whose cert_url is not a genuine PayPal domain.
+  if (!isValidPayPalCertUrl(certUrl)) {
+    console.warn("PayPal webhook: rejected invalid cert_url: " + certUrl);
+    return new Response("Invalid cert_url", { status: 400 });
+  }
+
   let token, base;
   try { ({ token, base } = await getPayPalToken(env)); } catch (err) {
     console.error("PayPal webhook token error:", err);
@@ -794,6 +820,8 @@ async function handlePayPalWebhook(request, env) {
       console.log(
         "Delivery trigger: product=" + customId +
         " | capture=" + parsedEvent.resource?.id +
+        " | amount=" + (parsedEvent.resource?.amount?.value || "?") +
+        " " + (parsedEvent.resource?.amount?.currency_code || "") +
         " | type=" + (product?.deliveryType || "unknown"),
       );
     }
@@ -810,10 +838,10 @@ async function handlePayPalWebhook(request, env) {
 // Returns structured transcript with staggered pacing metadata
 // ---------------------------------------------------------------------------
 async function handleDebateGenerate(request, env) {
-  const guard = guardSensitiveRequest(request, "ai");
+  const guard = guardSensitiveRequest(request, "ai", env);
   if (guard) return guard;
 
-  const rh = { "Content-Type": "application/json", ...SENSITIVE_CORS_HEADERS };
+  const rh = { "Content-Type": "application/json", ...sensitiveHeaders(env) };
   let body;
   try { body = await request.json(); } catch {
     return Response.json({ error: "Invalid JSON body" }, { status: 400, headers: rh });
@@ -835,11 +863,17 @@ async function handleDebateGenerate(request, env) {
   }
   const endpoint = env.ATLAS_AI_ENDPOINT || "https://api.openai.com/v1/chat/completions";
   const systemPrompt =
-    "You are a debate transcript generator. Given a topic, produce a structured " +
-    "JSON debate between two AI personas: Vector (pro/logical) and Cipher (con/skeptical). " +
+    "You are a structured AI debate transcript generator. " +
+    "Produce a realistic multi-round debate between two distinct AI personas:\n" +
+    "• Vector — data-driven and analytical. Cites evidence, uses precise language, " +
+    "builds logical chains. Confidence scores reflect strength of evidence (55–90).\n" +
+    "• Cipher — skeptical and provocative. Challenges assumptions, surfaces edge cases, " +
+    "uses rhetorical questions. Confidence scores are often lower but vary (40–75).\n" +
+    "Arguments should feel like a real technical debate, not a summary. " +
+    "Each argument should be 2–4 sentences and directly respond to the previous round. " +
     "Output ONLY valid JSON in this exact shape, with no markdown fencing:\n" +
-    "{\"topic\":\"...\",\"rounds\":[{\"round\":1,\"vector\":{\"argument\":\"...\",\"confidence\":70}," +
-    "\"cipher\":{\"argument\":\"...\",\"confidence\":60}}]}";
+    "{\"topic\":\"...\",\"rounds\":[{\"round\":1,\"vector\":{\"argument\":\"...\",\"confidence\":72}," +
+    "\"cipher\":{\"argument\":\"...\",\"confidence\":58}}]}";
 
   try {
     const aiResp = await fetch(endpoint, {
@@ -905,10 +939,10 @@ function handleForumThreads() {
 // Body: { topic?: string, category?: string }
 // ---------------------------------------------------------------------------
 async function handleForumGenerate(request, env) {
-  const guard = guardSensitiveRequest(request, "ai");
+  const guard = guardSensitiveRequest(request, "ai", env);
   if (guard) return guard;
 
-  const rh = { "Content-Type": "application/json", ...SENSITIVE_CORS_HEADERS };
+  const rh = { "Content-Type": "application/json", ...sensitiveHeaders(env) };
   let body;
   try { body = await request.json(); } catch {
     return Response.json({ error: "Invalid JSON body" }, { status: 400, headers: rh });
@@ -924,11 +958,16 @@ async function handleForumGenerate(request, env) {
   }
   const endpoint = env.ATLAS_AI_ENDPOINT || "https://api.openai.com/v1/chat/completions";
   const systemPrompt =
-    "You are an AI that writes realistic DevOps forum posts. " +
+    "You are an AI that writes realistic DevOps community forum posts. " +
+    "Write as a real practitioner — use first-person, specific technical details, " +
+    "concrete tooling names, and authentic frustrations or wins. " +
     "Mix 70% serious technical content with 30% dry humor. " +
+    "Author usernames should look like real DevOps handles (e.g. shellcraft, k8s_survivor). " +
+    "Reaction counts should be non-zero and proportional to post quality (fire: 5-40, " +
+    "thumbsup: 5-60, thinking: 3-25, laugh: 0-20). " +
     "Output ONLY valid JSON, no markdown fencing:\n" +
     "{\"title\":\"...\",\"body\":\"...\",\"author\":\"...\"," +
-    "\"tags\":[\"...\"],\"reactions\":{\"fire\":0,\"thumbsup\":0,\"thinking\":0}}";
+    "\"tags\":[\"...\"],\"reactions\":{\"fire\":0,\"thumbsup\":0,\"thinking\":0,\"laugh\":0}}";
   const userPrompt = topic
     ? "Write a forum post about: \"" + topic + "\" in category: " + category
     : "Write a forum post for category: " + category + ". Make it engaging and believable.";
@@ -963,8 +1002,12 @@ async function handleForumGenerate(request, env) {
         body: raw.slice(0, 800),
         author: "atlas_ai",
         tags: [category],
-        reactions: { fire: 0, thumbsup: 0, thinking: 0 },
+        reactions: { fire: 0, thumbsup: 0, thinking: 0, laugh: 0 },
       };
+    }
+    // Ensure laugh reaction is always present (matches seed data schema)
+    if (post.reactions && !("laugh" in post.reactions)) {
+      post.reactions.laugh = 0;
     }
     post.id = "ai-" + Date.now();
     post.createdAt = new Date().toISOString();
@@ -977,12 +1020,17 @@ async function handleForumGenerate(request, env) {
 }
 
 // ---------------------------------------------------------------------------
-// Profile — GET /api/profile
-// Returns the default profile schema. KV storage adds persistence.
+// Profile — GET /api/profile?userId=<id>
+// Returns profile from KV if configured, otherwise returns the default schema.
 // ---------------------------------------------------------------------------
-function handleProfile() {
-  const profile = {
-    id: "guest",
+async function handleProfile(request, env) {
+  const url = new URL(request.url);
+  const rawId = url.searchParams.get("userId") || "guest";
+  const userId = sanitizeUserId(rawId) || "guest";
+  const rh = { "Content-Type": "application/json", ...CORS_HEADERS };
+
+  const defaultProfile = {
+    id: userId,
     displayName: "Forge Atlas User",
     emblem: { primary: "#e52020", secondary: "#0d1117", symbol: "forgeAtlas" },
     stats: { debatesWon: 0, forumPosts: 0, toolsBuilt: 0, daysActive: 0 },
@@ -994,7 +1042,124 @@ function handleProfile() {
     theme: "forge-dark",
     joinedAt: null,
   };
-  return Response.json(profile, {
-    headers: { "Content-Type": "application/json", ...CORS_HEADERS },
-  });
+
+  if (!env.ATLAS_KV) {
+    return Response.json(defaultProfile, { headers: rh });
+  }
+
+  try {
+    const stored = await env.ATLAS_KV.get("profile:" + userId, { type: "json" });
+    return Response.json(stored || defaultProfile, { headers: rh });
+  } catch (err) {
+    console.error("Profile KV read error:", err);
+    return Response.json(defaultProfile, { headers: rh });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Profile save — POST /api/profile
+// Body: { userId: string, patch: object }
+// Merges the patch into the stored profile using a field allowlist.
+// ---------------------------------------------------------------------------
+async function handleProfileSave(request, env) {
+  const guard = guardSensitiveRequest(request, "ai", env);
+  if (guard) return guard;
+
+  const rh = { "Content-Type": "application/json", ...sensitiveHeaders(env) };
+
+  if (!env.ATLAS_KV) {
+    return Response.json({ error: "Profile storage not configured" }, { status: 503, headers: rh });
+  }
+
+  let body;
+  try { body = await request.json(); } catch {
+    return Response.json({ error: "Invalid JSON body" }, { status: 400, headers: rh });
+  }
+
+  const userId = sanitizeUserId(body?.userId);
+  if (!userId) {
+    return Response.json({ error: "A valid userId is required" }, { status: 400, headers: rh });
+  }
+
+  const patch = body?.patch;
+  if (!patch || typeof patch !== "object" || Array.isArray(patch)) {
+    return Response.json({ error: "patch must be a non-array object" }, { status: 400, headers: rh });
+  }
+
+  // Only allow writing these known-safe profile fields.
+  const ALLOWED_FIELDS = [
+    "displayName", "emblem", "stats", "badges", "milestones",
+    "purchases", "promptShowcase", "atlasSummary", "theme", "joinedAt",
+  ];
+
+  try {
+    const key = "profile:" + userId;
+    const existing = await env.ATLAS_KV.get(key, { type: "json" }) || {};
+    const merged = { ...existing };
+    for (const field of ALLOWED_FIELDS) {
+      if (Object.prototype.hasOwnProperty.call(patch, field)) {
+        merged[field] = patch[field];
+      }
+    }
+    merged.id = userId;
+    merged.updatedAt = new Date().toISOString();
+    if (!merged.joinedAt) merged.joinedAt = merged.updatedAt;
+    await env.ATLAS_KV.put(key, JSON.stringify(merged), {
+      expirationTtl: PROFILE_TTL_SECONDS,
+    });
+    return Response.json({ success: true, profile: merged }, { headers: rh });
+  } catch (err) {
+    console.error("Profile KV write error:", err);
+    return Response.json({ error: "Failed to save profile" }, { status: 500, headers: rh });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Shared utility helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Sanitize a user-supplied userId to safe KV key characters.
+ * Returns null when the input is invalid.
+ */
+function sanitizeUserId(raw) {
+  if (typeof raw !== "string") return null;
+  const trimmed = raw.trim().slice(0, 64);
+  if (!/^[a-zA-Z0-9_.\-]+$/.test(trimmed)) return null;
+  return trimmed;
+}
+
+/** Basic email format check — rejects obviously malformed addresses. */
+function isValidEmail(email) {
+  return typeof email === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+}
+
+/**
+ * Validate that a PayPal cert_url is served from a genuine PayPal domain.
+ * Prevents passing attacker-controlled URLs to PayPal's verification API.
+ * Uses `endsWith(".paypal.com")` which requires the character preceding
+ * "paypal.com" to be a literal dot — so "fakepaypal.com" and
+ * "evil.paypal.com.attacker.com" both correctly fail.
+ */
+function isValidPayPalCertUrl(url) {
+  try {
+    const parsed = new URL(url);
+    return (
+      parsed.protocol === "https:" &&
+      (parsed.hostname === "paypal.com" ||
+        parsed.hostname.endsWith(".paypal.com"))
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Strip control characters (except \t and \n) and zero-width Unicode chars
+ * from user-supplied strings before appending them to AI system prompts.
+ */
+function sanitizeSystemContext(text) {
+  return String(text)
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
+    .replace(/[\u200B-\u200D\uFEFF]/g, "");
 }
