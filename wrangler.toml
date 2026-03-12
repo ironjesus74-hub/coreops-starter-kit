@@ -33,7 +33,18 @@ local_protocol = "http"
 # ---------------------------------------------------------------------------
 # Production route & account settings (fill in before deploying)
 # ---------------------------------------------------------------------------
+# Set account_id here OR export CLOUDFLARE_ACCOUNT_ID in your CI environment
+# (GitHub Actions: Settings → Secrets → CLOUDFLARE_ACCOUNT_ID).
+# Without this, `wrangler deploy` will prompt interactively and fail in CI.
+#
 # account_id = "YOUR_CLOUDFLARE_ACCOUNT_ID"
+#
+# Before going live, also change PAYPAL_ENV (above) from "sandbox" to "live"
+# and verify all secrets are set:
+#   wrangler secret put ATLAS_AI_API_KEY
+#   wrangler secret put PAYPAL_CLIENT_ID
+#   wrangler secret put PAYPAL_CLIENT_SECRET
+#   wrangler secret put PAYPAL_WEBHOOK_ID
 #
 # [[routes]]
 # pattern  = "YOUR_DOMAIN/*"

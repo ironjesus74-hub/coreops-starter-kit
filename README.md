@@ -166,3 +166,46 @@ Usage:
   coreops bots <start|stop|status|factory>
   coreops panel
 ```
+
+---
+
+## ☁️ Cloudflare Deployment Pre-flight
+
+The web platform (`src/worker.js` + static assets) deploys as a single Cloudflare Worker.
+
+### Prerequisites
+
+1. **Install Wrangler**
+   ```bash
+   npm install
+   ```
+
+2. **Set your account ID** — required before `wrangler deploy` works in CI or non-interactive shells:
+   ```bash
+   # Option A: edit wrangler.toml (uncomment and fill in account_id)
+   # Option B: export the env var (preferred for CI)
+   export CLOUDFLARE_ACCOUNT_ID="your-account-id"
+   ```
+
+3. **Set secrets** (never stored in files):
+   ```bash
+   wrangler secret put ATLAS_AI_API_KEY       # OpenAI-compatible key for Atlas AI
+   wrangler secret put PAYPAL_CLIENT_ID        # PayPal app client ID
+   wrangler secret put PAYPAL_CLIENT_SECRET    # PayPal app client secret
+   wrangler secret put PAYPAL_WEBHOOK_ID       # PayPal webhook ID (for signature verification)
+   # Optional:
+   wrangler secret put CONTACT_WEBHOOK_URL     # Webhook URL for contact form delivery
+   ```
+   Secrets not set → those routes return `503` with a clear error. **PayPal and AI features are optional.**
+
+4. **Before going live**, change `PAYPAL_ENV` in `wrangler.toml` from `"sandbox"` to `"live"`.
+
+### Deploy
+
+```bash
+npm run deploy   # deploys Worker + all static assets in one command
+npm run dev      # local dev server at http://localhost:8787
+```
+
+> ⚠️ There is **no** `deploy:pages` script. This project uses Cloudflare Workers with an
+> ASSETS binding — **not** Cloudflare Pages. Do not create a Pages project for this repo.
