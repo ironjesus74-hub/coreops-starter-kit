@@ -2,6 +2,7 @@
 # Shell scripts and CLI tools
 bin/
 bots/
+boot/
 lib/
 modules/
 install.sh

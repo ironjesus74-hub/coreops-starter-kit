@@ -8,3 +8,6 @@ worker-configuration.d.ts
 
 # Node
 node_modules/
+
+# Accidental literal $HOME paths committed by shell scripts
+${HOME}
