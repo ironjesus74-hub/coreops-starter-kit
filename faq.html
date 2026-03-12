@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FAQ — Atlas</title>
+  <meta name="description" content="Frequently asked questions about the Atlas platform — installation, features, licensing, and more." />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --jet: #0a0d12;
+      --carbon: #11161d;
+      --obsidian: #05070b;
+      --blue-primary: #2f6bff;
+      --blue-electric: #57a6ff;
+      --blue-ice: #a9d4ff;
+      --text-high: #eef6ff;
+      --text-mid: #b7c6d9;
+      --text-low: #7d8da3;
+      --glass-bg: rgba(255,255,255,0.06);
+      --glass-border: rgba(255,255,255,0.14);
+      --radius: 16px;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--jet); color: var(--text-high);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, sans-serif;
+      line-height: 1.6; min-height: 100vh;
+    }
+    a { color: inherit; text-decoration: none; }
+    ul { list-style: none; }
+
+    /* ── NAV ── */
+    .site-nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(10,13,18,0.92); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--glass-border);
+    }
+    .nav-inner {
+      max-width: 1280px; margin: 0 auto; padding: 0 1.5rem;
+      display: flex; align-items: center; gap: 2rem; height: 64px;
+    }
+    .nav-brand { font-size: 1.4rem; font-weight: 800; color: var(--text-high); letter-spacing: -0.5px; flex-shrink: 0; }
+    .nav-brand span { color: var(--blue-primary); }
+    .nav-links { display: flex; align-items: center; gap: 0.25rem; flex: 1; flex-wrap: wrap; }
+    .nav-links a {
+      padding: 0.4rem 0.75rem; border-radius: 8px;
+      color: var(--text-mid); font-size: 0.875rem; font-weight: 500;
+      transition: color 0.2s, background 0.2s;
+    }
+    .nav-links a:hover { color: var(--text-high); background: var(--glass-bg); }
+    .nav-links a.active { color: var(--blue-electric); }
+    .nav-cta {
+      flex-shrink: 0; padding: 0.5rem 1.25rem;
+      background: var(--blue-primary); color: #fff;
+      border-radius: 8px; font-size: 0.875rem; font-weight: 600;
+      transition: background 0.2s, transform 0.15s;
+    }
+    .nav-cta:hover { background: #4a7fff; transform: translateY(-1px); }
+    .nav-hamburger {
+      display: none; flex-direction: column; justify-content: center;
+      gap: 5px; background: none; border: none; cursor: pointer;
+      padding: 0.5rem; margin-left: auto;
+    }
+    .nav-hamburger span { display: block; width: 22px; height: 2px; background: var(--text-mid); border-radius: 2px; transition: all 0.3s; }
+    @media (max-width: 900px) {
+      .nav-hamburger { display: flex; }
+      .nav-links {
+        display: none; position: absolute; top: 64px; left: 0; right: 0;
+        background: var(--carbon); flex-direction: column; align-items: flex-start;
+        padding: 1rem 1.5rem 1.5rem; gap: 0.25rem;
+        border-bottom: 1px solid var(--glass-border);
+      }
+      .nav-mobile-open .nav-links { display: flex; }
+      .nav-cta { display: none; }
+    }
+
+    /* ── LAYOUT ── */
+    .content-width { max-width: 1280px; margin: 0 auto; padding: 0 1.5rem; }
+    .section { padding: 5rem 0; }
+    .section-label {
+      display: inline-block; font-size: 0.7rem; font-weight: 700;
+      letter-spacing: 0.15em; color: var(--blue-electric);
+      text-transform: uppercase; margin-bottom: 1rem;
+    }
+    .gradient {
+      background: linear-gradient(135deg, var(--blue-primary), var(--blue-electric));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .btn-primary {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 0.75rem 1.75rem; background: var(--blue-primary); color: #fff;
+      border: none; border-radius: 8px; font-size: 0.95rem; font-weight: 600;
+      cursor: pointer; transition: background 0.2s, transform 0.15s; text-decoration: none;
+    }
+    .btn-primary:hover { background: #4a7fff; transform: translateY(-1px); }
+
+    /* ── HERO ── */
+    .page-hero {
+      padding: 6rem 0 4rem; text-align: center;
+      background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(47,107,255,0.18) 0%, transparent 70%);
+    }
+    .page-hero h1 {
+      font-size: clamp(2.4rem, 5vw, 4rem); font-weight: 800; line-height: 1.1;
+      letter-spacing: -1px; margin-bottom: 1rem;
+    }
+    .page-hero p { font-size: 1.15rem; color: var(--text-mid); }
+
+    /* ── FAQ ACCORDION ── */
+    .faq-wrap { max-width: 760px; margin: 0 auto; }
+    details {
+      background: var(--glass-bg); border: 1px solid var(--glass-border);
+      border-radius: 12px; margin-bottom: 0.75rem;
+      transition: border-color 0.2s;
+    }
+    details[open] { border-color: rgba(47,107,255,0.4); }
+    summary {
+      cursor: pointer; list-style: none;
+      padding: 1.1rem 1.5rem;
+      font-size: 0.975rem; font-weight: 600; color: var(--text-high);
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 1rem; user-select: none;
+    }
+    summary::-webkit-details-marker { display: none; }
+    summary::after {
+      content: "+";
+      font-size: 1.4rem; font-weight: 400; color: var(--blue-electric);
+      flex-shrink: 0; line-height: 1; transition: transform 0.25s;
+    }
+    details[open] summary::after {
+      content: "×";
+      transform: rotate(0deg);
+    }
+    .faq-answer {
+      padding: 0 1.5rem 1.25rem;
+      font-size: 0.9rem; color: var(--text-mid); line-height: 1.7;
+    }
+    .faq-answer code {
+      background: rgba(255,255,255,0.06); border: 1px solid var(--glass-border);
+      border-radius: 4px; padding: 0.1rem 0.4rem;
+      font-family: "SF Mono", "Fira Code", "Courier New", monospace;
+      font-size: 0.85em; color: var(--blue-ice);
+    }
+    .faq-answer a { color: var(--blue-electric); text-decoration: underline; }
+
+    /* ── CONTACT CTA ── */
+    .contact-cta { text-align: center; padding: 4rem 0 0; }
+    .contact-cta p { font-size: 1.05rem; color: var(--text-mid); margin-bottom: 1.5rem; }
+
+    /* ── FOOTER ── */
+    .site-footer {
+      background: var(--obsidian); border-top: 1px solid var(--glass-border);
+      padding: 4rem 0 0; margin-top: 6rem;
+    }
+    .footer-inner {
+      max-width: 1280px; margin: 0 auto; padding: 0 1.5rem;
+      display: grid; grid-template-columns: 2fr 1fr 1fr;
+      gap: 3rem; padding-bottom: 3rem;
+    }
+    @media (max-width: 640px) { .footer-inner { grid-template-columns: 1fr; gap: 2rem; } }
+    .footer-logo { font-size: 1.4rem; font-weight: 800; color: var(--text-high); display: inline-block; margin-bottom: 0.75rem; }
+    .footer-logo span { color: var(--blue-primary); }
+    .footer-brand-col p { font-size: 0.875rem; color: var(--text-low); line-height: 1.6; max-width: 300px; }
+    .footer-col h4 { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-mid); margin-bottom: 1rem; }
+    .footer-col ul { display: flex; flex-direction: column; gap: 0.5rem; }
+    .footer-col a { font-size: 0.875rem; color: var(--text-low); transition: color 0.2s; }
+    .footer-col a:hover { color: var(--blue-electric); }
+    .footer-bottom {
+      border-top: 1px solid var(--glass-border); padding: 1.25rem 1.5rem;
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 0.5rem; font-size: 0.8rem; color: var(--text-low);
+    }
+    .footer-bottom a { color: var(--blue-electric); }
+    .footer-bottom a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<nav class="site-nav" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">Atlas<span>.</span></a>
+    <ul class="nav-links" id="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="market.html">Market</a></li>
+      <li><a href="forum.html">AI Forum</a></li>
+      <li><a href="debate.html">Debate Arena</a></li>
+      <li><a href="gauntlet.html">Gauntlet</a></li>
+      <li><a href="gallery.html">Gallery</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a href="faq.html" class="active">FAQ</a></li>
+      <li><a href="contact.html">Contact</a></li>
+      <li><a href="atlas.html">Atlas</a></li>
+    </ul>
+    <a href="atlas.html" class="nav-cta">Open Atlas AI</a>
+    <button class="nav-hamburger" id="nav-hamburger" aria-label="Toggle menu" aria-expanded="false" aria-controls="nav-links">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<main>
+  <section class="page-hero">
+    <div class="content-width">
+      <span class="section-label">SUPPORT</span>
+      <h1>Frequently <span class="gradient">Asked</span></h1>
+      <p>Everything you need to know about Atlas.</p>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:2rem;">
+    <div class="content-width">
+      <div class="faq-wrap">
+
+        <details>
+          <summary>What is Atlas?</summary>
+          <div class="faq-answer">
+            Atlas is an elite technical platform for builders, operators, and engineers. It combines a powerful CLI (CoreOps), AI-assisted development (Atlas AI), a community marketplace, debate and forum tools, and a competitive benchmarking arena (Gauntlet) — all designed to run natively on Cloudflare infrastructure. It's a philosophy as much as a platform: precision, intelligence, independence.
+          </div>
+        </details>
+
+        <details>
+          <summary>How do I install Atlas?</summary>
+          <div class="faq-answer">
+            Install via curl: <code>curl -fsSL https://raw.githubusercontent.com/DreadHeadHippy/coreops-starter-kit/main/install.sh | bash</code><br /><br />
+            Or via npm: <code>npm install -g coreops-cli</code><br /><br />
+            Once installed, run <code>coreops --help</code> to see all available commands. Requires Node.js 18+ or a compatible Cloudflare Workers environment.
+          </div>
+        </details>
+
+        <details>
+          <summary>What is the Gauntlet?</summary>
+          <div class="faq-answer">
+            The Gauntlet is Atlas's live competitive benchmarking arena. Tools and approaches are matched head-to-head — for example, CoreOps CLI vs a legacy shell approach — and scored across real metrics like speed, resource usage, and output quality. Community members spectate, vote, and discuss each matchup in real time. Season results are archived for reference.
+          </div>
+        </details>
+
+        <details>
+          <summary>What is Atlas AI?</summary>
+          <div class="faq-answer">
+            Atlas AI is the platform's intelligent build assistant, accessible at <code>/api/atlas</code> and through the interactive chat interface at <a href="atlas.html">atlas.html</a>. It's trained on Cloudflare architecture, CoreOps tooling, and operator workflows. Ask it to generate Workers code, debug configurations, explain concepts, or review your infrastructure setup. It's AI-native — not bolted on.
+          </div>
+        </details>
+
+        <details>
+          <summary>Is Atlas free?</summary>
+          <div class="faq-answer">
+            The Atlas core platform is MIT licensed and completely free to use, fork, and deploy — including commercial projects. Premium tools and hosted services may be offered in the future, but the foundational platform, CLI, and community features will always remain open source and free.
+          </div>
+        </details>
+
+        <details>
+          <summary>Does Atlas work on Termux?</summary>
+          <div class="faq-answer">
+            Yes. Atlas and CoreOps CLI are designed with mobile operators in mind. Termux on Android provides a fully compatible environment. Install Node.js via Termux's package manager (<code>pkg install nodejs</code>), then install CoreOps via npm. All CLI features work on ARM and x86 architectures.
+          </div>
+        </details>
+
+        <details>
+          <summary>How does Cloudflare integration work?</summary>
+          <div class="faq-answer">
+            Atlas is built Cloudflare-native from the ground up. It integrates directly with Cloudflare Workers (via Wrangler), R2 object storage, KV namespaces, D1 databases, and the Cloudflare API. Deploy Workers with <code>wrangler deploy</code>, manage secrets via the dashboard or CLI, and use Atlas's built-in audit tools to inspect your Cloudflare configuration. No adapter layers, no wrappers.
+          </div>
+        </details>
+
+        <details>
+          <summary>What is the Bot Factory?</summary>
+          <div class="faq-answer">
+            The Bot Factory is Atlas's four-bot parallel orchestration system:<br /><br />
+            <strong>Builder</strong> — generates and deploys Cloudflare Workers from templates.<br />
+            <strong>Watchdog</strong> — monitors uptime, latency, and health of deployed services.<br />
+            <strong>Supervisor</strong> — coordinates bot execution, handles retries and escalations.<br />
+            <strong>Control Panel</strong> — provides a unified interface to manage all bots from a single dashboard.
+          </div>
+        </details>
+
+        <details>
+          <summary>Can I use Atlas commercially?</summary>
+          <div class="faq-answer">
+            Yes. Atlas is MIT licensed, which explicitly permits commercial use, modification, distribution, and sublicensing. You can build products on top of Atlas, fork it for internal tooling, or deploy it as part of a commercial service — with no royalties, no registration, and no restrictions beyond preserving the MIT license notice.
+          </div>
+        </details>
+
+        <details>
+          <summary>How do I contribute?</summary>
+          <div class="faq-answer">
+            Fork the repository at <a href="https://github.com/DreadHeadHippy/coreops-starter-kit" target="_blank" rel="noopener">github.com/DreadHeadHippy/coreops-starter-kit</a>, create a feature branch, and open a pull request. Read the CONTRIBUTING guide in the repo root for code style, commit format, and review expectations. Bug reports, documentation improvements, and new module proposals are all welcome via GitHub Issues.
+          </div>
+        </details>
+
+        <details>
+          <summary>What makes Atlas different?</summary>
+          <div class="faq-answer">
+            Three things: <strong>Precision</strong> — every feature is deliberate, nothing is added for the sake of a feature list. <strong>Intelligence</strong> — AI is woven into the core, not retrofitted. <strong>Independence</strong> — MIT licensed with no telemetry, no vendor lock-in, and no platform dependency beyond what you choose. Atlas is the tool that works the way you think, not the other way around.
+          </div>
+        </details>
+
+        <details>
+          <summary>What's on the roadmap?</summary>
+          <div class="faq-answer">
+            The current roadmap includes:<br /><br />
+            <strong>Atlas v2 CLI</strong> — plugin architecture, improved audit engine, and new output formats.<br />
+            <strong>Atlas AI v2</strong> — multi-turn context, code execution sandbox, and deeper Cloudflare API knowledge.<br />
+            <strong>Gauntlet Season 2</strong> — expanded matchup categories, persistent leaderboards, and community-submitted challenges.<br />
+            <strong>Market v2</strong> — verified tool listings, ratings, and integrated deployment flows.
+          </div>
+        </details>
+
+      </div>
+
+      <div class="contact-cta">
+        <p>Still have questions?</p>
+        <a href="contact.html" class="btn-primary">Get in Touch</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer" role="contentinfo">
+  <div class="footer-inner">
+    <div class="footer-brand-col">
+      <a href="index.html" class="footer-logo">Atlas<span>.</span></a>
+      <p>The elite technical platform for builders, operators, and engineers who ship. Built for Cloudflare. Designed to last.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Platform</h4>
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="market.html">Market</a></li>
+        <li><a href="gauntlet.html">Gauntlet</a></li>
+        <li><a href="gallery.html">Gallery</a></li>
+        <li><a href="atlas.html">Atlas AI</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Community</h4>
+      <ul>
+        <li><a href="forum.html">AI Forum</a></li>
+        <li><a href="debate.html">Debate Arena</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="faq.html">FAQ</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom content-width">
+    <p>&copy; 2025 Atlas Platform. MIT Licensed. <a href="https://github.com/DreadHeadHippy/coreops-starter-kit" target="_blank" rel="noopener">GitHub</a></p>
+    <p>Built Different. Built to Last.</p>
+  </div>
+</footer>
+
+<script>
+  (function(){
+    var btn = document.getElementById('nav-hamburger');
+    var nav = document.querySelector('.site-nav');
+    if(!btn || !nav) return;
+    btn.addEventListener('click', function(){
+      var open = nav.classList.toggle('nav-mobile-open');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    document.addEventListener('keydown', function(e){
+      if(e.key === 'Escape') {
+        nav.classList.remove('nav-mobile-open');
+        btn.setAttribute('aria-expanded','false');
+      }
+    });
+  })();
+</script>
+</body>
+</html>

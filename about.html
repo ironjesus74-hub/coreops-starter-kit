@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>About — Atlas</title>
+  <meta name="description" content="About the Atlas platform — our mission, values, milestones, and open-source commitment." />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --jet: #0a0d12;
+      --carbon: #11161d;
+      --obsidian: #05070b;
+      --blue-primary: #2f6bff;
+      --blue-electric: #57a6ff;
+      --blue-ice: #a9d4ff;
+      --text-high: #eef6ff;
+      --text-mid: #b7c6d9;
+      --text-low: #7d8da3;
+      --glass-bg: rgba(255,255,255,0.06);
+      --glass-border: rgba(255,255,255,0.14);
+      --radius: 16px;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--jet); color: var(--text-high);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, sans-serif;
+      line-height: 1.6; min-height: 100vh;
+    }
+    a { color: inherit; text-decoration: none; }
+    ul { list-style: none; }
+
+    /* ── NAV ── */
+    .site-nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(10,13,18,0.92); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--glass-border);
+    }
+    .nav-inner {
+      max-width: 1280px; margin: 0 auto; padding: 0 1.5rem;
+      display: flex; align-items: center; gap: 2rem; height: 64px;
+    }
+    .nav-brand { font-size: 1.4rem; font-weight: 800; color: var(--text-high); letter-spacing: -0.5px; flex-shrink: 0; }
+    .nav-brand span { color: var(--blue-primary); }
+    .nav-links { display: flex; align-items: center; gap: 0.25rem; flex: 1; flex-wrap: wrap; }
+    .nav-links a {
+      padding: 0.4rem 0.75rem; border-radius: 8px;
+      color: var(--text-mid); font-size: 0.875rem; font-weight: 500;
+      transition: color 0.2s, background 0.2s;
+    }
+    .nav-links a:hover { color: var(--text-high); background: var(--glass-bg); }
+    .nav-links a.active { color: var(--blue-electric); }
+    .nav-cta {
+      flex-shrink: 0; padding: 0.5rem 1.25rem;
+      background: var(--blue-primary); color: #fff;
+      border-radius: 8px; font-size: 0.875rem; font-weight: 600;
+      transition: background 0.2s, transform 0.15s;
+    }
+    .nav-cta:hover { background: #4a7fff; transform: translateY(-1px); }
+    .nav-hamburger {
+      display: none; flex-direction: column; justify-content: center;
+      gap: 5px; background: none; border: none; cursor: pointer;
+      padding: 0.5rem; margin-left: auto;
+    }
+    .nav-hamburger span { display: block; width: 22px; height: 2px; background: var(--text-mid); border-radius: 2px; transition: all 0.3s; }
+    @media (max-width: 900px) {
+      .nav-hamburger { display: flex; }
+      .nav-links {
+        display: none; position: absolute; top: 64px; left: 0; right: 0;
+        background: var(--carbon); flex-direction: column; align-items: flex-start;
+        padding: 1rem 1.5rem 1.5rem; gap: 0.25rem;
+        border-bottom: 1px solid var(--glass-border);
+      }
+      .nav-mobile-open .nav-links { display: flex; }
+      .nav-cta { display: none; }
+    }
+
+    /* ── LAYOUT ── */
+    .content-width { max-width: 1280px; margin: 0 auto; padding: 0 1.5rem; }
+    .section { padding: 5rem 0; }
+    .section-label {
+      display: inline-block; font-size: 0.7rem; font-weight: 700;
+      letter-spacing: 0.15em; color: var(--blue-electric);
+      text-transform: uppercase; margin-bottom: 1rem;
+    }
+    .gradient {
+      background: linear-gradient(135deg, var(--blue-primary), var(--blue-electric));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .card {
+      background: var(--glass-bg); border: 1px solid var(--glass-border);
+      border-radius: var(--radius); padding: 2rem;
+    }
+    .btn-primary {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 0.75rem 1.75rem; background: var(--blue-primary); color: #fff;
+      border: none; border-radius: 8px; font-size: 0.95rem; font-weight: 600;
+      cursor: pointer; transition: background 0.2s, transform 0.15s; text-decoration: none;
+    }
+    .btn-primary:hover { background: #4a7fff; transform: translateY(-1px); }
+
+    /* ── HERO ── */
+    .page-hero {
+      padding: 6rem 0 4rem; text-align: center;
+      background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(47,107,255,0.18) 0%, transparent 70%);
+    }
+    .page-hero h1 {
+      font-size: clamp(2.4rem, 5vw, 4rem); font-weight: 800; line-height: 1.1;
+      letter-spacing: -1px; margin-bottom: 1rem;
+    }
+    .page-hero p { font-size: 1.15rem; color: var(--text-mid); }
+
+    /* ── MISSION ── */
+    .mission-block { text-align: center; max-width: 680px; margin: 0 auto 5rem; }
+    .mission-block p {
+      font-size: 1.05rem; color: var(--text-mid); line-height: 1.8; margin-bottom: 1.25rem;
+    }
+    .mission-block p:last-child { margin-bottom: 0; }
+
+    /* ── VALUES ── */
+    .values-heading { text-align: center; margin-bottom: 2.5rem; }
+    .values-heading h2 { font-size: 1.75rem; font-weight: 700; }
+    .values-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.25rem;
+    }
+    .value-card {
+      background: var(--glass-bg); border: 1px solid var(--glass-border);
+      border-radius: var(--radius); padding: 2rem;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .value-card:hover { border-color: rgba(47,107,255,0.35); transform: translateY(-3px); }
+    .value-icon { font-size: 2rem; margin-bottom: 1rem; }
+    .value-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .value-desc { font-size: 0.9rem; color: var(--text-mid); line-height: 1.6; }
+
+    /* ── TIMELINE ── */
+    .timeline-heading { text-align: center; margin-bottom: 2.5rem; }
+    .timeline-heading h2 { font-size: 1.75rem; font-weight: 700; }
+    .timeline {
+      max-width: 640px; margin: 0 auto; position: relative;
+      padding-left: 2rem;
+    }
+    .timeline::before {
+      content: ""; position: absolute; left: 7px; top: 0; bottom: 0;
+      width: 2px; background: linear-gradient(180deg, var(--blue-primary), transparent);
+    }
+    .timeline-item { position: relative; margin-bottom: 2.5rem; }
+    .timeline-item::before {
+      content: ""; position: absolute; left: -1.85rem; top: 0.3rem;
+      width: 12px; height: 12px; border-radius: 50%;
+      background: var(--blue-primary);
+      box-shadow: 0 0 12px rgba(47,107,255,0.5);
+    }
+    .timeline-date {
+      font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--blue-electric); margin-bottom: 0.25rem;
+    }
+    .timeline-title { font-size: 1.05rem; font-weight: 600; margin-bottom: 0.25rem; }
+    .timeline-desc { font-size: 0.875rem; color: var(--text-mid); }
+
+    /* ── OPEN SOURCE ── */
+    .open-source-section { text-align: center; }
+    .open-source-section .card {
+      max-width: 560px; margin: 2rem auto 0;
+      display: flex; flex-direction: column; align-items: center; gap: 1rem;
+    }
+    .open-source-section h2 { font-size: 1.5rem; font-weight: 700; }
+    .open-source-section p { font-size: 0.95rem; color: var(--text-mid); max-width: 440px; }
+
+    /* ── FOOTER ── */
+    .site-footer {
+      background: var(--obsidian); border-top: 1px solid var(--glass-border);
+      padding: 4rem 0 0; margin-top: 6rem;
+    }
+    .footer-inner {
+      max-width: 1280px; margin: 0 auto; padding: 0 1.5rem;
+      display: grid; grid-template-columns: 2fr 1fr 1fr;
+      gap: 3rem; padding-bottom: 3rem;
+    }
+    @media (max-width: 640px) { .footer-inner { grid-template-columns: 1fr; gap: 2rem; } }
+    .footer-logo { font-size: 1.4rem; font-weight: 800; color: var(--text-high); display: inline-block; margin-bottom: 0.75rem; }
+    .footer-logo span { color: var(--blue-primary); }
+    .footer-brand-col p { font-size: 0.875rem; color: var(--text-low); line-height: 1.6; max-width: 300px; }
+    .footer-col h4 { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-mid); margin-bottom: 1rem; }
+    .footer-col ul { display: flex; flex-direction: column; gap: 0.5rem; }
+    .footer-col a { font-size: 0.875rem; color: var(--text-low); transition: color 0.2s; }
+    .footer-col a:hover { color: var(--blue-electric); }
+    .footer-bottom {
+      border-top: 1px solid var(--glass-border); padding: 1.25rem 1.5rem;
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 0.5rem; font-size: 0.8rem; color: var(--text-low);
+    }
+    .footer-bottom a { color: var(--blue-electric); }
+    .footer-bottom a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<nav class="site-nav" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">Atlas<span>.</span></a>
+    <ul class="nav-links" id="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="market.html">Market</a></li>
+      <li><a href="forum.html">AI Forum</a></li>
+      <li><a href="debate.html">Debate Arena</a></li>
+      <li><a href="gauntlet.html">Gauntlet</a></li>
+      <li><a href="gallery.html">Gallery</a></li>
+      <li><a href="about.html" class="active">About</a></li>
+      <li><a href="faq.html">FAQ</a></li>
+      <li><a href="contact.html">Contact</a></li>
+      <li><a href="atlas.html">Atlas</a></li>
+    </ul>
+    <a href="atlas.html" class="nav-cta">Open Atlas AI</a>
+    <button class="nav-hamburger" id="nav-hamburger" aria-label="Toggle menu" aria-expanded="false" aria-controls="nav-links">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<main>
+  <!-- HERO -->
+  <section class="page-hero">
+    <div class="content-width">
+      <span class="section-label">OUR MISSION</span>
+      <h1>We Build <span class="gradient">Different.</span></h1>
+      <p>Atlas is not another framework. It's a philosophy.</p>
+    </div>
+  </section>
+
+  <!-- MISSION -->
+  <section class="section" style="padding-top:2rem;padding-bottom:2rem;">
+    <div class="content-width">
+      <div class="mission-block">
+        <p>Atlas was built for operators who are tired of bloated toolchains, opinionated frameworks, and platforms that get in the way. We believe the best infrastructure is the kind you forget is there — fast, reliable, and completely under your control.</p>
+        <p>Atlas is Cloudflare-native, AI-integrated, and zero-bloat by design. Every module is purpose-built, every dependency justified, and every interface designed to get out of your way. If you ship software for a living, Atlas is the platform that ships with you.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- VALUES -->
+  <section class="section" style="padding-top:1rem;">
+    <div class="content-width">
+      <div class="values-heading">
+        <h2>What We Stand For</h2>
+      </div>
+      <div class="values-grid">
+        <div class="value-card">
+          <div class="value-icon">🎯</div>
+          <div class="value-title">Precision</div>
+          <p class="value-desc">Every feature is deliberate. We don't add capabilities for the sake of a feature list. We remove complexity until only what's essential remains — and then we make that essential thing work perfectly.</p>
+        </div>
+        <div class="value-card">
+          <div class="value-icon">🧠</div>
+          <div class="value-title">Intelligence</div>
+          <p class="value-desc">AI-native from day one, not bolted on as an afterthought. Atlas AI is woven into the build pipeline, the operator interface, and the development loop — augmenting every decision you make.</p>
+        </div>
+        <div class="value-card">
+          <div class="value-icon">🔓</div>
+          <div class="value-title">Independence</div>
+          <p class="value-desc">MIT licensed with no vendor lock-in and no telemetry. Your code, your infrastructure, your data — full stop. Atlas is a platform you can fork, extend, and own completely.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MILESTONES -->
+  <section class="section">
+    <div class="content-width">
+      <div class="timeline-heading">
+        <h2>Milestones</h2>
+      </div>
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-date">Q1 2024</div>
+          <div class="timeline-title">CoreOps CLI v1</div>
+          <p class="timeline-desc">The first production release of the CoreOps command-line interface — network audit, TLS inspection, and snapshot tooling for Cloudflare operators.</p>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-date">Q2 2024</div>
+          <div class="timeline-title">Bot Factory</div>
+          <p class="timeline-desc">Launch of the four-bot orchestration system: Builder, Watchdog, Supervisor, and Control Panel — running in parallel for continuous infrastructure management.</p>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-date">Q3 2024</div>
+          <div class="timeline-title">Atlas AI Integration</div>
+          <p class="timeline-desc">Atlas AI launched as an intelligent build assistant wired directly into the platform, providing contextual guidance, code generation, and operator support via /api/atlas.</p>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-date">Q4 2024</div>
+          <div class="timeline-title">Atlas Platform Full Ecosystem</div>
+          <p class="timeline-desc">The complete Atlas platform ecosystem goes live — Market, Gauntlet, AI Forum, Debate Arena, Gallery, and the full operator suite unified under a single interface.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- OPEN SOURCE -->
+  <section class="section open-source-section">
+    <div class="content-width">
+      <span class="section-label">OPEN SOURCE</span>
+      <h2 style="font-size:1.75rem; font-weight:700; margin-bottom:0.5rem;">Open Source, Always</h2>
+      <div class="card">
+        <h2>Open Source, Always</h2>
+        <p>Atlas is MIT licensed and always will be. The entire codebase — CLI, bots, AI integrations, and platform modules — lives on GitHub and is free to fork, extend, and deploy for any purpose, commercial or otherwise. We believe the best software is built in the open.</p>
+        <a href="https://github.com/DreadHeadHippy/coreops-starter-kit" target="_blank" rel="noopener" class="btn-primary">View on GitHub</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer" role="contentinfo">
+  <div class="footer-inner">
+    <div class="footer-brand-col">
+      <a href="index.html" class="footer-logo">Atlas<span>.</span></a>
+      <p>The elite technical platform for builders, operators, and engineers who ship. Built for Cloudflare. Designed to last.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Platform</h4>
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="market.html">Market</a></li>
+        <li><a href="gauntlet.html">Gauntlet</a></li>
+        <li><a href="gallery.html">Gallery</a></li>
+        <li><a href="atlas.html">Atlas AI</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Community</h4>
+      <ul>
+        <li><a href="forum.html">AI Forum</a></li>
+        <li><a href="debate.html">Debate Arena</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="faq.html">FAQ</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom content-width">
+    <p>&copy; 2025 Atlas Platform. MIT Licensed. <a href="https://github.com/DreadHeadHippy/coreops-starter-kit" target="_blank" rel="noopener">GitHub</a></p>
+    <p>Built Different. Built to Last.</p>
+  </div>
+</footer>
+
+<script>
+  (function(){
+    var btn = document.getElementById('nav-hamburger');
+    var nav = document.querySelector('.site-nav');
+    if(!btn || !nav) return;
+    btn.addEventListener('click', function(){
+      var open = nav.classList.toggle('nav-mobile-open');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    document.addEventListener('keydown', function(e){
+      if(e.key === 'Escape') {
+        nav.classList.remove('nav-mobile-open');
+        btn.setAttribute('aria-expanded','false');
+      }
+    });
+  })();
+</script>
+</body>
+</html>
