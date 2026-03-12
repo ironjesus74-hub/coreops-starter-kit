@@ -12,6 +12,11 @@ permissions:
   contents: write
   actions: read
 
+# Prevent concurrent runs from racing on the same branch files.
+concurrency:
+  group: atlas-status-feed
+  cancel-in-progress: false
+
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -116,20 +121,32 @@ jobs:
             const jsonContent = JSON.stringify(out, null, 2);
             const svgContent  = svgFor(out.overall.status, out.overall.conclusion, out.repo);
 
-            async function upsert(path, content, message) {
-              let sha = undefined;
-              try {
-                const existing = await github.rest.repos.getContent({ owner, repo, path, ref: branch });
-                sha = existing.data.sha;
-              } catch (e) {
-                if (e.status !== 404) throw e;
+            async function upsert(path, content, message, maxAttempts = 3) {
+              for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+                let sha = undefined;
+                try {
+                  const existing = await github.rest.repos.getContent({ owner, repo, path, ref: branch });
+                  sha = existing.data.sha;
+                } catch (e) {
+                  if (e.status !== 404) throw e;
+                }
+                try {
+                  await github.rest.repos.createOrUpdateFileContents({
+                    owner, repo, branch, path,
+                    message,
+                    content: b64(content),
+                    sha
+                  });
+                  return;
+                } catch (e) {
+                  if (e.status === 409 && attempt < maxAttempts) {
+                    core.info(`SHA conflict on ${path} (attempt ${attempt}/${maxAttempts}), retrying…`);
+                    await new Promise(r => setTimeout(r, 1000 * attempt));
+                  } else {
+                    throw e;
+                  }
+                }
               }
-              await github.rest.repos.createOrUpdateFileContents({
-                owner, repo, branch, path,
-                message,
-                content: b64(content),
-                sha
-              });
             }
 
             await upsert(jsonPath, jsonContent, "ATLAS: update status.json");
