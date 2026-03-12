@@ -10,26 +10,26 @@
   height: 52px;
   border-radius: 50%;
   border: none;
-  background: #00d4ff;
-  color: #0d1117;
+  background: #57a6ff;
+  color: #05070b;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 20px rgba(0, 212, 255, 0.45);
+  box-shadow: 0 4px 20px rgba(87, 166, 255, 0.45);
   transition: box-shadow 0.25s, transform 0.2s;
   font-size: 1.25rem;
 }
 
 #atlas-toggle:hover {
-  box-shadow: 0 4px 32px rgba(0, 212, 255, 0.7);
+  box-shadow: 0 4px 32px rgba(87, 166, 255, 0.7);
   transform: scale(1.06);
 }
 
 #atlas-toggle[aria-expanded="true"] {
-  background: #161b22;
-  color: #00d4ff;
-  border: 1.5px solid rgba(0, 212, 255, 0.4);
+  background: #11161d;
+  color: #57a6ff;
+  border: 1.5px solid rgba(87, 166, 255, 0.4);
 }
 
 /* ── Chat panel ──────────────────────────────────────────────────────────── */
@@ -40,12 +40,12 @@
   z-index: 8999;
   width: min(380px, calc(100vw - 2rem));
   max-height: min(560px, calc(100vh - 7rem));
-  background: #0d1117;
-  border: 1px solid #1e2633;
+  background: #0a0d12;
+  border: 1px solid rgba(255,255,255,0.14);
   border-radius: 14px;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(0, 212, 255, 0.08);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(87, 166, 255, 0.08);
   overflow: hidden;
   transform-origin: bottom right;
   transition: opacity 0.2s, transform 0.2s;
@@ -61,8 +61,8 @@
   align-items: center;
   gap: 0.6rem;
   padding: 0.85rem 1rem;
-  border-bottom: 1px solid #1e2633;
-  background: #111620;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  background: #11161d;
   flex-shrink: 0;
 }
 
@@ -70,15 +70,15 @@
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: #00d4ff;
+  background: #57a6ff;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 0.7rem;
   font-weight: 900;
-  color: #0d1117;
+  color: #05070b;
   flex-shrink: 0;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 .atlas-header-text {
@@ -89,16 +89,16 @@
 .atlas-name {
   font-size: 0.72rem;
   font-weight: 700;
-  color: #e6edf3;
+  color: #eef6ff;
   letter-spacing: 0.04em;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 .atlas-tagline {
   font-size: 0.58rem;
-  color: #8b949e;
+  color: #7d8da3;
   letter-spacing: 0.06em;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 .atlas-status-dot {
@@ -118,12 +118,12 @@
   flex-direction: column;
   gap: 0.65rem;
   scrollbar-width: thin;
-  scrollbar-color: #1e2633 transparent;
+  scrollbar-color: rgba(255,255,255,0.1) transparent;
 }
 
 .atlas-messages::-webkit-scrollbar { width: 5px; }
 .atlas-messages::-webkit-scrollbar-track { background: transparent; }
-.atlas-messages::-webkit-scrollbar-thumb { background: #1e2633; border-radius: 3px; }
+.atlas-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
 
 /* ── Message bubbles ─────────────────────────────────────────────────────── */
 .atlas-msg {
@@ -150,27 +150,27 @@
   line-height: 1.6;
   word-break: break-word;
   white-space: pre-wrap;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
 }
 
 .atlas-msg.user .atlas-bubble {
-  background: rgba(0, 212, 255, 0.15);
-  color: #e6edf3;
-  border: 1px solid rgba(0, 212, 255, 0.25);
+  background: rgba(87, 166, 255, 0.15);
+  color: #eef6ff;
+  border: 1px solid rgba(87, 166, 255, 0.25);
   border-bottom-right-radius: 3px;
 }
 
 .atlas-msg.bot .atlas-bubble {
-  background: #161b22;
-  color: #e6edf3;
-  border: 1px solid #1e2633;
+  background: #11161d;
+  color: #eef6ff;
+  border: 1px solid rgba(255,255,255,0.08);
   border-bottom-left-radius: 3px;
 }
 
 .atlas-msg.error .atlas-bubble {
-  background: rgba(255, 45, 120, 0.08);
-  color: #ff2d78;
-  border-color: rgba(255, 45, 120, 0.2);
+  background: rgba(87, 166, 255, 0.08);
+  color: #a9d4ff;
+  border-color: rgba(87, 166, 255, 0.2);
 }
 
 /* ── Typing indicator ────────────────────────────────────────────────────── */
@@ -179,8 +179,8 @@
   gap: 4px;
   align-items: center;
   padding: 0.55rem 0.75rem;
-  background: #161b22;
-  border: 1px solid #1e2633;
+  background: #11161d;
+  border: 1px solid rgba(255,255,255,0.08);
   border-radius: 10px;
   border-bottom-left-radius: 3px;
   width: fit-content;
@@ -190,7 +190,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #8b949e;
+  background: #7d8da3;
   animation: atlas-bounce 1.2s ease-in-out infinite;
 }
 .atlas-typing span:nth-child(2) { animation-delay: 0.2s; }
@@ -206,20 +206,20 @@
   display: flex;
   gap: 0.5rem;
   padding: 0.75rem 0.9rem;
-  border-top: 1px solid #1e2633;
-  background: #111620;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  background: #11161d;
   flex-shrink: 0;
 }
 
 #atlas-input {
   flex: 1;
-  background: #0d1117;
-  border: 1px solid #1e2633;
+  background: #0a0d12;
+  border: 1px solid rgba(255,255,255,0.12);
   border-radius: 8px;
   padding: 0.5rem 0.65rem;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 0.72rem;
-  color: #e6edf3;
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.82rem;
+  color: #eef6ff;
   outline: none;
   resize: none;
   min-height: 36px;
@@ -227,10 +227,10 @@
   transition: border-color 0.2s;
 }
 
-#atlas-input::placeholder { color: #484f58; }
+#atlas-input::placeholder { color: #7d8da3; }
 
 #atlas-input:focus {
-  border-color: rgba(0, 212, 255, 0.4);
+  border-color: rgba(87, 166, 255, 0.4);
 }
 
 #atlas-send {
@@ -239,8 +239,8 @@
   height: 36px;
   border-radius: 8px;
   border: none;
-  background: #00d4ff;
-  color: #0d1117;
+  background: #57a6ff;
+  color: #05070b;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -250,8 +250,36 @@
   align-self: flex-end;
 }
 
-#atlas-send:hover { opacity: 0.85; box-shadow: 0 0 12px rgba(0, 212, 255, 0.4); }
+#atlas-send:hover { opacity: 0.85; box-shadow: 0 0 12px rgba(87, 166, 255, 0.4); }
 #atlas-send:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── Code inside messages ────────────────────────────────────────────────── */
+.atlas-bubble code {
+  font-family: 'JetBrains Mono', ui-monospace, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.68rem;
+  background: rgba(87, 166, 255, 0.1);
+  color: #a9d4ff;
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+}
+
+.atlas-bubble pre {
+  font-family: 'JetBrains Mono', ui-monospace, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.68rem;
+  background: rgba(5,7,11,0.8);
+  border: 1px solid rgba(87, 166, 255, 0.15);
+  border-radius: 6px;
+  padding: 0.6rem 0.75rem;
+  overflow-x: auto;
+  margin-top: 0.3rem;
+  white-space: pre;
+}
+
+.atlas-bubble pre code {
+  background: none;
+  padding: 0;
+  color: #a9d4ff;
+}
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 480px) {

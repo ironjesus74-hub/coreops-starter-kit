@@ -73,7 +73,7 @@
     if (isOpen) {
       // Show welcome message once
       if (messages.childElementCount === 0) {
-        appendBotMsg("Hey there! I'm **Atlas**, your DevOps assistant for CoreOps. Ask me about CLI commands, networking, TLS, shell scripting, or anything ops-related.");
+        appendBotMsg("Hello. I'm Atlas AI — your intelligent build assistant. Ask me about architecture, CLI tools, infrastructure, automation, or anything ops-related. Let's build something great.");
       }
       input.focus();
       scrollToBottom();
