@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Atlas Market — Premium Tools</title>
+  <meta name="description" content="Premium tools, modules, and bundles for serious operators. Everything you need to build with Atlas.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230a0d12'/%3E%3Cpolygon points='16%2C4 28%2C10 28%2C22 16%2C28 4%2C22 4%2C10' fill='none' stroke='%2357a6ff' stroke-width='1.5'/%3E%3Ctext x='16' y='21' text-anchor='middle' fill='%2357a6ff' font-family='monospace' font-size='10' font-weight='900'%3EA%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/platform.css">
+  <link rel="stylesheet" href="assets/atlas.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0a0d12; color: #eef6ff; font-family: 'Inter', sans-serif; }
+    .gradient {
+      background: linear-gradient(135deg, #2f6bff 0%, #57a6ff 50%, #a9d4ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ── Page Hero ── */
+    .page-hero {
+      padding: 7rem 2rem 4rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .page-hero::before {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -60%);
+      width: 700px; height: 500px;
+      background: radial-gradient(ellipse at center, rgba(47,107,255,0.16) 0%, rgba(47,107,255,0.05) 45%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+    .page-hero > * { position: relative; z-index: 1; }
+    .section-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.18em;
+      color: #57a6ff;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+      opacity: 0.9;
+    }
+    .page-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(2.8rem, 8vw, 5.5rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: #eef6ff;
+      margin-bottom: 1rem;
+    }
+    .page-sub {
+      font-size: 1.1rem;
+      color: #b7c6d9;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    /* ── Filter Bar ── */
+    .filter-bar {
+      padding: 2rem 2rem 0;
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+    .filter-btn {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      padding: 0.5rem 1.1rem;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.04);
+      color: #7d8da3;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .filter-btn:hover {
+      border-color: rgba(87,166,255,0.4);
+      color: #b7c6d9;
+      background: rgba(87,166,255,0.06);
+    }
+    .filter-btn.active {
+      background: rgba(47,107,255,0.2);
+      border-color: #2f6bff;
+      color: #57a6ff;
+    }
+
+    /* ── Product Grid ── */
+    .market-section {
+      padding: 3rem 2rem 6rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+    }
+    .product-card {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 16px;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      transition: border-color 0.25s, transform 0.25s;
+    }
+    .product-card:hover {
+      border-color: rgba(87,166,255,0.4);
+      transform: translateY(-3px);
+    }
+    .product-badge {
+      display: inline-block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
+      color: #57a6ff;
+      background: rgba(47,107,255,0.15);
+      border: 1px solid rgba(47,107,255,0.3);
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      width: fit-content;
+    }
+    .product-name {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: #eef6ff;
+    }
+    .product-desc {
+      font-size: 0.88rem;
+      color: #b7c6d9;
+      line-height: 1.65;
+      flex: 1;
+    }
+    .product-price {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #eef6ff;
+    }
+    .product-price span {
+      font-size: 0.8rem;
+      font-weight: 400;
+      color: #7d8da3;
+    }
+    .btn-primary {
+      display: inline-block;
+      background: linear-gradient(135deg, #2f6bff, #57a6ff);
+      color: #fff;
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 600;
+      font-size: 0.9rem;
+      padding: 0.7rem 1.6rem;
+      border-radius: 8px;
+      text-decoration: none;
+      text-align: center;
+      transition: opacity 0.2s, transform 0.2s;
+      border: none; cursor: pointer;
+    }
+    .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+    .btn-outline {
+      display: inline-block;
+      background: transparent;
+      color: #57a6ff;
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 600;
+      font-size: 0.9rem;
+      padding: 0.7rem 1.6rem;
+      border-radius: 8px;
+      border: 1.5px solid rgba(87,166,255,0.45);
+      text-decoration: none;
+      transition: border-color 0.2s, background 0.2s;
+      cursor: pointer;
+    }
+    .btn-outline:hover { border-color: #57a6ff; background: rgba(87,166,255,0.08); }
+
+    /* ── Bundle Spotlight ── */
+    .bundle-section {
+      padding: 0 2rem 7rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .bundle-card {
+      background: rgba(255,255,255,0.05);
+      border: 2px solid rgba(47,107,255,0.45);
+      border-radius: 20px;
+      padding: 3.5rem;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 2rem;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .bundle-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(135deg, rgba(47,107,255,0.08) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .bundle-card > * { position: relative; z-index: 1; }
+    @media(max-width:640px){ .bundle-card { grid-template-columns: 1fr; gap: 1.5rem; padding: 2rem; } }
+    .bundle-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.18em;
+      color: #57a6ff;
+      text-transform: uppercase;
+      margin-bottom: 0.75rem;
+    }
+    .bundle-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(1.5rem, 3vw, 2.2rem);
+      font-weight: 700;
+      color: #eef6ff;
+      margin-bottom: 0.75rem;
+    }
+    .bundle-desc {
+      color: #b7c6d9;
+      font-size: 0.95rem;
+      line-height: 1.7;
+      max-width: 580px;
+      margin-bottom: 1.5rem;
+    }
+    .bundle-price {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #eef6ff;
+      white-space: nowrap;
+      text-align: right;
+    }
+    .bundle-price small {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 400;
+      color: #7d8da3;
+      text-align: right;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="site-nav" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">Atlas<span>.</span></a>
+    <ul class="nav-links" id="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="market.html" class="active" aria-current="page">Market</a></li>
+      <li><a href="forum.html">AI Forum</a></li>
+      <li><a href="debate.html">Debate Arena</a></li>
+      <li><a href="gauntlet.html">Gauntlet</a></li>
+      <li><a href="gallery.html">Gallery</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a href="faq.html">FAQ</a></li>
+      <li><a href="contact.html">Contact</a></li>
+      <li><a href="atlas.html">Atlas</a></li>
+    </ul>
+    <a href="atlas.html" class="nav-cta">Open Atlas AI</a>
+    <button class="nav-hamburger" id="nav-hamburger" aria-label="Toggle menu" aria-expanded="false" aria-controls="nav-links">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<main>
+
+  <!-- Page Hero -->
+  <section class="page-hero" aria-label="Market Hero">
+    <p class="section-label">MARKETPLACE</p>
+    <h1 class="page-title">Atlas <span class="gradient">Market</span></h1>
+    <p class="page-sub">Premium tools for serious operators.</p>
+  </section>
+
+  <!-- Filter Bar -->
+  <div class="filter-bar" role="group" aria-label="Product filters" id="filter-bar">
+    <button class="filter-btn active" data-filter="all">All</button>
+    <button class="filter-btn" data-filter="cli-tools">CLI Tools</button>
+    <button class="filter-btn" data-filter="automation">Automation</button>
+    <button class="filter-btn" data-filter="security">Security</button>
+    <button class="filter-btn" data-filter="networking">Networking</button>
+    <button class="filter-btn" data-filter="bundles">Bundles</button>
+  </div>
+
+  <!-- Product Grid -->
+  <section class="market-section" aria-label="Product listings">
+    <div class="grid-3" id="product-grid">
+
+      <article class="product-card" data-category="cli-tools">
+        <span class="product-badge">CLI TOOLS</span>
+        <h3 class="product-name">CoreOps Pro</h3>
+        <p class="product-desc">The complete CoreOps CLI toolkit with premium modules and priority support.</p>
+        <p class="product-price">$29<span>/mo</span></p>
+        <a href="#" class="btn-primary">Get Access</a>
+      </article>
+
+      <article class="product-card" data-category="automation">
+        <span class="product-badge">AUTOMATION</span>
+        <h3 class="product-name">Atlas Bot Factory</h3>
+        <p class="product-desc">Four specialized bots: Builder, Watchdog, Supervisor, Control Panel. Deploy in minutes.</p>
+        <p class="product-price">$49<span>/mo</span></p>
+        <a href="#" class="btn-primary">Get Access</a>
+      </article>
+
+      <article class="product-card" data-category="security">
+        <span class="product-badge">SECURITY</span>
+        <h3 class="product-name">TLS Auditor Suite</h3>
+        <p class="product-desc">Comprehensive TLS/SSL inspection, certificate monitoring, and vulnerability detection.</p>
+        <p class="product-price">$19<span>/mo</span></p>
+        <a href="#" class="btn-primary">Get Access</a>
+      </article>
+
+      <article class="product-card" data-category="networking">
+        <span class="product-badge">NETWORKING</span>
+        <h3 class="product-name">Network Recon Kit</h3>
+        <p class="product-desc">Advanced network mapping, port scanning, DNS analysis, and monitoring tools.</p>
+        <p class="product-price">$24<span>/mo</span></p>
+        <a href="#" class="btn-primary">Get Access</a>
+      </article>
+
+      <article class="product-card" data-category="cli-tools">
+        <span class="product-badge">CLI TOOLS</span>
+        <h3 class="product-name">Shell Mastery Bundle</h3>
+        <p class="product-desc">Complete shell scripting curriculum, templates, and automation patterns.</p>
+        <p class="product-price">$39<span>/mo</span></p>
+        <a href="#" class="btn-primary">Get Access</a>
+      </article>
+
+      <article class="product-card" data-category="bundles">
+        <span class="product-badge">BUNDLES</span>
+        <h3 class="product-name">Atlas Full Access</h3>
+        <p class="product-desc">Every tool. Every module. Every update. The complete Atlas operator experience.</p>
+        <p class="product-price">$89<span>/mo</span></p>
+        <a href="#" class="btn-primary">Get Access</a>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- Bundle Spotlight -->
+  <section class="bundle-section" aria-labelledby="bundle-title">
+    <div class="bundle-card">
+      <div>
+        <p class="bundle-label"><span aria-hidden="true">&#11088;</span> FEATURED BUNDLE</p>
+        <h2 class="bundle-title" id="bundle-title">Atlas Complete Bundle</h2>
+        <p class="bundle-desc">Everything Atlas has to offer in one premium package. All tools, all modules, priority support, lifetime updates.</p>
+        <a href="#" class="btn-primary">Get Complete Bundle</a>
+      </div>
+      <div>
+        <p class="bundle-price">$149<small>/lifetime</small></p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer" role="contentinfo">
+  <div class="footer-inner">
+    <div class="footer-brand-col">
+      <a href="index.html" class="footer-logo">Atlas<span>.</span></a>
+      <p>The elite technical platform for builders, operators, and engineers who ship. Built for Cloudflare. Designed to last.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Platform</h4>
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="market.html">Market</a></li>
+        <li><a href="gauntlet.html">Gauntlet</a></li>
+        <li><a href="gallery.html">Gallery</a></li>
+        <li><a href="atlas.html">Atlas AI</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Community</h4>
+      <ul>
+        <li><a href="forum.html">AI Forum</a></li>
+        <li><a href="debate.html">Debate Arena</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="faq.html">FAQ</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom content-width">
+    <p>&copy; 2025 Atlas Platform. MIT Licensed. <a href="https://github.com/DreadHeadHippy/coreops-starter-kit" target="_blank" rel="noopener">GitHub</a></p>
+    <p>Built Different. Built to Last.</p>
+  </div>
+</footer>
+
+<script>
+  (function(){
+    var btn = document.getElementById('nav-hamburger');
+    var nav = document.querySelector('.site-nav');
+    if(!btn || !nav) return;
+    btn.addEventListener('click', function(){
+      var open = nav.classList.toggle('nav-mobile-open');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    document.addEventListener('keydown', function(e){
+      if(e.key === 'Escape') {
+        nav.classList.remove('nav-mobile-open');
+        btn.setAttribute('aria-expanded','false');
+      }
+    });
+  })();
+</script>
+<script>
+  (function(){
+    var bar = document.getElementById('filter-bar');
+    var cards = document.querySelectorAll('#product-grid .product-card');
+    if(!bar) return;
+    bar.addEventListener('click', function(e){
+      var btn = e.target.closest('.filter-btn');
+      if(!btn) return;
+      bar.querySelectorAll('.filter-btn').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      var filter = btn.getAttribute('data-filter');
+      cards.forEach(function(card){
+        if(filter === 'all' || card.getAttribute('data-category') === filter){
+          card.style.display = '';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    });
+  })();
+</script>
+</body>
+</html>
