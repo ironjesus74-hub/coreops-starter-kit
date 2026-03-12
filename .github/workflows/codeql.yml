@@ -15,13 +15,27 @@ permissions:
   actions: read
   pull-requests: read
 
+# Prevent concurrent scans from interfering with each other.
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   analyze:
+    name: Analyze JavaScript
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: github/codeql-action/init@v3
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
         with:
-          languages: [ 'javascript' ]
-      - uses: github/codeql-action/autobuild@v3
-      - uses: github/codeql-action/analyze@v3
+          languages: ['javascript']
+
+      # JavaScript does not require a build step — autobuild is omitted
+      # intentionally to avoid spurious failures on Worker/Node projects.
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:javascript"
