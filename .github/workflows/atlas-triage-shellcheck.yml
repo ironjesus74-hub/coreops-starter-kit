@@ -29,21 +29,23 @@ jobs:
             const sha = run?.head_sha || "unknown";
             const when = new Date().toISOString();
 
-            const failBody =
-`ATLAS detected a ShellCheck failure.
+            const failBody = [
+              "ATLAS detected a ShellCheck failure.",
+              "",
+              `- Time: ${when}`,
+              `- SHA: ${sha}`,
+              `- Run: ${runUrl}`,
+              "",
+            ].join("\n");
 
-- Time: ${when}
-- SHA: ${sha}
-- Run: ${runUrl}
-`;
-
-            const okBody =
-`ATLAS reports ShellCheck recovery ✅
-
-- Time: ${when}
-- SHA: ${sha}
-- Run: ${runUrl}
-`;
+            const okBody = [
+              "ATLAS reports ShellCheck recovery ✅",
+              "",
+              `- Time: ${when}`,
+              `- SHA: ${sha}`,
+              `- Run: ${runUrl}`,
+              "",
+            ].join("\n");
 
             try {
               const { data: issues } = await github.rest.search.issuesAndPullRequests({

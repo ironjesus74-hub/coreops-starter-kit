@@ -70,17 +70,12 @@ jobs:
         run: |
           set -euo pipefail
           if command -v npm &>/dev/null && [ -f "package-lock.json" ]; then
-            npm audit --audit-level=high --json 2>/dev/null \
-              | python3 -c "
-import json, sys
-data = json.load(sys.stdin)
-vulns = data.get('metadata', {}).get('vulnerabilities', {})
-total = sum(vulns.values())
-if total > 0:
-    print(f'::warning::npm audit: {total} vulnerabilities found: {vulns}')
-else:
-    print('npm audit: no high/critical vulnerabilities.')
-" || echo "::warning::npm audit encountered an error or no lock file."
+            # Capture output then parse; multi-line Python inside run: | is not
+            # YAML-safe (content at column 0 ends the block scalar).
+            audit_json=$(npm audit --audit-level=high --json 2>/dev/null || true)
+            [ -n "$audit_json" ] && echo "$audit_json" \
+              | python3 -c "import json,sys;d=json.load(sys.stdin);v=d.get('metadata',{}).get('vulnerabilities',{});t=sum(v.values());print('::warning::npm audit: '+str(t)+' vulnerabilities: '+str(v)) if t>0 else print('npm audit: no high/critical vulnerabilities.')" \
+              || echo "::warning::npm audit encountered an error or no lock file."
           else
             echo "npm not available or no lock file — skipping."
           fi
