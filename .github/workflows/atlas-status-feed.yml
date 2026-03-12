@@ -2,7 +2,7 @@ name: ATLAS Status Feed
 
 on:
   workflow_run:
-    workflows: ["ShellCheck", "ATLAS Guard", "pages-build-deployment", "Pages", "CI"]
+    workflows: ["ShellCheck", "Repo Guard", "pages-build-deployment", "Pages", "CI"]
     types: [completed]
   schedule:
     - cron: "*/30 * * * *"  # every 30 minutes
@@ -26,7 +26,7 @@ jobs:
             const jsonPath = "ci/status.json";
             const svgPath  = "ci/status.svg";
 
-            const desired = ["ShellCheck", "ATLAS Guard"];
+            const desired = ["ShellCheck", "Repo Guard"];
             const wfList = await github.rest.actions.listRepoWorkflows({ owner, repo, per_page: 100 });
             const workflows = wfList.data.workflows || [];
 
@@ -62,7 +62,7 @@ jobs:
             const candidates = Object.values(out.workflows).filter(Boolean);
             let overall = { status: "unknown", conclusion: "unknown" };
             if (candidates.length) {
-              const guard = out.workflows["ATLAS Guard"];
+              const guard = out.workflows["Repo Guard"];
               overall = (guard || candidates[0]);
             }
             out.overall = {

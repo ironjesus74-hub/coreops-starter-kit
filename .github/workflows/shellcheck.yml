@@ -18,7 +18,7 @@ jobs:
         shell: bash
         run: |
           shopt -s nullglob
-          files=(bin/*.sh modules/*.sh lib/*.sh)
+          files=(bin/*.sh modules/*.sh lib/*.sh bots/*.sh bots/lib/*.sh bots/tools/*.sh)
           if [ ${#files[@]} -eq 0 ]; then
             echo "No shell scripts found. Skipping."
             exit 0
