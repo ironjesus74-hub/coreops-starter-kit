@@ -19,6 +19,7 @@
  *   POST  /api/forum/generate        — Generate AI forum post/thread
  *   GET   /api/profile               — Read profile (KV-backed; ?userId=)
  *   POST  /api/profile               — Write/merge profile patch (KV-backed)
+ *   GET   /api/purchases             — Read purchase history (KV-backed; ?userId=)
  *   OPTIONS *                        — CORS preflight
  *   *                                — Static assets via ASSETS binding
  *
@@ -35,7 +36,7 @@
  *   ALLOWED_ORIGIN        — Restricts sensitive CORS endpoints (e.g. "https://forge-atlas.io")
  *
  * KV Namespaces:
- *   ATLAS_KV              — Persistent profile storage
+ *   ATLAS_KV              — Persistent profile + purchase storage
  */
 
 // ---------------------------------------------------------------------------
@@ -53,6 +54,7 @@ const DEBATE_CIPHER_JITTER_MS = 400;
 const DEBATE_ROUND_BASE_MS = 2000;
 const DEBATE_ROUND_JITTER_MS = 1000;
 const PROFILE_TTL_SECONDS = 60 * 60 * 24 * 365; // 1 year
+const PURCHASE_TTL_SECONDS = 60 * 60 * 24 * 365 * 5; // 5 years — purchase records kept longer
 
 // Fallback deployed origin — override via the ALLOWED_ORIGIN wrangler var.
 const DEPLOYED_ORIGIN = "https://forgeatlas.example";
@@ -80,6 +82,7 @@ const SECURITY_HEADERS = {
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "X-Frame-Options": "SAMEORIGIN",
   "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
+  "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=(self)",
   "Content-Security-Policy":
     "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://api-m.paypal.com https://api-m.sandbox.paypal.com https://www.paypal.com; frame-src https://www.paypal.com https://www.sandbox.paypal.com; object-src 'none'; base-uri 'self'; form-action 'self';",
 };
@@ -364,6 +367,11 @@ export default {
       if (request.method === "POST") return handleProfileSave(request, env);
     }
 
+    // ── Purchases route ──────────────────────────────────────────────────────
+    if (url.pathname === "/api/purchases" && request.method === "GET") {
+      return handlePurchases(request, env);
+    }
+
     // ── Static assets via ASSETS binding ────────────────────────────────────
     const assetResponse = await env.ASSETS.fetch(request);
     return applyHeaders(assetResponse);
@@ -479,6 +487,20 @@ async function handleAtlas(request, env) {
 // Contact form endpoint — POST /api/contact
 // ---------------------------------------------------------------------------
 async function handleContact(request, env) {
+  if (request.method !== "POST") {
+    return Response.json(
+      { error: "Method not allowed" },
+      { status: 405, headers: { Allow: "POST, OPTIONS", "Content-Type": "application/json" } },
+    );
+  }
+  const ip = clientIp(request);
+  if (!checkRateLimit("contact:" + ip, RATE_LIMIT_MAX_AI)) {
+    return Response.json(
+      { error: "Too many requests. Please try again later." },
+      { status: 429, headers: { "Content-Type": "application/json", "Retry-After": "60", ...CORS_HEADERS } },
+    );
+  }
+
   const responseHeaders = {
     "Content-Type": "application/json",
     ...CORS_HEADERS,
@@ -709,6 +731,11 @@ async function handlePayPalCaptureOrder(request, env) {
   if (!orderId || typeof orderId !== "string") {
     return Response.json({ error: "orderId is required" }, { status: 400, headers: rh });
   }
+  // PayPal order IDs are alphanumeric uppercase, typically 17 chars. Enforce a
+  // safe length cap to prevent oversized values reaching the upstream URL.
+  if (orderId.length > 64 || !/^[A-Z0-9\-]+$/.test(orderId)) {
+    return Response.json({ error: "Invalid orderId format" }, { status: 400, headers: rh });
+  }
 
   let token, base;
   try { ({ token, base } = await getPayPalToken(env)); } catch (err) {
@@ -739,6 +766,29 @@ async function handlePayPalCaptureOrder(request, env) {
       "Order captured: " + captureData.id + " | product: " + pid +
       " | amount: " + (capture?.amount?.value || "?") + " " + (capture?.amount?.currency_code || ""),
     );
+
+    // Persist purchase record to KV (best-effort — never block the response).
+    if (env.ATLAS_KV && pid) {
+      const record = {
+        orderId: captureData.id,
+        productId: pid,
+        productTitle: product?.title || pid,
+        deliveryType: product?.deliveryType || "unknown",
+        amount: capture?.amount?.value || null,
+        currency: capture?.amount?.currency_code || "USD",
+        capturedAt: new Date().toISOString(),
+        status: captureData.status,
+      };
+      const listKey = "purchases:unassigned";
+      env.ATLAS_KV.get(listKey, { type: "json" })
+        .then((existing) => {
+          const list = Array.isArray(existing) ? existing : [];
+          list.push(record);
+          return env.ATLAS_KV.put(listKey, JSON.stringify(list), { expirationTtl: PURCHASE_TTL_SECONDS });
+        })
+        .catch((err) => console.error("Purchase KV write error:", err));
+    }
+
     return Response.json(
       {
         success: true,
@@ -824,6 +874,31 @@ async function handlePayPalWebhook(request, env) {
         " " + (parsedEvent.resource?.amount?.currency_code || "") +
         " | type=" + (product?.deliveryType || "unknown"),
       );
+      // Persist webhook-confirmed purchase to KV (authoritative record).
+      if (env.ATLAS_KV && customId) {
+        const record = {
+          orderId: parsedEvent.resource?.id || "",
+          productId: customId,
+          productTitle: product?.title || customId,
+          deliveryType: product?.deliveryType || "unknown",
+          amount: parsedEvent.resource?.amount?.value || null,
+          currency: parsedEvent.resource?.amount?.currency_code || "USD",
+          capturedAt: new Date().toISOString(),
+          source: "webhook",
+          status: "COMPLETED",
+        };
+        const listKey = "purchases:unassigned";
+        env.ATLAS_KV.get(listKey, { type: "json" })
+          .then((existing) => {
+            const list = Array.isArray(existing) ? existing : [];
+            // Deduplicate by orderId — webhook may fire multiple times.
+            if (!list.some((r) => r.orderId === record.orderId)) {
+              list.push(record);
+              return env.ATLAS_KV.put(listKey, JSON.stringify(list), { expirationTtl: PURCHASE_TTL_SECONDS });
+            }
+          })
+          .catch((err) => console.error("Webhook purchase KV write error:", err));
+      }
     }
     return new Response("OK", { status: 200 });
   } catch (err) {
@@ -870,7 +945,9 @@ async function handleDebateGenerate(request, env) {
     "• Cipher — skeptical and provocative. Challenges assumptions, surfaces edge cases, " +
     "uses rhetorical questions. Confidence scores are often lower but vary (40–75).\n" +
     "Arguments should feel like a real technical debate, not a summary. " +
-    "Each argument should be 2–4 sentences and directly respond to the previous round. " +
+    "Each argument must be 2–4 sentences and MUST directly and specifically rebut the " +
+    "previous round's opposing argument — reference its claims, not just the topic. " +
+    "Vary argument length, tone intensity, and confidence scores across rounds to feel organic. " +
     "Output ONLY valid JSON in this exact shape, with no markdown fencing:\n" +
     "{\"topic\":\"...\",\"rounds\":[{\"round\":1,\"vector\":{\"argument\":\"...\",\"confidence\":72}," +
     "\"cipher\":{\"argument\":\"...\",\"confidence\":58}}]}";
@@ -1117,6 +1194,31 @@ async function handleProfileSave(request, env) {
 // ---------------------------------------------------------------------------
 // Shared utility helpers
 // ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Purchases — GET /api/purchases?userId=<id>
+// Returns the purchase history list from KV for the given user.
+// Falls back to the unassigned global list when no userId is provided.
+// ---------------------------------------------------------------------------
+async function handlePurchases(request, env) {
+  const url = new URL(request.url);
+  const rawId = url.searchParams.get("userId") || "";
+  const rh = { "Content-Type": "application/json", ...CORS_HEADERS };
+
+  if (!env.ATLAS_KV) {
+    return Response.json({ purchases: [] }, { headers: rh });
+  }
+
+  try {
+    const userId = rawId ? sanitizeUserId(rawId) : null;
+    const key = userId ? "purchases:" + userId : "purchases:unassigned";
+    const stored = await env.ATLAS_KV.get(key, { type: "json" });
+    return Response.json({ purchases: Array.isArray(stored) ? stored : [] }, { headers: rh });
+  } catch (err) {
+    console.error("Purchases KV read error:", err);
+    return Response.json({ purchases: [] }, { headers: rh });
+  }
+}
 
 /**
  * Sanitize a user-supplied userId to safe KV key characters.

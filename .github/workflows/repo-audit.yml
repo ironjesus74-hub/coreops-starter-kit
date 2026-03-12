@@ -97,32 +97,34 @@ jobs:
           [ -f "$worker" ] || { echo "::warning::$worker not found — skipping."; exit 0; }
           fail=0
 
-          # SENSITIVE_CORS_HEADERS must not use a wildcard origin
-          if grep -A5 "SENSITIVE_CORS_HEADERS" "$worker" \
+          # sensitiveHeaders() must not resolve to a wildcard origin.
+          # The function returns a dynamic origin from env.ALLOWED_ORIGIN; a
+          # wildcard would only appear if the function body hardcoded "*".
+          if grep -A5 "function sensitiveHeaders" "$worker" \
                | grep -q '"Access-Control-Allow-Origin"[[:space:]]*:[[:space:]]*"\*"'; then
-            echo "::error::SENSITIVE_CORS_HEADERS uses wildcard Access-Control-Allow-Origin."
+            echo "::error::sensitiveHeaders() uses wildcard Access-Control-Allow-Origin."
             fail=1
           else
-            echo "  ✔  SENSITIVE_CORS_HEADERS does not use wildcard origin."
+            echo "  ✔  sensitiveHeaders() does not use wildcard origin."
           fi
 
-          # PayPal create-order must use SENSITIVE_CORS_HEADERS.
-          # -A5 is sufficient: the response-header object is always defined within
-          # the first 5 lines of each handler body, right after guardSensitiveRequest.
+          # PayPal create-order must use sensitiveHeaders() for restricted CORS.
+          # -A5 is sufficient: the response-header object is defined within the
+          # first 5 lines of each handler body, right after guardSensitiveRequest.
           if grep -A5 "async function handlePayPalCreateOrder" "$worker" \
-               | grep -q "SENSITIVE_CORS_HEADERS"; then
-            echo "  ✔  handlePayPalCreateOrder uses SENSITIVE_CORS_HEADERS."
+               | grep -q "sensitiveHeaders"; then
+            echo "  ✔  handlePayPalCreateOrder uses sensitiveHeaders()."
           else
-            echo "::error::handlePayPalCreateOrder does not use SENSITIVE_CORS_HEADERS."
+            echo "::error::handlePayPalCreateOrder does not use sensitiveHeaders()."
             fail=1
           fi
 
-          # PayPal capture-order must use SENSITIVE_CORS_HEADERS
+          # PayPal capture-order must use sensitiveHeaders() for restricted CORS.
           if grep -A5 "async function handlePayPalCaptureOrder" "$worker" \
-               | grep -q "SENSITIVE_CORS_HEADERS"; then
-            echo "  ✔  handlePayPalCaptureOrder uses SENSITIVE_CORS_HEADERS."
+               | grep -q "sensitiveHeaders"; then
+            echo "  ✔  handlePayPalCaptureOrder uses sensitiveHeaders()."
           else
-            echo "::error::handlePayPalCaptureOrder does not use SENSITIVE_CORS_HEADERS."
+            echo "::error::handlePayPalCaptureOrder does not use sensitiveHeaders()."
             fail=1
           fi
 

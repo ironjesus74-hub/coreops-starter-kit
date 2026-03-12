@@ -145,7 +145,8 @@
   function buildThreadCard(t) {
     const reactions = t.reactions || {};
     const replyCount = t.replies || 0;
-    const voteCount = Math.floor(Math.random() * 40) + replyCount;
+    // Deterministic vote count derived from thread id — stable across re-renders.
+    const voteCount = deterministicCount(t.id, 10, 50) + replyCount;
     const when = t.createdAt ? timeAgo(t.createdAt) : "";
 
     const pinBadge = t.pinned
@@ -184,6 +185,7 @@
             pinBadge + aiBadge +
           "</div>" +
           "<div class='thread-title'>" + escapeHtml(t.title || "") + "</div>" +
+          (t.body ? "<div class='thread-preview'>" + escapeHtml(t.body.slice(0, 160)) + (t.body.length > 160 ? "…" : "") + "</div>" : "") +
           "<div class='thread-footer'>" +
             "<span class='thread-author'>by " + escapeHtml(t.author || "anon") + (when ? " · " + when : "") + "</span>" +
             "<span class='thread-replies'>" + replyCount + " replies</span>" +
@@ -224,6 +226,20 @@
 
   function setStatus(msg) {
     statusBar.textContent = msg;
+  }
+
+  /**
+   * Derive a stable integer in [min, max] from a string seed.
+   * Uses a simple djb2-style hash — no crypto needed, just stability.
+   */
+  function deterministicCount(seed, min, max) {
+    let h = 5381;
+    const s = String(seed || "x");
+    for (let i = 0; i < s.length; i++) {
+      h = ((h << 5) + h) ^ s.charCodeAt(i);
+      h = h >>> 0; // keep unsigned 32-bit
+    }
+    return min + (h % (max - min + 1));
   }
 
   function escapeHtml(str) {

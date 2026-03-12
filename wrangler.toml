@@ -27,13 +27,39 @@ PAYPAL_ENV        = "sandbox"
 ALLOWED_ORIGIN    = "https://forgeatlas.example"
 
 # ---------------------------------------------------------------------------
-# KV namespace for persistent profile storage.
+# KV namespace for persistent profile and purchase storage.
 # Create the namespace: wrangler kv:namespace create ATLAS_KV
 # Then replace YOUR_KV_NAMESPACE_ID with the returned id.
 # ---------------------------------------------------------------------------
 [[kv_namespaces]]
 binding = "ATLAS_KV"
 id      = "YOUR_KV_NAMESPACE_ID"
+
+# ---------------------------------------------------------------------------
+# Future Cloudflare resources — add when ready to scale
+# ---------------------------------------------------------------------------
+# Cloudflare Queues — async digital delivery after successful payment
+# [[queues.producers]]
+# binding  = "DELIVERY_QUEUE"
+# queue    = "atlas-delivery"
+#
+# [[queues.consumers]]
+# queue                  = "atlas-delivery"
+# max_batch_size         = 10
+# max_batch_timeout      = 30
+#
+# Cloudflare R2 — store and serve downloadable digital assets
+# [[r2_buckets]]
+# binding = "ATLAS_ASSETS"
+# bucket_name = "atlas-digital-assets"
+#
+# Cloudflare AI Gateway — model routing, cost monitoring, caching
+# Set ATLAS_AI_ENDPOINT to your AI Gateway URL:
+# https://gateway.ai.cloudflare.com/v1/<account_id>/<gateway_id>/openai
+#
+# Cloudflare Turnstile — anti-bot protection for forms and AI endpoints
+# Add TURNSTILE_SECRET_KEY as a wrangler secret and validate tokens
+# server-side before processing any user-submitted request.
 
 # ---------------------------------------------------------------------------
 # Local dev server settings
