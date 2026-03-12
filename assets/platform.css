@@ -49,3 +49,11 @@
   padding: 0 0.1rem;
   user-select: none;
 }
+
+/* ===== Focus ring (platform-level override) ===== */
+.platform-nav li a:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: -2px;
+  border-radius: 2px;
+  color: var(--cyan);
+}

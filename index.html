@@ -6,6 +6,22 @@
   <title>CoreOps — Mobile-First DevOps CLI</title>
   <meta name="description" content="CoreOps: fast, portable DevOps and automation CLI for Termux and Linux. Network checks, TLS audits, snapshots, and a 4-bot automation factory.">
 
+  <!-- Open Graph / Social Preview -->
+  <meta property="og:type"        content="website">
+  <meta property="og:url"         content="https://ironjesus74-hub.github.io/coreops-starter-kit/">
+  <meta property="og:title"       content="CoreOps — DevOps CLI for Termux &amp; Linux">
+  <meta property="og:description" content="Full DevOps toolkit that runs on Android (Termux) and Linux. Network diagnostics, TLS audits, port scanning, system snapshots, and a 4-bot automation factory.">
+  <meta property="og:image"       content="https://ironjesus74-hub.github.io/coreops-starter-kit/assets/coreops-live-dashboard.png">
+  <!-- Twitter Card -->
+  <meta name="twitter:card"        content="summary_large_image">
+  <meta name="twitter:title"       content="CoreOps — DevOps CLI for Termux &amp; Linux">
+  <meta name="twitter:description" content="Full DevOps toolkit that runs on Android (Termux) and Linux. Network diagnostics, TLS audits, port scanning, and a 4-bot automation factory.">
+  <meta name="twitter:image"       content="https://ironjesus74-hub.github.io/coreops-starter-kit/assets/coreops-live-dashboard.png">
+  <!-- Mobile browser theme -->
+  <meta name="theme-color" content="#0d1117">
+  <!-- Canonical -->
+  <link rel="canonical" href="https://ironjesus74-hub.github.io/coreops-starter-kit/">
+
   <link rel="icon" type="image/svg+xml"
         href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%230d1117' stroke='%2300d4ff' stroke-width='1.5'/%3E%3Ctext x='16' y='21' text-anchor='middle' fill='%2300d4ff' font-family='monospace' font-size='11' font-weight='900'%3ECO%3C/text%3E%3C/svg%3E">
 
@@ -317,6 +333,106 @@
     .footer a { color: var(--faint); text-decoration: none; }
     .footer a:hover { color: var(--cyan); }
 
+    /* ===== Skip navigation ===== */
+    .skip-nav {
+      position: absolute;
+      top: -100%;
+      left: 1rem;
+      background: var(--cyan);
+      color: var(--bg-dark);
+      padding: 0.5rem 1rem;
+      border-radius: 0 0 8px 8px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-decoration: none;
+      z-index: 200;
+      transition: top 0.15s;
+    }
+    .skip-nav:focus { top: 0; }
+
+    /* ===== Focus ring ===== */
+    :focus-visible {
+      outline: 2px solid var(--cyan);
+      outline-offset: 3px;
+      border-radius: 4px;
+    }
+
+    /* ===== Features section ===== */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-sub);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      transition: border-color 0.25s, box-shadow 0.25s;
+    }
+
+    .feature-card:hover {
+      border-color: rgba(0, 212, 255, 0.3);
+      box-shadow: 0 0 20px rgba(0, 212, 255, 0.07);
+    }
+
+    .feature-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: rgba(0, 212, 255, 0.08);
+      border: 1px solid rgba(0, 212, 255, 0.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1rem;
+      font-size: 1rem;
+    }
+
+    .feature-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--white);
+      margin-bottom: 0.4rem;
+    }
+
+    .feature-desc {
+      font-size: 0.65rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    /* ===== Bottom CTA ===== */
+    .cta-band {
+      background: var(--bg-panel);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 3.5rem 2rem;
+      text-align: center;
+      margin-bottom: 0;
+    }
+
+    .cta-band-title {
+      font-size: clamp(1.2rem, 4vw, 2rem);
+      font-weight: 800;
+      color: var(--white);
+      letter-spacing: -0.02em;
+      margin-bottom: 0.65rem;
+    }
+
+    .cta-band-title .accent { color: var(--cyan); }
+
+    .cta-band-sub {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-bottom: 2rem;
+      max-width: 460px;
+      margin-left: auto;
+      margin-right: auto;
+      line-height: 1.65;
+    }
+
     /* ===== Screen-reader only utility ===== */
     .sr-only {
       position: absolute;
@@ -336,15 +452,21 @@
       .divider { padding: 0 1rem; }
       .cmd-grid { grid-template-columns: 1fr 1fr; }
       .qs-code { font-size: 0.68rem; }
+      .features-grid { grid-template-columns: 1fr 1fr; }
+      .cta-band { padding: 2.5rem 1rem; }
     }
 
     @media (max-width: 400px) {
       .hero-title { font-size: 2.2rem; }
       .cmd-grid { grid-template-columns: 1fr; }
+      .features-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
+
+  <!-- Skip navigation for accessibility -->
+  <a href="#main-content" class="skip-nav">Skip to content</a>
 
   <!-- ===== PLATFORM NAV ===== -->
   <nav class="platform-nav" aria-label="Platform sections">
@@ -365,27 +487,82 @@
 
   <!-- ===== HERO ===== -->
   <header class="hero">
-    <div class="hero-badge">⚡ CoreOps Platform · v1.0</div>
+    <div class="hero-badge">⚡ CoreOps Platform · v1.0 · MIT</div>
     <h1 class="hero-title"><span class="core">Core</span>Ops</h1>
     <p class="hero-sub">
-      Mobile-first DevOps &amp; automation CLI.<br>
-      Network checks · TLS audits · System snapshots · 4-bot factory.
+      Full DevOps toolkit. Terminal-native.<br>
+      Runs on Android, Termux, and Linux — no configuration required.
     </p>
     <div class="hero-actions">
       <a href="https://github.com/ironjesus74-hub/coreops-starter-kit"
-         class="btn btn-primary">Get Started</a>
+         class="btn btn-primary" rel="noopener">Install Now</a>
       <a href="gauntlet.html" class="btn btn-outline">Atlas Gauntlet →</a>
     </div>
   </header>
 
   <!-- ===== HIGHLIGHTS ===== -->
   <div class="highlights" aria-label="Key features">
-    <div class="hl-item"><span class="hl-dot"></span>Runs on Android (Termux) + Linux</div>
-    <div class="hl-item"><span class="hl-dot"></span>Zero bloat · minimal deps</div>
+    <div class="hl-item"><span class="hl-dot"></span>Android (Termux) + Linux</div>
+    <div class="hl-item"><span class="hl-dot"></span>One-command install</div>
     <div class="hl-item"><span class="hl-dot"></span>24-tool auto-build factory</div>
-    <div class="hl-item"><span class="hl-dot"></span>Modular · easy to extend</div>
-    <div class="hl-item"><span class="hl-dot"></span>MIT License</div>
+    <div class="hl-item"><span class="hl-dot"></span>Modular &amp; extensible</div>
+    <div class="hl-item"><span class="hl-dot"></span>Zero bloat · MIT License</div>
   </div>
+
+  <main id="main-content">
+
+  <!-- ===== WHY COREOPS ===== -->
+  <div class="divider" role="separator">
+    <div class="divider-line"></div>
+    <div class="divider-label"><span>Why CoreOps</span></div>
+  </div>
+
+  <section class="section" aria-labelledby="features-heading">
+    <h2 id="features-heading" class="section-label">What you get</h2>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="9" cy="9" r="7" stroke="#00d4ff" stroke-width="1.5"/>
+            <path d="M6 9h6M9 6v6" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="feature-title">One-Command Install</div>
+        <div class="feature-desc">Clone, chmod, run — fully operational in under 30 seconds. Works on any Termux or Linux terminal with no prior configuration.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="2" y="4" width="14" height="10" rx="2" stroke="#00d4ff" stroke-width="1.5"/>
+            <path d="M5 8h2M5 11h6" stroke="#00d4ff" stroke-width="1.2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="feature-title">Full Diagnostics Suite</div>
+        <div class="feature-desc">DNS checks, TLS certificate audits, TCP port scanning, HTTP health testing, and full system snapshots — all in one unified CLI.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 9a6 6 0 1 1 12 0" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="9" cy="9" r="2" fill="#00d4ff"/>
+            <path d="M9 4V3M9 15v-1M4 9H3M15 9h-1" stroke="#00d4ff" stroke-width="1.2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="feature-title">4-Bot Automation Factory</div>
+        <div class="feature-desc">A supervised bot system that auto-builds and catalogs 24 tools into organized directories. Supervisor, two builders, and a watchdog — always on.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M9 2v4M9 12v4M2 9h4M12 9h4" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="9" cy="9" r="3" stroke="#00d4ff" stroke-width="1.5"/>
+          </svg>
+        </div>
+        <div class="feature-title">Live Monitoring</div>
+        <div class="feature-desc">Continuous host polling with configurable refresh intervals and structured pass/fail output. Run it anywhere — including from your phone.</div>
+      </div>
+    </div>
+  </section>
 
   <!-- ===== QUICK START ===== -->
   <div class="divider" role="separator">
@@ -475,11 +652,12 @@ coreops help</code>
   <section class="section" aria-labelledby="bots-heading">
     <h2 id="bots-heading" class="section-label">4-Bot Automation System</h2>
     <table class="bot-table">
+      <caption class="sr-only">CoreOps 4-Bot Automation System — bot names, roles, and output directories</caption>
       <thead>
         <tr>
-          <th>Bot</th>
-          <th>Role</th>
-          <th>Output</th>
+          <th scope="col">Bot</th>
+          <th scope="col">Role</th>
+          <th scope="col">Output</th>
         </tr>
       </thead>
       <tbody>
@@ -507,9 +685,25 @@ coreops help</code>
     </table>
   </section>
 
+  <!-- ===== BOTTOM CTA ===== -->
+  <div class="cta-band">
+    <div class="cta-band-title">Ready to <span class="accent">deploy</span>?</div>
+    <p class="cta-band-sub">
+      Get CoreOps running on your device in under a minute.
+      No dependencies to hunt down — the installer handles everything.
+    </p>
+    <div class="hero-actions">
+      <a href="https://github.com/ironjesus74-hub/coreops-starter-kit"
+         class="btn btn-primary" rel="noopener">View on GitHub</a>
+      <a href="gauntlet.html" class="btn btn-outline">Explore Atlas Gauntlet →</a>
+    </div>
+  </div>
+
+  </main><!-- /#main-content -->
+
   <!-- ===== FOOTER ===== -->
   <footer class="footer">
-    <a href="https://github.com/ironjesus74-hub/coreops-starter-kit">
+    <a href="https://github.com/ironjesus74-hub/coreops-starter-kit" rel="noopener">
       ironjesus74-hub/coreops-starter-kit
     </a>
     &nbsp;·&nbsp; CoreOps Platform &nbsp;·&nbsp; MIT License
