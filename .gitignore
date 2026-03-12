@@ -8,3 +8,22 @@ worker-configuration.d.ts
 
 # Node
 node_modules/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Guard against accidentally committing literal ${HOME} paths
+\${HOME}/
+*.pid
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
