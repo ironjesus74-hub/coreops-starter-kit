@@ -11,7 +11,7 @@
     "secrets:set-atlas-key": "wrangler secret put ATLAS_AI_API_KEY"
   },
   "devDependencies": {
-    "wrangler": "^3.101.0"
+    "wrangler": "^4.72.0"
   },
   "engines": {
     "node": ">=18"
