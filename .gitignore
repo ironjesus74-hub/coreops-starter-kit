@@ -1,2 +1,10 @@
 snapshot_*.txt
 *.zip
+
+# Cloudflare / Wrangler build artifacts
+.wrangler/
+dist/
+worker-configuration.d.ts
+
+# Node
+node_modules/
