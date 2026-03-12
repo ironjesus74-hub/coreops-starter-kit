@@ -6,9 +6,11 @@
   position: sticky;
   top: 0;
   z-index: 100;
-  background: var(--bg-dark);
+  background: rgba(13, 17, 23, 0.95);
   border-bottom: 1px solid var(--border);
   padding: 0 2rem;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .platform-nav ul {
@@ -41,11 +43,17 @@
 }
 .platform-nav li a[aria-disabled="true"] {
   pointer-events: none;
-  opacity: 0.4;
+  opacity: 0.35;
 }
 .platform-nav .sep {
   color: var(--border);
   font-size: 0.65rem;
   padding: 0 0.1rem;
   user-select: none;
+}
+
+/* ===== Focus ring (keyboard accessibility) ===== */
+:focus-visible {
+  outline: 2px solid var(--cyan, #00d4ff);
+  outline-offset: 2px;
 }
