@@ -150,9 +150,9 @@ jobs:
           set -euo pipefail
           worker="src/worker.js"
           [ -f "$worker" ] || exit 0
-          if grep -A5 "SENSITIVE_CORS_HEADERS" "$worker" \
+          if grep -A5 "function sensitiveHeaders" "$worker" \
                | grep -q '"Access-Control-Allow-Origin"[[:space:]]*:[[:space:]]*"\*"'; then
-            echo "::warning::SENSITIVE_CORS_HEADERS uses wildcard origin — fix before deploying."
+            echo "::warning::sensitiveHeaders() uses wildcard origin — fix before deploying."
           else
             echo "  ✔  No wildcard origin on sensitive endpoints."
           fi
