@@ -385,34 +385,24 @@ async function handleAtlas(request, env) {
   const guard = guardSensitiveRequest(request, "ai", env);
   if (guard) return guard;
 
-  const responseHeaders = {
-    "Content-Type": "application/json",
-    ...sensitiveHeaders(env),
-  };
+  const rh = { "Content-Type": "application/json", ...sensitiveHeaders(env) };
 
-  let body;
-  try {
-    body = await request.json();
-  } catch {
-    return Response.json(
-      { error: "Invalid JSON body" },
-      { status: 400, headers: responseHeaders },
-    );
-  }
+  const { body, bodyError } = await parseJsonBody(request);
+  if (bodyError) return Response.json({ error: bodyError }, { status: 400, headers: rh });
 
   const message =
     typeof body?.message === "string" ? body.message.trim() : "";
   if (!message) {
     return Response.json(
       { error: "message field is required" },
-      { status: 400, headers: responseHeaders },
+      { status: 400, headers: rh },
     );
   }
 
   if (message.length > MAX_ATLAS_MSG_LENGTH) {
     return Response.json(
       { error: "message exceeds maximum allowed length" },
-      { status: 400, headers: responseHeaders },
+      { status: 400, headers: rh },
     );
   }
 
@@ -420,7 +410,7 @@ async function handleAtlas(request, env) {
   if (!apiKey) {
     return Response.json(
       { error: "AI service not configured" },
-      { status: 503, headers: responseHeaders },
+      { status: 503, headers: rh },
     );
   }
 
@@ -436,49 +426,36 @@ async function handleAtlas(request, env) {
       : "";
 
   try {
-    const aiResponse = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are Atlas, an AI assistant for CoreOps — a mobile-first DevOps CLI platform built for Termux and Linux. " +
-              "Help users with DevOps questions, CLI usage, networking, TLS audits, automation, and shell scripting. " +
-              "Keep responses concise, technical, and actionable. Use code blocks when sharing commands." +
-              systemExtra,
-          },
-          { role: "user", content: message },
-        ],
-        max_tokens: 1024,
-      }),
-    });
+    const raw = await callAI(endpoint, apiKey, {
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are Atlas, an AI assistant for CoreOps — a mobile-first DevOps CLI platform built for Termux and Linux. " +
+            "Help users with DevOps questions, CLI usage, networking, TLS audits, automation, and shell scripting. " +
+            "Keep responses concise, technical, and actionable. Use code blocks when sharing commands." +
+            systemExtra,
+        },
+        { role: "user", content: message },
+      ],
+      max_tokens: 1024,
+    }, "Atlas AI upstream");
 
-    if (!aiResponse.ok) {
-      const errText = await aiResponse.text().catch(() => "");
-      console.error(`Atlas AI upstream error ${aiResponse.status}: ${errText}`);
+    if (raw === null) {
       return Response.json(
         { error: "Atlas is temporarily unavailable" },
-        { status: 502, headers: responseHeaders },
+        { status: 502, headers: rh },
       );
     }
 
-    const data = await aiResponse.json();
-    const reply =
-      data?.choices?.[0]?.message?.content?.trim() ||
-      "Atlas has no response right now.";
-
-    return Response.json({ reply }, { headers: responseHeaders });
+    const reply = raw || "Atlas has no response right now.";
+    return Response.json({ reply }, { headers: rh });
   } catch (err) {
     console.error("Atlas fetch error:", err);
     return Response.json(
       { error: "Atlas is temporarily unavailable" },
-      { status: 502, headers: responseHeaders },
+      { status: 502, headers: rh },
     );
   }
 }
@@ -501,33 +478,23 @@ async function handleContact(request, env) {
     );
   }
 
-  const responseHeaders = {
-    "Content-Type": "application/json",
-    ...CORS_HEADERS,
-  };
+  const rh = { "Content-Type": "application/json", ...CORS_HEADERS };
 
-  let body;
-  try {
-    body = await request.json();
-  } catch {
-    return Response.json(
-      { error: "Invalid JSON body" },
-      { status: 400, headers: responseHeaders },
-    );
-  }
+  const { body, bodyError } = await parseJsonBody(request);
+  if (bodyError) return Response.json({ error: bodyError }, { status: 400, headers: rh });
 
   const { name, email, message } = body || {};
   if (!name || !email || !message) {
     return Response.json(
       { error: "name, email, and message are required" },
-      { status: 400, headers: responseHeaders },
+      { status: 400, headers: rh },
     );
   }
 
   if (!isValidEmail(email)) {
     return Response.json(
       { error: "A valid email address is required" },
-      { status: 400, headers: responseHeaders },
+      { status: 400, headers: rh },
     );
   }
 
@@ -544,7 +511,7 @@ async function handleContact(request, env) {
 
   return Response.json(
     { success: true, message: "Message received" },
-    { headers: responseHeaders },
+    { headers: rh },
   );
 }
 
@@ -655,10 +622,9 @@ async function handlePayPalCreateOrder(request, env) {
   if (guard) return guard;
 
   const rh = { "Content-Type": "application/json", ...sensitiveHeaders(env) };
-  let body;
-  try { body = await request.json(); } catch {
-    return Response.json({ error: "Invalid JSON body" }, { status: 400, headers: rh });
-  }
+
+  const { body, bodyError } = await parseJsonBody(request);
+  if (bodyError) return Response.json({ error: bodyError }, { status: 400, headers: rh });
   const { productId } = body || {};
   if (!productId) {
     return Response.json({ error: "productId is required" }, { status: 400, headers: rh });
@@ -723,10 +689,9 @@ async function handlePayPalCaptureOrder(request, env) {
   if (guard) return guard;
 
   const rh = { "Content-Type": "application/json", ...sensitiveHeaders(env) };
-  let body;
-  try { body = await request.json(); } catch {
-    return Response.json({ error: "Invalid JSON body" }, { status: 400, headers: rh });
-  }
+
+  const { body, bodyError } = await parseJsonBody(request);
+  if (bodyError) return Response.json({ error: bodyError }, { status: 400, headers: rh });
   const { orderId } = body || {};
   if (!orderId || typeof orderId !== "string") {
     return Response.json({ error: "orderId is required" }, { status: 400, headers: rh });
@@ -768,7 +733,7 @@ async function handlePayPalCaptureOrder(request, env) {
     );
 
     // Persist purchase record to KV (best-effort — never block the response).
-    if (env.ATLAS_KV && pid) {
+    if (pid) {
       const record = {
         orderId: captureData.id,
         productId: pid,
@@ -779,14 +744,7 @@ async function handlePayPalCaptureOrder(request, env) {
         capturedAt: new Date().toISOString(),
         status: captureData.status,
       };
-      const listKey = "purchases:unassigned";
-      env.ATLAS_KV.get(listKey, { type: "json" })
-        .then((existing) => {
-          const list = Array.isArray(existing) ? existing : [];
-          list.push(record);
-          return env.ATLAS_KV.put(listKey, JSON.stringify(list), { expirationTtl: PURCHASE_TTL_SECONDS });
-        })
-        .catch((err) => console.error("Purchase KV write error:", err));
+      appendPurchaseRecord(env, record);
     }
 
     return Response.json(
@@ -875,7 +833,7 @@ async function handlePayPalWebhook(request, env) {
         " | type=" + (product?.deliveryType || "unknown"),
       );
       // Persist webhook-confirmed purchase to KV (authoritative record).
-      if (env.ATLAS_KV && customId) {
+      if (customId) {
         const record = {
           orderId: parsedEvent.resource?.id || "",
           productId: customId,
@@ -887,17 +845,7 @@ async function handlePayPalWebhook(request, env) {
           source: "webhook",
           status: "COMPLETED",
         };
-        const listKey = "purchases:unassigned";
-        env.ATLAS_KV.get(listKey, { type: "json" })
-          .then((existing) => {
-            const list = Array.isArray(existing) ? existing : [];
-            // Deduplicate by orderId — webhook may fire multiple times.
-            if (!list.some((r) => r.orderId === record.orderId)) {
-              list.push(record);
-              return env.ATLAS_KV.put(listKey, JSON.stringify(list), { expirationTtl: PURCHASE_TTL_SECONDS });
-            }
-          })
-          .catch((err) => console.error("Webhook purchase KV write error:", err));
+        appendPurchaseRecord(env, record, { deduplicate: true, logLabel: "Webhook purchase" });
       }
     }
     return new Response("OK", { status: 200 });
@@ -917,10 +865,9 @@ async function handleDebateGenerate(request, env) {
   if (guard) return guard;
 
   const rh = { "Content-Type": "application/json", ...sensitiveHeaders(env) };
-  let body;
-  try { body = await request.json(); } catch {
-    return Response.json({ error: "Invalid JSON body" }, { status: 400, headers: rh });
-  }
+
+  const { body, bodyError } = await parseJsonBody(request);
+  if (bodyError) return Response.json({ error: bodyError }, { status: 400, headers: rh });
   const topic = typeof body?.topic === "string" ? body.topic.trim().slice(0, 300) : "";
   if (!topic) {
     return Response.json({ error: "topic is required" }, { status: 400, headers: rh });
@@ -953,26 +900,19 @@ async function handleDebateGenerate(request, env) {
     "\"cipher\":{\"argument\":\"...\",\"confidence\":58}}]}";
 
   try {
-    const aiResp = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: "Bearer " + apiKey },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: "Generate a " + rounds + "-round debate on: \"" + topic + "\"" },
-        ],
-        max_tokens: 1800,
-        temperature: 0.85,
-      }),
-    });
-    if (!aiResp.ok) {
-      const errText = await aiResp.text().catch(() => "");
-      console.error("Debate AI error " + aiResp.status + ": " + errText);
+    const raw = await callAI(endpoint, apiKey, {
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: "Generate a " + rounds + "-round debate on: \"" + topic + "\"" },
+      ],
+      max_tokens: 1800,
+      temperature: 0.85,
+    }, "Debate AI");
+
+    if (raw === null) {
       return Response.json({ error: "Debate engine temporarily unavailable" }, { status: 502, headers: rh });
     }
-    const aiData = await aiResp.json();
-    const raw = aiData?.choices?.[0]?.message?.content?.trim() || "";
     let transcript;
     try {
       transcript = JSON.parse(raw);
@@ -1020,10 +960,9 @@ async function handleForumGenerate(request, env) {
   if (guard) return guard;
 
   const rh = { "Content-Type": "application/json", ...sensitiveHeaders(env) };
-  let body;
-  try { body = await request.json(); } catch {
-    return Response.json({ error: "Invalid JSON body" }, { status: 400, headers: rh });
-  }
+
+  const { body, bodyError } = await parseJsonBody(request);
+  if (bodyError) return Response.json({ error: bodyError }, { status: 400, headers: rh });
   const topic = typeof body?.topic === "string" ? body.topic.trim().slice(0, 200) : "";
   const category = typeof body?.category === "string" ? body.category.trim() : "general";
   const apiKey = env.ATLAS_AI_API_KEY;
@@ -1050,26 +989,19 @@ async function handleForumGenerate(request, env) {
     : "Write a forum post for category: " + category + ". Make it engaging and believable.";
 
   try {
-    const aiResp = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: "Bearer " + apiKey },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        max_tokens: 600,
-        temperature: 0.9,
-      }),
-    });
-    if (!aiResp.ok) {
-      const errText = await aiResp.text().catch(() => "");
-      console.error("Forum AI error " + aiResp.status + ": " + errText);
+    const raw = await callAI(endpoint, apiKey, {
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      max_tokens: 600,
+      temperature: 0.9,
+    }, "Forum AI");
+
+    if (raw === null) {
       return Response.json({ error: "Forum AI temporarily unavailable" }, { status: 502, headers: rh });
     }
-    const aiData = await aiResp.json();
-    const raw = aiData?.choices?.[0]?.message?.content?.trim() || "";
     let post;
     try {
       post = JSON.parse(raw);
@@ -1148,10 +1080,8 @@ async function handleProfileSave(request, env) {
     return Response.json({ error: "Profile storage not configured" }, { status: 503, headers: rh });
   }
 
-  let body;
-  try { body = await request.json(); } catch {
-    return Response.json({ error: "Invalid JSON body" }, { status: 400, headers: rh });
-  }
+  const { body, bodyError } = await parseJsonBody(request);
+  if (bodyError) return Response.json({ error: bodyError }, { status: 400, headers: rh });
 
   const userId = sanitizeUserId(body?.userId);
   if (!userId) {
@@ -1194,6 +1124,66 @@ async function handleProfileSave(request, env) {
 // ---------------------------------------------------------------------------
 // Shared utility helpers
 // ---------------------------------------------------------------------------
+
+/**
+ * Attempt to parse the request body as JSON.
+ * Returns { body, bodyError } — bodyError is a non-null string on failure.
+ */
+async function parseJsonBody(request) {
+  try {
+    return { body: await request.json(), bodyError: null };
+  } catch {
+    return { body: null, bodyError: "Invalid JSON body" };
+  }
+}
+
+/**
+ * Call an OpenAI-compatible chat completions endpoint.
+ * Returns the trimmed model response text on success, or null on any error.
+ * Non-ok HTTP responses are logged with `logPrefix`; network errors propagate
+ * as thrown exceptions so the caller's catch block can assign a status code.
+ * @param {string} endpoint
+ * @param {string} apiKey
+ * @param {object} payload  — the full JSON body sent to the endpoint
+ * @param {string} logPrefix — prefix for the console.error log line
+ * @returns {Promise<string|null>}
+ */
+async function callAI(endpoint, apiKey, payload, logPrefix) {
+  const resp = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: "Bearer " + apiKey },
+    body: JSON.stringify(payload),
+  });
+  if (!resp.ok) {
+    const errText = await resp.text().catch(() => "");
+    console.error(logPrefix + " error " + resp.status + ": " + errText);
+    return null;
+  }
+  const data = await resp.json();
+  return data?.choices?.[0]?.message?.content?.trim() ?? "";
+}
+
+/**
+ * Append a purchase record to the `purchases:unassigned` KV list.
+ * Fire-and-forget — never blocks the response.
+ * When `deduplicate` is true the record is skipped when an entry with the
+ * same orderId already exists (prevents double-writes from webhook retries).
+ * @param {object} env
+ * @param {object} record
+ * @param {{ deduplicate?: boolean, logLabel?: string }} [options={}]
+ */
+function appendPurchaseRecord(env, record, { deduplicate = false, logLabel = "Purchase" } = {}) {
+  if (!env.ATLAS_KV || !record) return;
+  const listKey = "purchases:unassigned";
+  env.ATLAS_KV.get(listKey, { type: "json" })
+    .then((existing) => {
+      const list = Array.isArray(existing) ? existing : [];
+      if (deduplicate && list.some((r) => r.orderId === record.orderId)) return;
+      list.push(record);
+      return env.ATLAS_KV.put(listKey, JSON.stringify(list), { expirationTtl: PURCHASE_TTL_SECONDS });
+    })
+    .catch((err) => console.error(logLabel + " KV write error:", err));
+}
 
 // ---------------------------------------------------------------------------
 // Purchases — GET /api/purchases?userId=<id>
