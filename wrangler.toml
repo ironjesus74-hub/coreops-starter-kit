@@ -21,6 +21,7 @@ binding   = "ASSETS"
 # ---------------------------------------------------------------------------
 [vars]
 ATLAS_AI_ENDPOINT = "https://api.openai.com/v1/chat/completions"
+PAYPAL_ENV        = "sandbox"
 
 # ---------------------------------------------------------------------------
 # Local dev server settings

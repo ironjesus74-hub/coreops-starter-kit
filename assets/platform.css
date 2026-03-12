@@ -1,5 +1,23 @@
 /* ===== CoreOps Platform — Shared Styles ===== */
-/* Shared across all platform pages (index.html, gauntlet.html, …) */
+/* Shared across all platform pages (index.html, gauntlet.html, market.html, …) */
+
+/*
+ * Design tokens:
+ *   CoreOps legacy pages  → --cyan / --magenta accent scheme
+ *   Forge Atlas new pages → --red  / --chrome  accent scheme
+ * Both share the same jet-black background and glass panel variables.
+ */
+
+/* ===== Forge Atlas design tokens ===== */
+:root {
+  --red:         #e52020;
+  --red-dim:     rgba(229, 32, 32, 0.18);
+  --red-glow:    0 0 20px rgba(229, 32, 32, 0.45), 0 0 48px rgba(229, 32, 32, 0.15);
+  --chrome:      #e8ecf0;
+  --chrome-dim:  rgba(232, 236, 240, 0.55);
+  --glass-bg:    rgba(22, 27, 34, 0.72);
+  --glass-border:rgba(232, 236, 240, 0.08);
+}
 
 /* ===== Platform nav bar ===== */
 .platform-nav {
