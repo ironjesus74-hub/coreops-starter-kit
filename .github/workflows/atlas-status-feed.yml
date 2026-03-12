@@ -2,7 +2,7 @@ name: ATLAS Status Feed
 
 on:
   workflow_run:
-    workflows: ["ShellCheck", "Repo Guard", "pages-build-deployment", "Pages", "CI"]
+    workflows: ["ShellCheck", "Repo Guard", "CI Failure Alerts", "Stale Branch Cleanup", "pages-build-deployment", "Pages", "CI"]
     types: [completed]
   schedule:
     - cron: "*/30 * * * *"  # every 30 minutes
@@ -26,7 +26,7 @@ jobs:
             const jsonPath = "ci/status.json";
             const svgPath  = "ci/status.svg";
 
-            const desired = ["ShellCheck", "Repo Guard"];
+            const desired = ["ShellCheck", "Repo Guard", "CI Failure Alerts", "Stale Branch Cleanup"];
             const wfList = await github.rest.actions.listRepoWorkflows({ owner, repo, per_page: 100 });
             const workflows = wfList.data.workflows || [];
 

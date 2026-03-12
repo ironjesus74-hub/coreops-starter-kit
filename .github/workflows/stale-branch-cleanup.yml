@@ -1,0 +1,131 @@
+name: Stale Branch Cleanup
+
+on:
+  schedule:
+    - cron: "0 3 * * 0"  # Sundays at 03:00 UTC
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run – list stale branches without deleting (true/false)"
+        required: false
+        default: "true"
+        type: boolean
+      days_stale:
+        description: "Days without commits before a branch is considered stale"
+        required: false
+        default: "90"
+        type: string
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  cleanup:
+    name: Remove Stale Branches
+    runs-on: ubuntu-latest
+    steps:
+      - name: Find and remove stale branches
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo  = context.repo.repo;
+
+            // On schedule: auto-delete. On workflow_dispatch: dry_run defaults to true.
+            const dryRun = context.eventName === 'workflow_dispatch'
+              ? String(context.payload.inputs?.dry_run) !== 'false'
+              : false;
+
+            const daysStale = parseInt(
+              context.eventName === 'workflow_dispatch'
+                ? (context.payload.inputs?.days_stale || '90')
+                : '90',
+              10
+            );
+
+            const cutoff = new Date(Date.now() - daysStale * 24 * 60 * 60 * 1000);
+            const PROTECTED = new Set(['main', 'master', 'develop', 'staging', 'production']);
+
+            core.info(`Cutoff: ${cutoff.toISOString()} (branches idle >${daysStale} days)`);
+            core.info(`Dry run: ${dryRun}`);
+
+            const branches = await github.paginate(
+              github.rest.repos.listBranches,
+              { owner, repo, per_page: 100 }
+            );
+
+            const stale = [];
+            for (const branch of branches) {
+              if (PROTECTED.has(branch.name)) continue;
+              const { data: commitData } = await github.rest.repos.getCommit({
+                owner, repo, ref: branch.commit.sha
+              });
+              const lastDate = new Date(
+                commitData.commit.committer?.date || commitData.commit.author?.date
+              );
+              if (lastDate < cutoff) {
+                stale.push({ name: branch.name, lastCommit: lastDate.toISOString() });
+              }
+            }
+
+            if (stale.length === 0) {
+              core.info('No stale branches found — nothing to do.');
+              return;
+            }
+
+            core.info(`Found ${stale.length} stale branch(es).`);
+
+            if (dryRun) {
+              core.info('DRY RUN — branches that would be deleted:');
+              for (const b of stale) {
+                core.info(`  ${b.name}  (last commit: ${b.lastCommit})`);
+              }
+              return;
+            }
+
+            const deleted = [];
+            const errors  = [];
+            for (const branch of stale) {
+              try {
+                await github.rest.git.deleteRef({ owner, repo, ref: `heads/${branch.name}` });
+                core.info(`Deleted: ${branch.name}`);
+                deleted.push(branch);
+              } catch (e) {
+                core.warning(`Failed to delete ${branch.name}: ${e.message}`);
+                errors.push({ ...branch, error: e.message });
+              }
+            }
+
+            if (deleted.length === 0) {
+              core.info('No branches were deleted.');
+              return;
+            }
+
+            const table = [
+              '| Branch | Last Commit |',
+              '|--------|-------------|',
+              ...deleted.map(b => `| \`${b.name}\` | ${b.lastCommit} |`),
+            ].join('\n');
+
+            const errNote = errors.length
+              ? `\n> ⚠️ **${errors.length}** branch(es) could not be deleted — check for branch protection rules.`
+              : '';
+
+            const body = [
+              '## 🧹 Stale Branch Cleanup Report',
+              '',
+              `Automatically deleted **${deleted.length}** branch(es) with no activity in the past **${daysStale} days**.`,
+              '',
+              table,
+              errNote,
+            ].join('\n').trim();
+
+            await github.rest.issues.create({
+              owner,
+              repo,
+              title: '[ATLAS] Stale branch cleanup report',
+              body,
+              labels: ['atlas', 'maintenance'],
+            });
+            core.info(`Cleanup complete. Created summary issue.`);
