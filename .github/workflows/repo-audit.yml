@@ -51,39 +51,6 @@ jobs:
           echo "All required health files present."
 
   # ---------------------------------------------------------------------------
-  # 2 · ShellCheck — errors only (matches the dedicated ShellCheck workflow)
-  # ---------------------------------------------------------------------------
-  shellcheck:
-    name: ShellCheck
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install ShellCheck
-        run: sudo apt-get update -y && sudo apt-get install -y shellcheck
-
-      - name: Run ShellCheck (errors only)
-        shell: bash
-        run: |
-          set -euo pipefail
-          shopt -s nullglob
-          files=(
-            bin/*.sh
-            modules/*.sh
-            lib/*.sh
-            bots/*.sh
-            bots/lib/*.sh
-            bots/tools/*.sh
-          )
-          if [ "${#files[@]}" -eq 0 ]; then
-            echo "No shell scripts found — skipping."
-            exit 0
-          fi
-          echo "Checking ${#files[@]} script(s): ${files[*]}"
-          shellcheck -S error "${files[@]}"
-          echo "ShellCheck passed."
-
-  # ---------------------------------------------------------------------------
   # 3 · CodeQL language config — must only scan languages present in the repo
   # ---------------------------------------------------------------------------
   codeql-config:
@@ -371,7 +338,6 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - health-files
-      - shellcheck
       - codeql-config
       - worker-security
       - wrangler-config
@@ -384,7 +350,6 @@ jobs:
         shell: bash
         env:
           HEALTH: ${{ needs.health-files.result }}
-          SHELLCHECK: ${{ needs.shellcheck.result }}
           CODEQL: ${{ needs.codeql-config.result }}
           WORKER: ${{ needs.worker-security.result }}
           WRANGLER: ${{ needs.wrangler-config.result }}
@@ -397,7 +362,6 @@ jobs:
           # Explicit ordered list so the table is always printed in a consistent sequence
           check_names=(
             "Health Files"
-            "ShellCheck"
             "CodeQL Config"
             "Worker Security"
             "Wrangler Config"
@@ -407,7 +371,6 @@ jobs:
           )
           check_results=(
             "$HEALTH"
-            "$SHELLCHECK"
             "$CODEQL"
             "$WORKER"
             "$WRANGLER"
