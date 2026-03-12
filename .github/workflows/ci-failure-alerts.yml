@@ -1,0 +1,78 @@
+name: CI Failure Alerts
+
+on:
+  workflow_run:
+    workflows:
+      - "CodeQL"
+      - "Repo Audit"
+      - "Repo Guard"
+      - "Deploy to Cloudflare Workers"
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+  issues: write
+
+jobs:
+  alert:
+    name: Alert on CI Failure
+    runs-on: ubuntu-latest
+    steps:
+      - name: Open/update issue on failure, close on recovery
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner      = context.repo.owner;
+            const repo       = context.repo.repo;
+            const run        = context.payload.workflow_run;
+            const wfName     = run?.name || 'Unknown Workflow';
+            const conclusion = run?.conclusion || 'unknown';
+            const runUrl     = run?.html_url || `https://github.com/${owner}/${repo}/actions`;
+            const sha        = run?.head_sha || 'unknown';
+            const when       = new Date().toISOString();
+
+            const title  = `[ATLAS] CI failure: ${wfName}`;
+            const labels = ['atlas', 'ci-failure', 'triage'];
+
+            const failBody = [
+              `ATLAS detected a CI failure in **${wfName}**.`,
+              '',
+              `- **Time:** ${when}`,
+              `- **SHA:** \`${sha}\``,
+              `- **Run:** ${runUrl}`,
+            ].join('\n');
+
+            const okBody = [
+              `✅ ATLAS reports **${wfName}** has recovered.`,
+              '',
+              `- **Time:** ${when}`,
+              `- **SHA:** \`${sha}\``,
+              `- **Run:** ${runUrl}`,
+            ].join('\n');
+
+            const { data } = await github.rest.search.issuesAndPullRequests({
+              q: `repo:${owner}/${repo} is:issue is:open in:title "${title}"`
+            });
+
+            if (conclusion === 'failure') {
+              if (data.items.length > 0) {
+                const num = data.items[0].number;
+                await github.rest.issues.createComment({ owner, repo, issue_number: num, body: failBody });
+                core.info(`Updated existing issue #${num} for ${wfName}`);
+              } else {
+                const created = await github.rest.issues.create({ owner, repo, title, body: failBody, labels });
+                core.info(`Created issue #${created.data.number} for ${wfName}`);
+              }
+            } else if (conclusion === 'success') {
+              if (data.items.length > 0) {
+                const num = data.items[0].number;
+                await github.rest.issues.createComment({ owner, repo, issue_number: num, body: okBody });
+                await github.rest.issues.update({ owner, repo, issue_number: num, state: 'closed' });
+                core.info(`Closed issue #${num} — ${wfName} recovered`);
+              } else {
+                core.info(`No open CI-failure issue for ${wfName} — nothing to close.`);
+              }
+            } else {
+              core.info(`Conclusion=${conclusion} for ${wfName}; no action.`);
+            }

@@ -297,7 +297,9 @@ jobs:
             ".github/workflows/codeql.yml" \
             ".github/workflows/shellcheck.yml" \
             ".github/workflows/repo-guard.yml" \
-            ".github/workflows/deploy.yml"; do
+            ".github/workflows/deploy.yml" \
+            ".github/workflows/stale-branch-cleanup.yml" \
+            ".github/workflows/ci-failure-alerts.yml"; do
             if [ -f "$wf" ]; then
               echo "  ✔  $wf"
             else
