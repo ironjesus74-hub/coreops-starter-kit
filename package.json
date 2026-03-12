@@ -1,13 +1,12 @@
 {
   "name": "coreops-starter-kit",
   "version": "1.0.0",
-  "description": "CoreOps Platform — Cloudflare Workers + Pages deployment",
+  "description": "CoreOps Platform — Cloudflare Workers + Static Assets deployment",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "deploy:pages": "wrangler pages deploy .",
     "secrets:set-atlas-key": "wrangler secret put ATLAS_AI_API_KEY"
   },
   "devDependencies": {
