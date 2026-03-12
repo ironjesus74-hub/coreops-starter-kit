@@ -1,16 +1,52 @@
 /**
- * CoreOps Cloudflare Worker
+ * Forge Atlas — Cloudflare Worker (unified API gateway)
+ *
+ * Architecture: single multi-route worker chosen over multiple workers because:
+ *   1. Shared product catalog and auth helpers across all routes
+ *   2. Single deployment unit — one `npm run deploy` covers everything
+ *   3. Consistent CORS/security header application
  *
  * Routes:
- *   POST /api/atlas   — Atlas AI chat endpoint
- *   POST /api/contact — Contact form handler
- *   OPTIONS *         — CORS preflight
- *   *                 — Static assets via ASSETS binding
+ *   POST  /api/atlas                 — Atlas AI assistant
+ *   POST  /api/contact               — Contact form
+ *   GET   /api/products              — Product catalog (public)
+ *   GET   /api/paypal/config         — Return PayPal client ID (safe)
+ *   POST  /api/paypal/create-order   — Create PayPal order (server-priced)
+ *   POST  /api/paypal/capture-order  — Capture PayPal order
+ *   POST  /api/paypal/webhook        — PayPal webhook handler
+ *   POST  /api/debate/generate       — Generate AI debate transcript
+ *   GET   /api/forum/threads         — Get seeded forum threads list
+ *   POST  /api/forum/generate        — Generate AI forum post/thread
+ *   GET   /api/profile               — Profile structure
+ *   OPTIONS *                        — CORS preflight
+ *   *                                — Static assets via ASSETS binding
  *
- * Environment variables (set via wrangler secret put):
- *   ATLAS_AI_API_KEY   — API key for the AI provider
- *   ATLAS_AI_ENDPOINT  — AI API endpoint (default: OpenAI chat completions)
+ * Secrets (set via: wrangler secret put <NAME>):
+ *   ATLAS_AI_API_KEY      — OpenAI-compatible API key
+ *   PAYPAL_CLIENT_ID      — PayPal app client ID
+ *   PAYPAL_CLIENT_SECRET  — PayPal app client secret
+ *   PAYPAL_WEBHOOK_ID     — PayPal webhook ID for signature verification
+ *   CONTACT_WEBHOOK_URL   — Optional webhook for contact form delivery
+ *
+ * Vars (wrangler.toml [vars]):
+ *   ATLAS_AI_ENDPOINT     — AI chat completions endpoint
+ *   PAYPAL_ENV            — "sandbox" | "live"
  */
+
+// ---------------------------------------------------------------------------
+// Named constants
+// ---------------------------------------------------------------------------
+const MAX_ATLAS_MSG_LENGTH = 4000;
+const MAX_SYSTEM_CONTEXT_LENGTH = 500;
+const DEBATE_MIN_ROUNDS = 1;
+const DEBATE_MAX_ROUNDS = 5;
+const DEBATE_DEFAULT_ROUNDS = 3;
+const DEBATE_FALLBACK_CONFIDENCE_VECTOR = 70;
+const DEBATE_FALLBACK_CONFIDENCE_CIPHER = 50;
+const DEBATE_BASE_CIPHER_DELAY_MS = 800;
+const DEBATE_CIPHER_JITTER_MS = 400;
+const DEBATE_ROUND_BASE_MS = 2000;
+const DEBATE_ROUND_JITTER_MS = 1000;
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -23,6 +59,124 @@ const SECURITY_HEADERS = {
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "X-Frame-Options": "SAMEORIGIN",
 };
+
+// ---------------------------------------------------------------------------
+// Product catalog — source of truth for pricing (never trust the browser)
+// ---------------------------------------------------------------------------
+const PRODUCT_CATALOG = [
+  {
+    id: "atlas-starter",
+    title: "Atlas Starter Pack",
+    description:
+      "Essential DevOps toolkit with CLI templates, automation scripts, and Atlas AI access for 30 days.",
+    category: "bundle",
+    platform: ["web", "termux", "linux"],
+    domain: ["devops", "automation"],
+    basePrice: 4.99,
+    salePrice: null,
+    fixedPrice: true,
+    deliveryType: "digital",
+    featured: false,
+  },
+  {
+    id: "atlas-pro",
+    title: "Atlas Pro License",
+    description:
+      "Full Atlas AI assistant access with extended memory, priority responses, and premium shell templates.",
+    category: "license",
+    platform: ["web", "mobile", "desktop"],
+    domain: ["ai", "devops"],
+    basePrice: 14.99,
+    salePrice: 9.99,
+    fixedPrice: false,
+    deliveryType: "digital",
+    featured: true,
+  },
+  {
+    id: "coreops-factory",
+    title: "CoreOps Bot Factory Premium",
+    description:
+      "Unlock all 4 bot modules with persistent state, cloud sync, and the full 24-tool expanded catalog.",
+    category: "upgrade",
+    platform: ["termux", "linux"],
+    domain: ["automation", "bots"],
+    basePrice: 19.99,
+    salePrice: null,
+    fixedPrice: true,
+    deliveryType: "digital",
+    featured: true,
+  },
+  {
+    id: "gauntlet-pass",
+    title: "Gauntlet Season Pass",
+    description:
+      "Unlimited AI debate arena sessions with leaderboard tracking and custom AI persona configuration.",
+    category: "subscription",
+    platform: ["web"],
+    domain: ["ai", "arena"],
+    basePrice: 7.99,
+    salePrice: null,
+    fixedPrice: true,
+    deliveryType: "digital",
+    featured: false,
+  },
+];
+
+// ---------------------------------------------------------------------------
+// Forum seed threads — used when AI key is not configured
+// ---------------------------------------------------------------------------
+const FORUM_SEED_THREADS = [
+  {
+    id: "t-001",
+    title: "Is Kubernetes really necessary for a 3-person startup?",
+    category: "devops",
+    author: "shellcraft",
+    replies: 14,
+    reactions: { fire: 8, thumbsup: 12, thinking: 6 },
+    pinned: false,
+    createdAt: "2025-11-15T10:22:00Z",
+  },
+  {
+    id: "t-002",
+    title: "My AI assistant scheduled a meeting during my coffee break. We need to talk.",
+    category: "humor",
+    author: "bitflip_joe",
+    replies: 31,
+    reactions: { fire: 22, thumbsup: 41, laugh: 19 },
+    pinned: false,
+    createdAt: "2025-11-16T08:45:00Z",
+  },
+  {
+    id: "t-003",
+    title: "Deep dive: Cloudflare Workers vs AWS Lambda at the edge",
+    category: "cloud",
+    author: "atlas_sentinel",
+    replies: 27,
+    reactions: { fire: 15, thumbsup: 33, thinking: 18 },
+    pinned: true,
+    createdAt: "2025-11-17T14:10:00Z",
+  },
+  {
+    id: "t-004",
+    title: "Shell scripting best practices that saved us from a 3am outage",
+    category: "devops",
+    author: "nightshift_ops",
+    replies: 9,
+    reactions: { fire: 19, thumbsup: 28, thinking: 4 },
+    pinned: false,
+    createdAt: "2025-11-18T06:30:00Z",
+  },
+  {
+    id: "t-005",
+    title: "Atlas AI told me to rotate my secrets. It was right. (story inside)",
+    category: "security",
+    author: "redteam_rx",
+    replies: 42,
+    reactions: { fire: 36, thumbsup: 52, thinking: 11 },
+    pinned: true,
+    createdAt: "2025-11-19T11:05:00Z",
+  },
+];
 
 export default {
   async fetch(request, env) {
@@ -40,6 +194,45 @@ export default {
 
     if (url.pathname === "/api/contact" && request.method === "POST") {
       return handleContact(request, env);
+    }
+
+    // ── Commerce routes ─────────────────────────────────────────────────────
+    if (url.pathname === "/api/products" && request.method === "GET") {
+      return handleProducts();
+    }
+
+    if (url.pathname === "/api/paypal/config" && request.method === "GET") {
+      return handlePayPalConfig(env);
+    }
+
+    if (url.pathname === "/api/paypal/create-order" && request.method === "POST") {
+      return handlePayPalCreateOrder(request, env);
+    }
+
+    if (url.pathname === "/api/paypal/capture-order" && request.method === "POST") {
+      return handlePayPalCaptureOrder(request, env);
+    }
+
+    if (url.pathname === "/api/paypal/webhook" && request.method === "POST") {
+      return handlePayPalWebhook(request, env);
+    }
+
+    // ── AI system routes ─────────────────────────────────────────────────────
+    if (url.pathname === "/api/debate/generate" && request.method === "POST") {
+      return handleDebateGenerate(request, env);
+    }
+
+    if (url.pathname === "/api/forum/threads" && request.method === "GET") {
+      return handleForumThreads();
+    }
+
+    if (url.pathname === "/api/forum/generate" && request.method === "POST") {
+      return handleForumGenerate(request, env);
+    }
+
+    // ── Profile route ────────────────────────────────────────────────────────
+    if (url.pathname === "/api/profile" && request.method === "GET") {
+      return handleProfile();
     }
 
     // ── Static assets via ASSETS binding ────────────────────────────────────
@@ -76,7 +269,7 @@ async function handleAtlas(request, env) {
     );
   }
 
-  if (message.length > 4000) {
+  if (message.length > MAX_ATLAS_MSG_LENGTH) {
     return Response.json(
       { error: "message exceeds maximum allowed length" },
       { status: 400, headers: responseHeaders },
@@ -95,6 +288,12 @@ async function handleAtlas(request, env) {
     env.ATLAS_AI_ENDPOINT ||
     "https://api.openai.com/v1/chat/completions";
 
+  // Optional: account-specific prompt context (ASCII-safe; trimmed server-side)
+  const systemExtra =
+    typeof body?.systemContext === "string"
+      ? " " + body.systemContext.slice(0, MAX_SYSTEM_CONTEXT_LENGTH)
+      : "";
+
   try {
     const aiResponse = await fetch(endpoint, {
       method: "POST",
@@ -110,7 +309,8 @@ async function handleAtlas(request, env) {
             content:
               "You are Atlas, an AI assistant for CoreOps — a mobile-first DevOps CLI platform built for Termux and Linux. " +
               "Help users with DevOps questions, CLI usage, networking, TLS audits, automation, and shell scripting. " +
-              "Keep responses concise, technical, and actionable. Use code blocks when sharing commands.",
+              "Keep responses concise, technical, and actionable. Use code blocks when sharing commands." +
+              systemExtra,
           },
           { role: "user", content: message },
         ],
@@ -223,5 +423,446 @@ function applyHeaders(response) {
     status: response.status,
     statusText: response.statusText,
     headers,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Product catalog — GET /api/products
+// ---------------------------------------------------------------------------
+function handleProducts() {
+  return Response.json(PRODUCT_CATALOG, {
+    headers: { "Content-Type": "application/json", ...CORS_HEADERS },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// PayPal helpers
+// ---------------------------------------------------------------------------
+function paypalBase(env) {
+  return env.PAYPAL_ENV === "live"
+    ? "https://api-m.paypal.com"
+    : "https://api-m.sandbox.paypal.com";
+}
+
+async function getPayPalToken(env) {
+  if (!env.PAYPAL_CLIENT_ID || !env.PAYPAL_CLIENT_SECRET) {
+    throw new Error("PayPal credentials not configured");
+  }
+  const base = paypalBase(env);
+  // PayPal client IDs and secrets are guaranteed ASCII, making btoa safe here.
+  const credentials = btoa(env.PAYPAL_CLIENT_ID + ":" + env.PAYPAL_CLIENT_SECRET);
+  const resp = await fetch(base + "/v1/oauth2/token", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Authorization: "Basic " + credentials,
+    },
+    body: "grant_type=client_credentials",
+  });
+  if (!resp.ok) {
+    const errText = await resp.text().catch(() => "");
+    console.error("PayPal auth error " + resp.status + ": " + errText);
+    throw new Error("PayPal authentication failed");
+  }
+  const data = await resp.json();
+  return { token: data.access_token, base };
+}
+
+// ---------------------------------------------------------------------------
+// PayPal config — GET /api/paypal/config
+// Returns public client ID only. Safe to expose to the browser.
+// ---------------------------------------------------------------------------
+function handlePayPalConfig(env) {
+  const rh = { "Content-Type": "application/json", ...CORS_HEADERS };
+  if (!env.PAYPAL_CLIENT_ID) {
+    return Response.json({ error: "PayPal not configured" }, { status: 503, headers: rh });
+  }
+  return Response.json(
+    { clientId: env.PAYPAL_CLIENT_ID, env: env.PAYPAL_ENV || "sandbox" },
+    { headers: rh },
+  );
+}
+
+// ---------------------------------------------------------------------------
+// PayPal create order — POST /api/paypal/create-order
+// Body: { productId: string }
+// Server resolves price from catalog — browser cannot override it.
+// ---------------------------------------------------------------------------
+async function handlePayPalCreateOrder(request, env) {
+  const rh = { "Content-Type": "application/json", ...CORS_HEADERS };
+  let body;
+  try { body = await request.json(); } catch {
+    return Response.json({ error: "Invalid JSON body" }, { status: 400, headers: rh });
+  }
+  const { productId } = body || {};
+  if (!productId) {
+    return Response.json({ error: "productId is required" }, { status: 400, headers: rh });
+  }
+  const product = PRODUCT_CATALOG.find((p) => p.id === productId);
+  if (!product) {
+    return Response.json({ error: "Product not found" }, { status: 404, headers: rh });
+  }
+  const finalPrice = product.salePrice !== null ? product.salePrice : product.basePrice;
+  const amount = finalPrice.toFixed(2);
+
+  let token, base;
+  try { ({ token, base } = await getPayPalToken(env)); } catch (err) {
+    console.error("PayPal token error:", err);
+    return Response.json({ error: "Payment service temporarily unavailable" }, { status: 503, headers: rh });
+  }
+
+  const orderPayload = {
+    intent: "CAPTURE",
+    purchase_units: [{
+      reference_id: product.id,
+      description: product.title,
+      amount: { currency_code: "USD", value: amount },
+      custom_id: product.id,
+    }],
+    application_context: {
+      brand_name: "Forge Atlas",
+      landing_page: "NO_PREFERENCE",
+      user_action: "PAY_NOW",
+    },
+  };
+
+  try {
+    const orderResp = await fetch(base + "/v2/checkout/orders", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + token,
+        "PayPal-Request-Id": "atlas-" + product.id + "-" + Date.now(),
+      },
+      body: JSON.stringify(orderPayload),
+    });
+    if (!orderResp.ok) {
+      const errText = await orderResp.text().catch(() => "");
+      console.error("PayPal create order error " + orderResp.status + ": " + errText);
+      return Response.json({ error: "Failed to create payment order" }, { status: 502, headers: rh });
+    }
+    const orderData = await orderResp.json();
+    return Response.json({ orderId: orderData.id, status: orderData.status }, { headers: rh });
+  } catch (err) {
+    console.error("PayPal create order fetch error:", err);
+    return Response.json({ error: "Payment service temporarily unavailable" }, { status: 503, headers: rh });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// PayPal capture order — POST /api/paypal/capture-order
+// Body: { orderId: string }
+// ---------------------------------------------------------------------------
+async function handlePayPalCaptureOrder(request, env) {
+  const rh = { "Content-Type": "application/json", ...CORS_HEADERS };
+  let body;
+  try { body = await request.json(); } catch {
+    return Response.json({ error: "Invalid JSON body" }, { status: 400, headers: rh });
+  }
+  const { orderId } = body || {};
+  if (!orderId || typeof orderId !== "string") {
+    return Response.json({ error: "orderId is required" }, { status: 400, headers: rh });
+  }
+
+  let token, base;
+  try { ({ token, base } = await getPayPalToken(env)); } catch (err) {
+    console.error("PayPal token error:", err);
+    return Response.json({ error: "Payment service temporarily unavailable" }, { status: 503, headers: rh });
+  }
+
+  try {
+    const captureResp = await fetch(
+      base + "/v2/checkout/orders/" + encodeURIComponent(orderId) + "/capture",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+        body: JSON.stringify({}),
+      },
+    );
+    if (!captureResp.ok) {
+      const errText = await captureResp.text().catch(() => "");
+      console.error("PayPal capture error " + captureResp.status + ": " + errText);
+      return Response.json({ error: "Failed to capture payment" }, { status: 502, headers: rh });
+    }
+    const captureData = await captureResp.json();
+    const unit = captureData?.purchase_units?.[0];
+    const capture = unit?.payments?.captures?.[0];
+    const pid = unit?.reference_id || unit?.custom_id || "";
+    const product = PRODUCT_CATALOG.find((p) => p.id === pid);
+    console.log(
+      "Order captured: " + captureData.id + " | product: " + pid +
+      " | amount: " + (capture?.amount?.value || "?") + " " + (capture?.amount?.currency_code || ""),
+    );
+    return Response.json(
+      {
+        success: true,
+        orderId: captureData.id,
+        status: captureData.status,
+        product: product
+          ? { id: product.id, title: product.title, deliveryType: product.deliveryType }
+          : null,
+      },
+      { headers: rh },
+    );
+  } catch (err) {
+    console.error("PayPal capture fetch error:", err);
+    return Response.json({ error: "Payment service temporarily unavailable" }, { status: 503, headers: rh });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// PayPal webhook — POST /api/paypal/webhook
+// Verifies signature with PayPal's verify-webhook-signature API
+// ---------------------------------------------------------------------------
+async function handlePayPalWebhook(request, env) {
+  if (!env.PAYPAL_WEBHOOK_ID || !env.PAYPAL_CLIENT_ID || !env.PAYPAL_CLIENT_SECRET) {
+    return new Response("Webhook not configured", { status: 200 });
+  }
+  const rawBody = await request.text();
+  const transmissionId   = request.headers.get("paypal-transmission-id")   || "";
+  const transmissionTime = request.headers.get("paypal-transmission-time") || "";
+  const certUrl          = request.headers.get("paypal-cert-url")          || "";
+  const authAlgo         = request.headers.get("paypal-auth-algo")         || "";
+  const transmissionSig  = request.headers.get("paypal-transmission-sig")  || "";
+
+  let token, base;
+  try { ({ token, base } = await getPayPalToken(env)); } catch (err) {
+    console.error("PayPal webhook token error:", err);
+    return new Response("Service error", { status: 500 });
+  }
+
+  let parsedEvent;
+  try { parsedEvent = JSON.parse(rawBody); } catch {
+    return new Response("Invalid JSON body", { status: 400 });
+  }
+
+  const verifyPayload = {
+    auth_algo: authAlgo,
+    cert_url: certUrl,
+    transmission_id: transmissionId,
+    transmission_sig: transmissionSig,
+    transmission_time: transmissionTime,
+    webhook_id: env.PAYPAL_WEBHOOK_ID,
+    webhook_event: parsedEvent,
+  };
+
+  try {
+    const verifyResp = await fetch(base + "/v1/notifications/verify-webhook-signature", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+      body: JSON.stringify(verifyPayload),
+    });
+    if (!verifyResp.ok) {
+      console.error("PayPal webhook verify failed: " + verifyResp.status);
+      return new Response("Verification error", { status: 200 });
+    }
+    const verifyData = await verifyResp.json();
+    if (verifyData.verification_status !== "SUCCESS") {
+      console.warn("PayPal webhook signature invalid: " + verifyData.verification_status);
+      return new Response("Invalid signature", { status: 200 });
+    }
+    console.log("PayPal webhook event: " + parsedEvent.event_type + " | resource: " + parsedEvent.resource?.id);
+    if (parsedEvent.event_type === "PAYMENT.CAPTURE.COMPLETED") {
+      const customId = parsedEvent.resource?.custom_id || "";
+      const product = PRODUCT_CATALOG.find((p) => p.id === customId);
+      console.log(
+        "Delivery trigger: product=" + customId +
+        " | capture=" + parsedEvent.resource?.id +
+        " | type=" + (product?.deliveryType || "unknown"),
+      );
+    }
+    return new Response("OK", { status: 200 });
+  } catch (err) {
+    console.error("PayPal webhook error:", err);
+    return new Response("Processing error", { status: 200 });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Debate generate — POST /api/debate/generate
+// Body: { topic: string, rounds?: number (1-5) }
+// Returns structured transcript with staggered pacing metadata
+// ---------------------------------------------------------------------------
+async function handleDebateGenerate(request, env) {
+  const rh = { "Content-Type": "application/json", ...CORS_HEADERS };
+  let body;
+  try { body = await request.json(); } catch {
+    return Response.json({ error: "Invalid JSON body" }, { status: 400, headers: rh });
+  }
+  const topic = typeof body?.topic === "string" ? body.topic.trim().slice(0, 300) : "";
+  if (!topic) {
+    return Response.json({ error: "topic is required" }, { status: 400, headers: rh });
+  }
+  const rounds = Math.min(
+    Math.max(parseInt(body?.rounds, 10) || DEBATE_DEFAULT_ROUNDS, DEBATE_MIN_ROUNDS),
+    DEBATE_MAX_ROUNDS,
+  );
+  const apiKey = env.ATLAS_AI_API_KEY;
+  if (!apiKey) {
+    return Response.json(
+      { error: "Debate engine not configured — ATLAS_AI_API_KEY required" },
+      { status: 503, headers: rh },
+    );
+  }
+  const endpoint = env.ATLAS_AI_ENDPOINT || "https://api.openai.com/v1/chat/completions";
+  const systemPrompt =
+    "You are a debate transcript generator. Given a topic, produce a structured " +
+    "JSON debate between two AI personas: Vector (pro/logical) and Cipher (con/skeptical). " +
+    "Output ONLY valid JSON in this exact shape, with no markdown fencing:\n" +
+    "{\"topic\":\"...\",\"rounds\":[{\"round\":1,\"vector\":{\"argument\":\"...\",\"confidence\":70}," +
+    "\"cipher\":{\"argument\":\"...\",\"confidence\":60}}]}";
+
+  try {
+    const aiResp = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + apiKey },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: "Generate a " + rounds + "-round debate on: \"" + topic + "\"" },
+        ],
+        max_tokens: 1800,
+        temperature: 0.85,
+      }),
+    });
+    if (!aiResp.ok) {
+      const errText = await aiResp.text().catch(() => "");
+      console.error("Debate AI error " + aiResp.status + ": " + errText);
+      return Response.json({ error: "Debate engine temporarily unavailable" }, { status: 502, headers: rh });
+    }
+    const aiData = await aiResp.json();
+    const raw = aiData?.choices?.[0]?.message?.content?.trim() || "";
+    let transcript;
+    try {
+      transcript = JSON.parse(raw);
+    } catch {
+      transcript = {
+        topic,
+        rounds: [{
+          round: 1,
+          vector: { argument: raw.slice(0, 600), confidence: DEBATE_FALLBACK_CONFIDENCE_VECTOR },
+          cipher: { argument: "Position pending.", confidence: DEBATE_FALLBACK_CONFIDENCE_CIPHER },
+        }],
+      };
+    }
+    let delay = 0;
+    const roundsList = Array.isArray(transcript.rounds) ? transcript.rounds : [];
+    for (const r of roundsList) {
+      r.pacing = {
+        vectorDelay: delay,
+        cipherDelay: delay + DEBATE_BASE_CIPHER_DELAY_MS + Math.floor(Math.random() * DEBATE_CIPHER_JITTER_MS),
+      };
+      delay += DEBATE_ROUND_BASE_MS + Math.floor(Math.random() * DEBATE_ROUND_JITTER_MS);
+    }
+    return Response.json(transcript, { headers: rh });
+  } catch (err) {
+    console.error("Debate generate error:", err);
+    return Response.json({ error: "Debate engine temporarily unavailable" }, { status: 503, headers: rh });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Forum threads — GET /api/forum/threads
+// ---------------------------------------------------------------------------
+function handleForumThreads() {
+  return Response.json(FORUM_SEED_THREADS, {
+    headers: { "Content-Type": "application/json", ...CORS_HEADERS },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Forum generate — POST /api/forum/generate
+// Body: { topic?: string, category?: string }
+// ---------------------------------------------------------------------------
+async function handleForumGenerate(request, env) {
+  const rh = { "Content-Type": "application/json", ...CORS_HEADERS };
+  let body;
+  try { body = await request.json(); } catch {
+    return Response.json({ error: "Invalid JSON body" }, { status: 400, headers: rh });
+  }
+  const topic = typeof body?.topic === "string" ? body.topic.trim().slice(0, 200) : "";
+  const category = typeof body?.category === "string" ? body.category.trim() : "general";
+  const apiKey = env.ATLAS_AI_API_KEY;
+  if (!apiKey) {
+    return Response.json(
+      { error: "Forum AI not configured — ATLAS_AI_API_KEY required" },
+      { status: 503, headers: rh },
+    );
+  }
+  const endpoint = env.ATLAS_AI_ENDPOINT || "https://api.openai.com/v1/chat/completions";
+  const systemPrompt =
+    "You are an AI that writes realistic DevOps forum posts. " +
+    "Mix 70% serious technical content with 30% dry humor. " +
+    "Output ONLY valid JSON, no markdown fencing:\n" +
+    "{\"title\":\"...\",\"body\":\"...\",\"author\":\"...\"," +
+    "\"tags\":[\"...\"],\"reactions\":{\"fire\":0,\"thumbsup\":0,\"thinking\":0}}";
+  const userPrompt = topic
+    ? "Write a forum post about: \"" + topic + "\" in category: " + category
+    : "Write a forum post for category: " + category + ". Make it engaging and believable.";
+
+  try {
+    const aiResp = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + apiKey },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        max_tokens: 600,
+        temperature: 0.9,
+      }),
+    });
+    if (!aiResp.ok) {
+      const errText = await aiResp.text().catch(() => "");
+      console.error("Forum AI error " + aiResp.status + ": " + errText);
+      return Response.json({ error: "Forum AI temporarily unavailable" }, { status: 502, headers: rh });
+    }
+    const aiData = await aiResp.json();
+    const raw = aiData?.choices?.[0]?.message?.content?.trim() || "";
+    let post;
+    try {
+      post = JSON.parse(raw);
+    } catch {
+      post = {
+        title: topic || "New thread",
+        body: raw.slice(0, 800),
+        author: "atlas_ai",
+        tags: [category],
+        reactions: { fire: 0, thumbsup: 0, thinking: 0 },
+      };
+    }
+    post.id = "ai-" + Date.now();
+    post.createdAt = new Date().toISOString();
+    post.category = category;
+    return Response.json(post, { headers: rh });
+  } catch (err) {
+    console.error("Forum generate error:", err);
+    return Response.json({ error: "Forum AI temporarily unavailable" }, { status: 503, headers: rh });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Profile — GET /api/profile
+// Returns the default profile schema. KV storage adds persistence.
+// ---------------------------------------------------------------------------
+function handleProfile() {
+  const profile = {
+    id: "guest",
+    displayName: "Forge Atlas User",
+    emblem: { primary: "#e52020", secondary: "#0d1117", symbol: "forgeAtlas" },
+    stats: { debatesWon: 0, forumPosts: 0, toolsBuilt: 0, daysActive: 0 },
+    badges: [],
+    milestones: [],
+    purchases: [],
+    promptShowcase: [],
+    atlasSummary: "No conversations yet.",
+    theme: "forge-dark",
+    joinedAt: null,
+  };
+  return Response.json(profile, {
+    headers: { "Content-Type": "application/json", ...CORS_HEADERS },
   });
 }
