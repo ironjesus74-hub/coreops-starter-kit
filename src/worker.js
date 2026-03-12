@@ -55,6 +55,8 @@ const DEBATE_ROUND_BASE_MS = 2000;
 const DEBATE_ROUND_JITTER_MS = 1000;
 const PROFILE_TTL_SECONDS = 60 * 60 * 24 * 365; // 1 year
 const PURCHASE_TTL_SECONDS = 60 * 60 * 24 * 365 * 5; // 5 years — purchase records kept longer
+const PAYPAL_TOKEN_DEFAULT_TTL_SECONDS = 3600;  // PayPal token validity (1 h — their documented default)
+const PAYPAL_TOKEN_CACHE_BUFFER_SECONDS = 60;   // safety buffer to avoid using a token that may expire mid-flight
 
 // Fallback deployed origin — override via the ALLOWED_ORIGIN wrangler var.
 const DEPLOYED_ORIGIN = "https://forgeatlas.example";
@@ -98,8 +100,10 @@ const SECURITY_HEADERS = {
 const RATE_LIMIT_WINDOW_MS = 60_000;   // 1-minute window
 const RATE_LIMIT_MAX_PAYMENT = 10;     // max payment requests / IP / minute
 const RATE_LIMIT_MAX_AI = 20;          // max AI requests / IP / minute
+const RATE_LIMIT_PRUNE_INTERVAL = 200; // prune stale entries every N checks
 /** @type {Map<string, {count: number, windowStart: number}>} */
 const _rateLimitStore = new Map();
+let _rateLimitCheckCount = 0;
 
 /**
  * Returns true when the request should be allowed, false when rate-limited.
@@ -116,6 +120,15 @@ function checkRateLimit(key, limit) {
     entry.count += 1;
   }
   _rateLimitStore.set(key, entry);
+
+  // Periodically evict expired entries to prevent unbounded memory growth in
+  // long-lived isolates (e.g. during sustained traffic spikes).
+  if (++_rateLimitCheckCount % RATE_LIMIT_PRUNE_INTERVAL === 0) {
+    for (const [k, v] of _rateLimitStore) {
+      if (now - v.windowStart > RATE_LIMIT_WINDOW_MS) _rateLimitStore.delete(k);
+    }
+  }
+
   return entry.count <= limit;
 }
 
@@ -241,6 +254,9 @@ const PRODUCT_CATALOG = [
     featured: false,
   },
 ];
+
+// Pre-built Map for O(1) product lookups by id — avoids O(n) .find() scans.
+const PRODUCT_CATALOG_MAP = new Map(PRODUCT_CATALOG.map((p) => [p.id, p]));
 
 // ---------------------------------------------------------------------------
 // Forum seed threads — used when AI key is not configured
@@ -606,11 +622,26 @@ function paypalBase(env) {
     : "https://api-m.sandbox.paypal.com";
 }
 
+// In-memory OAuth2 token cache — per isolate instance. Tokens are valid for
+// ~1 h; we store them with a 60-s safety buffer to avoid using a token that
+// is about to expire.  Cloudflare Workers run in a single-threaded V8 isolate
+// so there are no shared-memory race conditions within one instance.
+/** @type {Map<string, {token: string, expiresAt: number}>} */
+const _paypalTokenCache = new Map();
+
 async function getPayPalToken(env) {
   if (!env.PAYPAL_CLIENT_ID || !env.PAYPAL_CLIENT_SECRET) {
     throw new Error("PayPal credentials not configured");
   }
   const base = paypalBase(env);
+
+  // Return a cached token when still valid.
+  const cacheKey = `${env.PAYPAL_ENV || "sandbox"}:${env.PAYPAL_CLIENT_ID}`;
+  const cached = _paypalTokenCache.get(cacheKey);
+  if (cached && Date.now() < cached.expiresAt) {
+    return { token: cached.token, base };
+  }
+
   // PayPal client IDs and secrets are guaranteed ASCII, making btoa safe here.
   const credentials = btoa(env.PAYPAL_CLIENT_ID + ":" + env.PAYPAL_CLIENT_SECRET);
   const resp = await fetch(base + "/v1/oauth2/token", {
@@ -627,6 +658,12 @@ async function getPayPalToken(env) {
     throw new Error("PayPal authentication failed");
   }
   const data = await resp.json();
+  // Cache with a safety buffer so we never hand out a token that may expire mid-flight.
+  const expiresIn = (data.expires_in || PAYPAL_TOKEN_DEFAULT_TTL_SECONDS) - PAYPAL_TOKEN_CACHE_BUFFER_SECONDS;
+  _paypalTokenCache.set(cacheKey, {
+    token: data.access_token,
+    expiresAt: Date.now() + expiresIn * 1000,
+  });
   return { token: data.access_token, base };
 }
 
@@ -663,7 +700,7 @@ async function handlePayPalCreateOrder(request, env) {
   if (!productId) {
     return Response.json({ error: "productId is required" }, { status: 400, headers: rh });
   }
-  const product = PRODUCT_CATALOG.find((p) => p.id === productId);
+  const product = PRODUCT_CATALOG_MAP.get(productId);
   if (!product) {
     return Response.json({ error: "Product not found" }, { status: 404, headers: rh });
   }
@@ -761,10 +798,9 @@ async function handlePayPalCaptureOrder(request, env) {
     const unit = captureData?.purchase_units?.[0];
     const capture = unit?.payments?.captures?.[0];
     const pid = unit?.reference_id || unit?.custom_id || "";
-    const product = PRODUCT_CATALOG.find((p) => p.id === pid);
+    const product = PRODUCT_CATALOG_MAP.get(pid);
     console.log(
-      "Order captured: " + captureData.id + " | product: " + pid +
-      " | amount: " + (capture?.amount?.value || "?") + " " + (capture?.amount?.currency_code || ""),
+      `Order captured: ${captureData.id} | product: ${pid} | amount: ${capture?.amount?.value || "?"} ${capture?.amount?.currency_code || ""}`,
     );
 
     // Persist purchase record to KV (best-effort — never block the response).
@@ -827,15 +863,16 @@ async function handlePayPalWebhook(request, env) {
     return new Response("Invalid cert_url", { status: 400 });
   }
 
+  // Parse the body early — reject invalid JSON before making any network calls.
+  let parsedEvent;
+  try { parsedEvent = JSON.parse(rawBody); } catch {
+    return new Response("Invalid JSON body", { status: 400 });
+  }
+
   let token, base;
   try { ({ token, base } = await getPayPalToken(env)); } catch (err) {
     console.error("PayPal webhook token error:", err);
     return new Response("Service error", { status: 500 });
-  }
-
-  let parsedEvent;
-  try { parsedEvent = JSON.parse(rawBody); } catch {
-    return new Response("Invalid JSON body", { status: 400 });
   }
 
   const verifyPayload = {
@@ -866,13 +903,9 @@ async function handlePayPalWebhook(request, env) {
     console.log("PayPal webhook event: " + parsedEvent.event_type + " | resource: " + parsedEvent.resource?.id);
     if (parsedEvent.event_type === "PAYMENT.CAPTURE.COMPLETED") {
       const customId = parsedEvent.resource?.custom_id || "";
-      const product = PRODUCT_CATALOG.find((p) => p.id === customId);
+      const product = PRODUCT_CATALOG_MAP.get(customId);
       console.log(
-        "Delivery trigger: product=" + customId +
-        " | capture=" + parsedEvent.resource?.id +
-        " | amount=" + (parsedEvent.resource?.amount?.value || "?") +
-        " " + (parsedEvent.resource?.amount?.currency_code || "") +
-        " | type=" + (product?.deliveryType || "unknown"),
+        `Delivery trigger: product=${customId} | capture=${parsedEvent.resource?.id} | amount=${parsedEvent.resource?.amount?.value || "?"} ${parsedEvent.resource?.amount?.currency_code || ""} | type=${product?.deliveryType || "unknown"}`,
       );
       // Persist webhook-confirmed purchase to KV (authoritative record).
       if (env.ATLAS_KV && customId) {
