@@ -48,17 +48,124 @@ const DEBATE_CIPHER_JITTER_MS = 400;
 const DEBATE_ROUND_BASE_MS = 2000;
 const DEBATE_ROUND_JITTER_MS = 1000;
 
+// Deployed origin — restrict sensitive endpoints to this domain.
+// Override via the ALLOWED_ORIGIN wrangler var if needed.
+const DEPLOYED_ORIGIN = "https://forgeatlas.example";
+
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
 };
 
+// Stricter CORS used for payment and AI endpoints.
+const SENSITIVE_CORS_HEADERS = {
+  "Access-Control-Allow-Origin": DEPLOYED_ORIGIN,
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Credentials": "true",
+  "Vary": "Origin",
+};
+
 const SECURITY_HEADERS = {
   "X-Content-Type-Options": "nosniff",
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "X-Frame-Options": "SAMEORIGIN",
+  "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
+  "Content-Security-Policy":
+    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://api-m.paypal.com https://api-m.sandbox.paypal.com https://www.paypal.com; frame-src https://www.paypal.com https://www.sandbox.paypal.com; object-src 'none'; base-uri 'self'; form-action 'self';",
 };
+
+// ---------------------------------------------------------------------------
+// Per-IP rate limiting — in-memory sliding window (per isolate instance).
+// Note: Cloudflare Workers run in a single-threaded V8 isolate so there are
+// no shared-memory race conditions within one instance. However, the store
+// is ephemeral — it resets whenever the isolate is recycled. This provides
+// meaningful burst protection; for durable, cross-instance enforcement use
+// Cloudflare Rate Limiting Rules in the dashboard (no extra code required).
+// ---------------------------------------------------------------------------
+const RATE_LIMIT_WINDOW_MS = 60_000;   // 1-minute window
+const RATE_LIMIT_MAX_PAYMENT = 10;     // max payment requests / IP / minute
+const RATE_LIMIT_MAX_AI = 20;          // max AI requests / IP / minute
+/** @type {Map<string, {count: number, windowStart: number}>} */
+const _rateLimitStore = new Map();
+
+/**
+ * Returns true when the request should be allowed, false when rate-limited.
+ * @param {string} key   - e.g. "pay:<ip>" or "ai:<ip>"
+ * @param {number} limit - max allowed requests per window
+ */
+function checkRateLimit(key, limit) {
+  const now = Date.now();
+  const entry = _rateLimitStore.get(key) || { count: 0, windowStart: now };
+  if (now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
+    entry.count = 1;
+    entry.windowStart = now;
+  } else {
+    entry.count += 1;
+  }
+  _rateLimitStore.set(key, entry);
+  return entry.count <= limit;
+}
+
+/** Extract the best available client IP from Cloudflare request headers. */
+function clientIp(request) {
+  return (
+    request.headers.get("CF-Connecting-IP") ||
+    request.headers.get("X-Forwarded-For")?.split(",")[0]?.trim() ||
+    "unknown"
+  );
+}
+
+/**
+ * Validate that the request Origin header matches the allowed origin.
+ * Returns a Response with status 403 if the origin is not allowed, or null
+ * if the origin is acceptable.
+ */
+function validateOrigin(request) {
+  const origin = request.headers.get("Origin");
+  if (origin && origin !== DEPLOYED_ORIGIN) {
+    return Response.json(
+      { error: "Origin not allowed" },
+      { status: 403, headers: { "Content-Type": "application/json" } },
+    );
+  }
+  return null;
+}
+
+/**
+ * Enforce method, origin, and rate-limit checks for sensitive endpoints.
+ * Returns a Response if the request should be rejected, or null to proceed.
+ * @param {Request} request
+ * @param {"payment"|"ai"} type
+ */
+function guardSensitiveRequest(request, type) {
+  if (request.method !== "POST") {
+    return Response.json(
+      { error: "Method not allowed" },
+      { status: 405, headers: { Allow: "POST, OPTIONS", "Content-Type": "application/json" } },
+    );
+  }
+  const originError = validateOrigin(request);
+  if (originError) return originError;
+
+  const ip = clientIp(request);
+  const limit = type === "payment" ? RATE_LIMIT_MAX_PAYMENT : RATE_LIMIT_MAX_AI;
+  if (!checkRateLimit(type + ":" + ip, limit)) {
+    return Response.json(
+      { error: "Too many requests. Please try again later." },
+      {
+        status: 429,
+        headers: {
+          "Content-Type": "application/json",
+          "Retry-After": "60",
+          ...SENSITIVE_CORS_HEADERS,
+        },
+      },
+    );
+  }
+  return null;
+}
 
 // ---------------------------------------------------------------------------
 // Product catalog — source of truth for pricing (never trust the browser)
@@ -184,7 +291,17 @@ export default {
 
     // ── CORS preflight ──────────────────────────────────────────────────────
     if (request.method === "OPTIONS") {
-      return new Response(null, { status: 204, headers: CORS_HEADERS });
+      const sensitivePaths = new Set([
+        "/api/atlas",
+        "/api/paypal/create-order",
+        "/api/paypal/capture-order",
+        "/api/debate/generate",
+        "/api/forum/generate",
+      ]);
+      const preflightHeaders = sensitivePaths.has(url.pathname)
+        ? SENSITIVE_CORS_HEADERS
+        : CORS_HEADERS;
+      return new Response(null, { status: 204, headers: preflightHeaders });
     }
 
     // ── API routes ──────────────────────────────────────────────────────────
@@ -245,9 +362,12 @@ export default {
 // Atlas AI endpoint — POST /api/atlas
 // ---------------------------------------------------------------------------
 async function handleAtlas(request, env) {
+  const guard = guardSensitiveRequest(request, "ai");
+  if (guard) return guard;
+
   const responseHeaders = {
     "Content-Type": "application/json",
-    ...CORS_HEADERS,
+    ...SENSITIVE_CORS_HEADERS,
   };
 
   let body;
@@ -489,7 +609,10 @@ function handlePayPalConfig(env) {
 // Server resolves price from catalog — browser cannot override it.
 // ---------------------------------------------------------------------------
 async function handlePayPalCreateOrder(request, env) {
-  const rh = { "Content-Type": "application/json", ...CORS_HEADERS };
+  const guard = guardSensitiveRequest(request, "payment");
+  if (guard) return guard;
+
+  const rh = { "Content-Type": "application/json", ...SENSITIVE_CORS_HEADERS };
   let body;
   try { body = await request.json(); } catch {
     return Response.json({ error: "Invalid JSON body" }, { status: 400, headers: rh });
@@ -554,7 +677,10 @@ async function handlePayPalCreateOrder(request, env) {
 // Body: { orderId: string }
 // ---------------------------------------------------------------------------
 async function handlePayPalCaptureOrder(request, env) {
-  const rh = { "Content-Type": "application/json", ...CORS_HEADERS };
+  const guard = guardSensitiveRequest(request, "payment");
+  if (guard) return guard;
+
+  const rh = { "Content-Type": "application/json", ...SENSITIVE_CORS_HEADERS };
   let body;
   try { body = await request.json(); } catch {
     return Response.json({ error: "Invalid JSON body" }, { status: 400, headers: rh });
@@ -684,7 +810,10 @@ async function handlePayPalWebhook(request, env) {
 // Returns structured transcript with staggered pacing metadata
 // ---------------------------------------------------------------------------
 async function handleDebateGenerate(request, env) {
-  const rh = { "Content-Type": "application/json", ...CORS_HEADERS };
+  const guard = guardSensitiveRequest(request, "ai");
+  if (guard) return guard;
+
+  const rh = { "Content-Type": "application/json", ...SENSITIVE_CORS_HEADERS };
   let body;
   try { body = await request.json(); } catch {
     return Response.json({ error: "Invalid JSON body" }, { status: 400, headers: rh });
@@ -776,7 +905,10 @@ function handleForumThreads() {
 // Body: { topic?: string, category?: string }
 // ---------------------------------------------------------------------------
 async function handleForumGenerate(request, env) {
-  const rh = { "Content-Type": "application/json", ...CORS_HEADERS };
+  const guard = guardSensitiveRequest(request, "ai");
+  if (guard) return guard;
+
+  const rh = { "Content-Type": "application/json", ...SENSITIVE_CORS_HEADERS };
   let body;
   try { body = await request.json(); } catch {
     return Response.json({ error: "Invalid JSON body" }, { status: 400, headers: rh });
