@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
 COREOPS_HOME="${COREOPS_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
