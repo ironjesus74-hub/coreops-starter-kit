@@ -16,8 +16,25 @@ directory = "."
 binding   = "ASSETS"
 
 # ---------------------------------------------------------------------------
+# KV Namespace — ATLAS_KV
+# Used for: user profiles, Atlas prompt memory, feature flags, product cache.
+# Create with:  wrangler kv namespace create ATLAS_KV
+# Then replace the id below with the output ID.
+# ---------------------------------------------------------------------------
+[[kv_namespaces]]
+binding = "ATLAS_KV"
+id      = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
+
+# ---------------------------------------------------------------------------
 # Environment variable placeholders.
-# Set real secrets via:  wrangler secret put ATLAS_AI_API_KEY
+# Set real secrets via:  wrangler secret put <NAME>
+#
+# Secrets (never stored in source):
+#   ATLAS_AI_API_KEY      — OpenAI-compatible API key
+#   PAYPAL_CLIENT_ID      — PayPal app client ID
+#   PAYPAL_CLIENT_SECRET  — PayPal app client secret
+#   PAYPAL_WEBHOOK_ID     — PayPal webhook ID for signature verification
+#   CONTACT_WEBHOOK_URL   — Optional webhook for contact form delivery
 # ---------------------------------------------------------------------------
 [vars]
 ATLAS_AI_ENDPOINT = "https://api.openai.com/v1/chat/completions"

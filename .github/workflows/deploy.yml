@@ -1,0 +1,33 @@
+name: Deploy to Cloudflare Workers
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy Worker
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate wrangler.toml KV namespace ID
+        shell: bash
+        run: |
+          if grep -q 'REPLACE_WITH_YOUR_KV_NAMESPACE_ID' wrangler.toml; then
+            echo "ERROR: wrangler.toml still contains placeholder KV namespace ID."
+            echo "Run: wrangler kv namespace create ATLAS_KV"
+            echo "Then update the 'id' field in [[kv_namespaces]] in wrangler.toml."
+            exit 1
+          fi
+
+      - name: Deploy via Wrangler
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

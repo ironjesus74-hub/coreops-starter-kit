@@ -8,3 +8,11 @@ worker-configuration.d.ts
 
 # Node
 node_modules/
+
+# Databases and local state files
+*.db
+*.sqlite
+*.sqlite3
+
+# Accidentally-expanded shell paths
+'${HOME}'/

@@ -17,9 +17,14 @@
  *   POST  /api/debate/generate       — Generate AI debate transcript
  *   GET   /api/forum/threads         — Get seeded forum threads list
  *   POST  /api/forum/generate        — Generate AI forum post/thread
- *   GET   /api/profile               — Profile structure
+ *   GET   /api/profile               — Get profile (KV-backed; ?userId=xxx)
+ *   POST  /api/profile               — Save/update profile (KV-backed)
  *   OPTIONS *                        — CORS preflight
  *   *                                — Static assets via ASSETS binding
+ *
+ * Bindings (wrangler.toml):
+ *   ASSETS   — static file serving
+ *   ATLAS_KV — Workers KV for profile/memory/feature-flag storage
  *
  * Secrets (set via: wrangler secret put <NAME>):
  *   ATLAS_AI_API_KEY      — OpenAI-compatible API key
@@ -232,7 +237,11 @@ export default {
 
     // ── Profile route ────────────────────────────────────────────────────────
     if (url.pathname === "/api/profile" && request.method === "GET") {
-      return handleProfile();
+      return handleProfileGet(request, env);
+    }
+
+    if (url.pathname === "/api/profile" && request.method === "POST") {
+      return handleProfilePost(request, env);
     }
 
     // ── Static assets via ASSETS binding ────────────────────────────────────
@@ -845,12 +854,19 @@ async function handleForumGenerate(request, env) {
 }
 
 // ---------------------------------------------------------------------------
-// Profile — GET /api/profile
-// Returns the default profile schema. KV storage adds persistence.
+// Profile helpers
 // ---------------------------------------------------------------------------
-function handleProfile() {
-  const profile = {
-    id: "guest",
+
+// Sanitise a user-supplied userId: alphanumeric, dash, underscore; max 64 chars.
+// Falls back to "guest" if the result would be empty.
+function sanitizeUserId(raw) {
+  const sanitized = String(raw || "").slice(0, 64).replace(/[^a-zA-Z0-9_-]/g, "");
+  return sanitized || "guest";
+}
+
+function defaultProfile(userId) {
+  return {
+    id: userId || "guest",
     displayName: "Forge Atlas User",
     emblem: { primary: "#e52020", secondary: "#0d1117", symbol: "forgeAtlas" },
     stats: { debatesWon: 0, forumPosts: 0, toolsBuilt: 0, daysActive: 0 },
@@ -862,7 +878,75 @@ function handleProfile() {
     theme: "forge-dark",
     joinedAt: null,
   };
-  return Response.json(profile, {
-    headers: { "Content-Type": "application/json", ...CORS_HEADERS },
-  });
+}
+
+// ---------------------------------------------------------------------------
+// Profile GET — GET /api/profile?userId=<id>
+// Reads from ATLAS_KV if bound; falls back to default profile.
+// ---------------------------------------------------------------------------
+async function handleProfileGet(request, env) {
+  const rh = { "Content-Type": "application/json", ...CORS_HEADERS };
+  const url = new URL(request.url);
+  const userId = sanitizeUserId(url.searchParams.get("userId") || "guest");
+
+  if (env.ATLAS_KV) {
+    const stored = await env.ATLAS_KV.get("profile:" + userId, { type: "json" }).catch(() => null);
+    if (stored) {
+      return Response.json(stored, { headers: rh });
+    }
+  }
+
+  return Response.json(defaultProfile(userId), { headers: rh });
+}
+
+// ---------------------------------------------------------------------------
+// Profile POST — POST /api/profile
+// Body: { userId: string, patch: object }
+// Merges patch into stored profile and persists to ATLAS_KV.
+// ---------------------------------------------------------------------------
+async function handleProfilePost(request, env) {
+  const rh = { "Content-Type": "application/json", ...CORS_HEADERS };
+
+  if (!env.ATLAS_KV) {
+    return Response.json({ error: "Profile storage not configured" }, { status: 503, headers: rh });
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return Response.json({ error: "Invalid JSON body" }, { status: 400, headers: rh });
+  }
+
+  const rawUserId = typeof body?.userId === "string" ? body.userId : "";
+  if (!rawUserId.trim()) {
+    return Response.json({ error: "userId is required" }, { status: 400, headers: rh });
+  }
+  const userId = sanitizeUserId(rawUserId);
+  if (!userId || userId === "guest") {
+    return Response.json({ error: "userId must contain valid characters (a-z, 0-9, -, _)" }, { status: 400, headers: rh });
+  }
+
+  const patch = body?.patch && typeof body.patch === "object" && !Array.isArray(body.patch)
+    ? body.patch
+    : {};
+
+  // Allowed top-level patch keys (prevents overwriting id or purchases via this endpoint)
+  const ALLOWED_PATCH_KEYS = new Set([
+    "displayName", "emblem", "stats", "badges", "milestones",
+    "promptShowcase", "atlasSummary", "theme", "joinedAt",
+  ]);
+
+  const existing = await env.ATLAS_KV.get("profile:" + userId, { type: "json" }).catch(() => null)
+    || defaultProfile(userId);
+
+  for (const [key, value] of Object.entries(patch)) {
+    if (ALLOWED_PATCH_KEYS.has(key)) {
+      existing[key] = value;
+    }
+  }
+  existing.id = userId;
+
+  await env.ATLAS_KV.put("profile:" + userId, JSON.stringify(existing));
+  return Response.json({ success: true, profile: existing }, { headers: rh });
 }
