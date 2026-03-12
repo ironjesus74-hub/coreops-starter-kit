@@ -1,0 +1,11 @@
+{
+  "name": "coreops-starter-kit",
+  "version": "1.0.0",
+  "description": "CoreOps local dev server — preview all HTML options in the browser",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [],
+  "license": "MIT"
+}
