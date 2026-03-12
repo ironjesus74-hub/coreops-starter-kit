@@ -22,7 +22,6 @@ jobs:
             const repo = context.repo.repo;
 
             const title = "[ATLAS] ShellCheck failing";
-            const labels = ["atlas", "triage", "shellcheck"];
 
             const run = context.payload.workflow_run;
             const conclusion = run?.conclusion || "unknown";
@@ -46,27 +45,32 @@ jobs:
 - Run: ${runUrl}
 `;
 
-            const { data: issues } = await github.rest.search.issuesAndPullRequests({
-              q: `repo:${owner}/${repo} is:issue is:open in:title "${title}"`
-            });
+            try {
+              const { data: issues } = await github.rest.search.issuesAndPullRequests({
+                q: `repo:${owner}/${repo} is:issue is:open in:title "${title}"`
+              });
 
-            if (conclusion === "failure") {
-              if (issues.items.length > 0) {
-                const issue_number = issues.items[0].number;
-                await github.rest.issues.createComment({ owner, repo, issue_number, body: failBody });
-                core.info(`Updated existing issue #${issue_number}`);
+              if (conclusion === "failure") {
+                if (issues.items.length > 0) {
+                  const issue_number = issues.items[0].number;
+                  await github.rest.issues.createComment({ owner, repo, issue_number, body: failBody });
+                  core.info(`Updated existing issue #${issue_number}`);
+                } else {
+                  const created = await github.rest.issues.create({ owner, repo, title, body: failBody });
+                  core.info(`Created issue #${created.data.number}`);
+                }
+              } else if (conclusion === "success") {
+                if (issues.items.length > 0) {
+                  const issue_number = issues.items[0].number;
+                  await github.rest.issues.createComment({ owner, repo, issue_number, body: okBody });
+                  await github.rest.issues.update({ owner, repo, issue_number, state: "closed" });
+                  core.info(`Closed issue #${issue_number} on recovery`);
+                } else {
+                  core.info("No open ShellCheck issue to close.");
+                }
               } else {
-                const created = await github.rest.issues.create({ owner, repo, title, body: failBody, labels });
-                core.info(`Created issue #${created.data.number}`);
+                core.info(`Conclusion=${conclusion}; no action.`);
               }
-            } else if (conclusion === "success") {
-              if (issues.items.length > 0) {
-                const issue_number = issues.items[0].number;
-                await github.rest.issues.createComment({ owner, repo, issue_number, body: okBody });
-                await github.rest.issues.update({ owner, repo, issue_number, state: "closed" });
-                core.info(`Closed issue #${issue_number} on recovery`);
-              } else {
-                core.info("No open ShellCheck issue to close.");
-              }
-            } else {
-              core.info(`Conclusion=${conclusion}; no action.`);
+            } catch (err) {
+              core.warning(`ATLAS triage script error: ${err.message}`);
+            }
