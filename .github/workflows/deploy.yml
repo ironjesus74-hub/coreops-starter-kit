@@ -1,0 +1,42 @@
+name: Deploy to Cloudflare Workers
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate wrangler config
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -q "YOUR_CLOUDFLARE_ACCOUNT_ID\|YOUR_KV_NAMESPACE_ID" wrangler.toml; then
+            echo "::warning::wrangler.toml contains placeholder values — skipping deploy."
+            echo "SKIP_DEPLOY=true" >> "$GITHUB_ENV"
+          else
+            echo "SKIP_DEPLOY=false" >> "$GITHUB_ENV"
+          fi
+
+      - name: Deploy Worker
+        if: env.SKIP_DEPLOY != 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npm run deploy
