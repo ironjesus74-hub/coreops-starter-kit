@@ -43,7 +43,7 @@
 
     let transcript_data;
     try {
-      const resp = await fetch("/api/debate/generate", {
+      const resp = await fetch("/api/atlas/debate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ topic, rounds }),

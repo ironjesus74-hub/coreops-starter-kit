@@ -9,16 +9,16 @@
  * Routes:
  *   GET   /api/health                — Service health check (DB connectivity)
  *   GET   /api/db-test               — D1 database smoke test
- *   POST  /api/atlas                 — Atlas AI assistant (legacy; prefer /api/atlas/chat)
+ *   POST  /api/atlas                 — Atlas AI assistant (legacy; delegates to /api/atlas/chat)
  *   POST  /api/contact               — Contact form
  *   GET   /api/products              — Product catalog (public)
  *   GET   /api/paypal/config         — Return PayPal client ID (safe)
  *   POST  /api/paypal/create-order   — Create PayPal order (server-priced)
  *   POST  /api/paypal/capture-order  — Capture PayPal order
  *   POST  /api/paypal/webhook        — PayPal webhook handler
- *   POST  /api/debate/generate       — Generate AI debate transcript (legacy; prefer /api/atlas/debate)
+ *   POST  /api/debate/generate       — Generate AI debate transcript (legacy; delegates to /api/atlas/debate)
  *   GET   /api/forum/threads         — Get seeded forum threads list
- *   POST  /api/forum/generate        — Generate AI forum post/thread (legacy; prefer /api/atlas/forum-assist)
+ *   POST  /api/forum/generate        — Generate AI forum post/thread (legacy; delegates to /api/atlas/forum-assist)
  *   GET   /api/profile               — Read profile (KV-backed; ?userId=)
  *   POST  /api/profile               — Write/merge profile patch (KV-backed)
  *   GET   /api/purchases             — Read purchase history (KV-backed; ?userId=)
@@ -27,7 +27,7 @@
  *   GET   /api/atlas/agents          — Agent registry (public, read-only)
  *   POST  /api/atlas/chat            — Enhanced Atlas AI chat (mode: devops|general|operator)
  *   POST  /api/atlas/debate          — AI debate generation
- *   POST  /api/atlas/forum-assist    — Forum AI assistance (draft|reply|summarize|categorize|analyze)
+ *   POST  /api/atlas/forum-assist    — Forum AI assistance (generate|draft|reply|summarize|categorize|analyze)
  *   POST  /api/atlas/moderate        — AI content moderation (verdict: safe|warn|flag)
  *   POST  /api/atlas/prompts         — Prompt generation/expansion (generate|expand|suggest)
  *   GET   /api/atlas/admin/status    — System status (requires ATLAS_INTERNAL_SECRET)
@@ -578,85 +578,11 @@ async function handleDbTest(env) {
 }
 
 // ---------------------------------------------------------------------------
-// Atlas AI endpoint — POST /api/atlas
+// Atlas AI endpoint — POST /api/atlas (legacy — delegates to /api/atlas/chat)
+// Kept for backward compatibility. All new callers should use /api/atlas/chat.
 // ---------------------------------------------------------------------------
 async function handleAtlas(request, env) {
-  const guard = guardSensitiveRequest(request, "ai", env);
-  if (guard) return guard;
-
-  const rh = { "Content-Type": "application/json", ...sensitiveHeaders(env) };
-
-  const { body, bodyError } = await parseJsonBody(request);
-  if (bodyError) return Response.json({ error: bodyError }, { status: 400, headers: rh });
-
-  const message =
-    typeof body?.message === "string" ? body.message.trim() : "";
-  if (!message) {
-    return Response.json(
-      { error: "message field is required" },
-      { status: 400, headers: rh },
-    );
-  }
-
-  if (message.length > MAX_ATLAS_MSG_LENGTH) {
-    return Response.json(
-      { error: "message exceeds maximum allowed length" },
-      { status: 400, headers: rh },
-    );
-  }
-
-  const apiKey = env.ATLAS_AI_API_KEY;
-  if (!apiKey) {
-    return Response.json(
-      { error: "AI service not configured" },
-      { status: 503, headers: rh },
-    );
-  }
-
-  const endpoint =
-    env.ATLAS_AI_ENDPOINT ||
-    "https://api.openai.com/v1/chat/completions";
-
-  // Optional account-specific prompt context — strip control/zero-width chars
-  // to prevent prompt-injection before appending to the system message.
-  const systemExtra =
-    typeof body?.systemContext === "string"
-      ? " " + sanitizeSystemContext(body.systemContext.slice(0, MAX_SYSTEM_CONTEXT_LENGTH))
-      : "";
-
-  try {
-    const raw = await callAI(endpoint, apiKey, {
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are Atlas, an AI assistant for CoreOps — a mobile-first DevOps CLI platform built for Termux and Linux. " +
-            "Help users with DevOps questions, CLI usage, networking, TLS audits, automation, and shell scripting. " +
-            "Keep responses concise, technical, and actionable. Use code blocks when sharing commands." +
-            systemExtra,
-        },
-        { role: "user", content: message },
-      ],
-      max_tokens: 1024,
-    }, "Atlas AI upstream");
-
-    if (raw === null) {
-      return Response.json(
-        { error: "Atlas is temporarily unavailable" },
-        { status: 502, headers: rh },
-      );
-    }
-
-    const reply = raw || "Atlas has no response right now.";
-    return Response.json({ reply }, { headers: rh });
-  } catch (err) {
-    console.error("Atlas fetch error:", err);
-    return Response.json(
-      { error: "Atlas is temporarily unavailable" },
-      { status: 502, headers: rh },
-    );
-  }
+  return handleAtlasChat(request, env);
 }
 
 // ---------------------------------------------------------------------------
@@ -1092,15 +1018,20 @@ async function handlePayPalWebhook(request, env) {
 }
 
 // ---------------------------------------------------------------------------
-// Debate generate — POST /api/debate/generate
+// Debate generate — POST /api/debate/generate AND POST /api/atlas/debate
 // Body: { topic: string, rounds?: number (1-5) }
-// Returns structured transcript with staggered pacing metadata
+// Returns structured transcript with staggered pacing metadata.
+// Both the legacy route and the canonical Atlas route share this handler.
 // ---------------------------------------------------------------------------
 async function handleDebateGenerate(request, env) {
   const guard = guardSensitiveRequest(request, "ai", env);
   if (guard) return guard;
 
   const rh = { "Content-Type": "application/json", ...sensitiveHeaders(env) };
+
+  if (env.DEBATE_AI_ENABLED === "false") {
+    return Response.json({ error: "Debate engine is disabled" }, { status: 503, headers: rh });
+  }
 
   const { body, bodyError } = await parseJsonBody(request);
   if (bodyError) return Response.json({ error: bodyError }, { status: 400, headers: rh });
@@ -1120,6 +1051,7 @@ async function handleDebateGenerate(request, env) {
     );
   }
   const endpoint = env.ATLAS_AI_ENDPOINT || "https://api.openai.com/v1/chat/completions";
+  const model = env.OPENAI_MODEL || "gpt-4o-mini";
   const systemPrompt =
     "You are a structured AI debate transcript generator. " +
     "Produce a realistic multi-round debate between two distinct AI personas:\n" +
@@ -1137,7 +1069,7 @@ async function handleDebateGenerate(request, env) {
 
   try {
     const raw = await callAI(endpoint, apiKey, {
-      model: "gpt-4o-mini",
+      model,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: "Generate a " + rounds + "-round debate on: \"" + topic + "\"" },
@@ -1174,7 +1106,7 @@ async function handleDebateGenerate(request, env) {
     return Response.json(transcript, { headers: rh });
   } catch (err) {
     console.error("Debate generate error:", err);
-    return Response.json({ error: "Debate engine temporarily unavailable" }, { status: 503, headers: rh });
+    return Response.json({ error: "Debate engine temporarily unavailable" }, { status: 502, headers: rh });
   }
 }
 
@@ -1188,27 +1120,21 @@ function handleForumThreads() {
 }
 
 // ---------------------------------------------------------------------------
-// Forum generate — POST /api/forum/generate
-// Body: { topic?: string, category?: string }
+// Internal helper — generate a single AI forum thread object.
+// Shared by handleForumGenerate (legacy) and handleAtlasForumAssist (generate).
+// Returns { post, error } — error is a non-null string on failure.
+// @param {string} topic
+// @param {string} category
+// @param {object} env
+// @returns {Promise<{post: object|null, error: string|null, status: number}>}
 // ---------------------------------------------------------------------------
-async function handleForumGenerate(request, env) {
-  const guard = guardSensitiveRequest(request, "ai", env);
-  if (guard) return guard;
-
-  const rh = { "Content-Type": "application/json", ...sensitiveHeaders(env) };
-
-  const { body, bodyError } = await parseJsonBody(request);
-  if (bodyError) return Response.json({ error: bodyError }, { status: 400, headers: rh });
-  const topic = typeof body?.topic === "string" ? body.topic.trim().slice(0, 200) : "";
-  const category = typeof body?.category === "string" ? body.category.trim() : "general";
+async function buildAIForumThread(topic, category, env) {
   const apiKey = env.ATLAS_AI_API_KEY;
   if (!apiKey) {
-    return Response.json(
-      { error: "Forum AI not configured — ATLAS_AI_API_KEY required" },
-      { status: 503, headers: rh },
-    );
+    return { post: null, error: "Forum AI not configured — ATLAS_AI_API_KEY required", status: 503 };
   }
   const endpoint = env.ATLAS_AI_ENDPOINT || "https://api.openai.com/v1/chat/completions";
+  const model = env.OPENAI_MODEL || "gpt-4o-mini";
   const systemPrompt =
     "You are an AI that writes realistic DevOps community forum posts. " +
     "Write as a real practitioner — use first-person, specific technical details, " +
@@ -1226,7 +1152,7 @@ async function handleForumGenerate(request, env) {
 
   try {
     const raw = await callAI(endpoint, apiKey, {
-      model: "gpt-4o-mini",
+      model,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
@@ -1236,7 +1162,7 @@ async function handleForumGenerate(request, env) {
     }, "Forum AI");
 
     if (raw === null) {
-      return Response.json({ error: "Forum AI temporarily unavailable" }, { status: 502, headers: rh });
+      return { post: null, error: "Forum AI temporarily unavailable", status: 502 };
     }
     let post;
     try {
@@ -1257,11 +1183,39 @@ async function handleForumGenerate(request, env) {
     post.id = "ai-" + Date.now();
     post.createdAt = new Date().toISOString();
     post.category = category;
-    return Response.json(post, { headers: rh });
+    post.aiGenerated = true;
+    return { post, error: null, status: 200 };
   } catch (err) {
-    console.error("Forum generate error:", err);
-    return Response.json({ error: "Forum AI temporarily unavailable" }, { status: 503, headers: rh });
+    console.error("Forum AI error:", err);
+    return { post: null, error: "Forum AI temporarily unavailable", status: 502 };
   }
+}
+
+// ---------------------------------------------------------------------------
+// Forum generate — POST /api/forum/generate (legacy — delegates to buildAIForumThread)
+// Body: { topic?: string, category?: string }
+// Kept for backward compatibility. New callers should use /api/atlas/forum-assist.
+// ---------------------------------------------------------------------------
+async function handleForumGenerate(request, env) {
+  const guard = guardSensitiveRequest(request, "ai", env);
+  if (guard) return guard;
+
+  const rh = { "Content-Type": "application/json", ...sensitiveHeaders(env) };
+
+  if (env.FORUM_AI_ENABLED === "false") {
+    return Response.json({ error: "Forum AI is disabled" }, { status: 503, headers: rh });
+  }
+
+  const { body, bodyError } = await parseJsonBody(request);
+  if (bodyError) return Response.json({ error: bodyError }, { status: 400, headers: rh });
+  const topic = typeof body?.topic === "string" ? body.topic.trim().slice(0, 200) : "";
+  const category = typeof body?.category === "string" ? body.category.trim() : "general";
+
+  const { post, error, status } = await buildAIForumThread(topic, category, env);
+  if (error) {
+    return Response.json({ error }, { status, headers: rh });
+  }
+  return Response.json(post, { headers: rh });
 }
 
 // ---------------------------------------------------------------------------
@@ -1590,12 +1544,29 @@ async function handleAtlasForumAssist(request, env) {
 
   const rh = { "Content-Type": "application/json", ...sensitiveHeaders(env) };
 
+  if (env.FORUM_AI_ENABLED === "false") {
+    return Response.json({ error: "Forum AI is disabled" }, { status: 503, headers: rh });
+  }
+
   const { body, bodyError } = await parseJsonBody(request);
   if (bodyError) return Response.json({ error: bodyError }, { status: 400, headers: rh });
 
-  const ALLOWED_ACTIONS = new Set(["draft", "reply", "summarize", "categorize", "analyze"]);
+  // "generate" creates a full structured thread; the rest are assistance actions.
+  const ALLOWED_ACTIONS = new Set(["generate", "draft", "reply", "summarize", "categorize", "analyze"]);
   const rawAction = typeof body?.action === "string" ? body.action.trim().toLowerCase() : "";
   const action = ALLOWED_ACTIONS.has(rawAction) ? rawAction : "draft";
+
+  // "generate" action: return a fully structured forum thread object (same shape
+  // as /api/forum/generate) so the forum frontend can consume it directly.
+  if (action === "generate") {
+    const topic = typeof body?.topic === "string" ? body.topic.trim().slice(0, 200) : "";
+    const category = typeof body?.category === "string" ? body.category.trim() : "general";
+    const { post, error, status } = await buildAIForumThread(topic, category, env);
+    if (error) {
+      return Response.json({ error }, { status, headers: rh });
+    }
+    return Response.json({ action, ...post }, { headers: rh });
+  }
 
   const content = typeof body?.content === "string" ? body.content.trim().slice(0, 2000) : "";
   const context = typeof body?.context === "string"
@@ -1665,7 +1636,7 @@ async function handleAtlasForumAssist(request, env) {
     return Response.json({ action, ...result }, { headers: rh });
   } catch (err) {
     console.error("Forum assist error:", err);
-    return Response.json({ error: "Forum AI temporarily unavailable" }, { status: 503, headers: rh });
+    return Response.json({ error: "Forum AI temporarily unavailable" }, { status: 502, headers: rh });
   }
 }
 
@@ -1733,7 +1704,7 @@ async function handleAtlasModerate(request, env) {
     return Response.json(result, { headers: rh });
   } catch (err) {
     console.error("Moderation error:", err);
-    return Response.json({ error: "Moderation service temporarily unavailable" }, { status: 503, headers: rh });
+    return Response.json({ error: "Moderation service temporarily unavailable" }, { status: 502, headers: rh });
   }
 }
 
@@ -1815,7 +1786,7 @@ async function handleAtlasPrompts(request, env) {
     return Response.json({ action, ...result }, { headers: rh });
   } catch (err) {
     console.error("Prompts error:", err);
-    return Response.json({ error: "Prompts service temporarily unavailable" }, { status: 503, headers: rh });
+    return Response.json({ error: "Prompts service temporarily unavailable" }, { status: 502, headers: rh });
   }
 }
 

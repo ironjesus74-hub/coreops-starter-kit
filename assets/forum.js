@@ -71,10 +71,10 @@
     const category = genCategorySelect.value;
 
     try {
-      const resp = await fetch("/api/forum/generate", {
+      const resp = await fetch("/api/atlas/forum-assist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic, category }),
+        body: JSON.stringify({ action: "generate", topic, category }),
       });
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({}));
