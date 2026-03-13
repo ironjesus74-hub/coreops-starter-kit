@@ -9,19 +9,29 @@
  * Routes:
  *   GET   /api/health                — Service health check (DB connectivity)
  *   GET   /api/db-test               — D1 database smoke test
- *   POST  /api/atlas                 — Atlas AI assistant
+ *   POST  /api/atlas                 — Atlas AI assistant (legacy; prefer /api/atlas/chat)
  *   POST  /api/contact               — Contact form
  *   GET   /api/products              — Product catalog (public)
  *   GET   /api/paypal/config         — Return PayPal client ID (safe)
  *   POST  /api/paypal/create-order   — Create PayPal order (server-priced)
  *   POST  /api/paypal/capture-order  — Capture PayPal order
  *   POST  /api/paypal/webhook        — PayPal webhook handler
- *   POST  /api/debate/generate       — Generate AI debate transcript
+ *   POST  /api/debate/generate       — Generate AI debate transcript (legacy; prefer /api/atlas/debate)
  *   GET   /api/forum/threads         — Get seeded forum threads list
- *   POST  /api/forum/generate        — Generate AI forum post/thread
+ *   POST  /api/forum/generate        — Generate AI forum post/thread (legacy; prefer /api/atlas/forum-assist)
  *   GET   /api/profile               — Read profile (KV-backed; ?userId=)
  *   POST  /api/profile               — Write/merge profile patch (KV-backed)
  *   GET   /api/purchases             — Read purchase history (KV-backed; ?userId=)
+ *
+ * Atlas AI orchestration routes (canonical):
+ *   GET   /api/atlas/agents          — Agent registry (public, read-only)
+ *   POST  /api/atlas/chat            — Enhanced Atlas AI chat (mode: devops|general|operator)
+ *   POST  /api/atlas/debate          — AI debate generation
+ *   POST  /api/atlas/forum-assist    — Forum AI assistance (draft|reply|summarize|categorize|analyze)
+ *   POST  /api/atlas/moderate        — AI content moderation (verdict: safe|warn|flag)
+ *   POST  /api/atlas/prompts         — Prompt generation/expansion (generate|expand|suggest)
+ *   GET   /api/atlas/admin/status    — System status (requires ATLAS_INTERNAL_SECRET)
+ *
  *   OPTIONS *                        — CORS preflight
  *   *                                — Static assets via ASSETS binding
  *
@@ -30,6 +40,7 @@
  *
  * Secrets (set via: wrangler secret put <NAME>):
  *   ATLAS_AI_API_KEY      — OpenAI-compatible API key
+ *   ATLAS_INTERNAL_SECRET — Secret token for admin/operator endpoints
  *   PAYPAL_CLIENT_ID      — PayPal app client ID
  *   PAYPAL_CLIENT_SECRET  — PayPal app client secret
  *   PAYPAL_WEBHOOK_ID     — PayPal webhook ID for signature verification
@@ -37,6 +48,11 @@
  *
  * Vars (wrangler.toml [vars]):
  *   ATLAS_AI_ENDPOINT     — AI chat completions endpoint
+ *   OPENAI_MODEL          — Model name (default: gpt-4o-mini)
+ *   AI_PROVIDER           — Provider label (default: openai)
+ *   APP_ENV               — Environment label (default: production)
+ *   FORUM_AI_ENABLED      — Enable forum AI routes (default: true)
+ *   DEBATE_AI_ENABLED     — Enable debate AI routes (default: true)
  *   PAYPAL_ENV            — "sandbox" | "live"
  *   ALLOWED_ORIGIN        — Restricts sensitive CORS endpoints (e.g. "https://forge-atlas.io")
  *
@@ -63,6 +79,54 @@ const PURCHASE_TTL_SECONDS = 60 * 60 * 24 * 365 * 5; // 5 years — purchase rec
 
 // Fallback deployed origin — override via the ALLOWED_ORIGIN wrangler var.
 const DEPLOYED_ORIGIN = "https://forge-atlas.io";
+
+// ---------------------------------------------------------------------------
+// Agent registry — Phase 1 foundation.
+// Each entry describes one Atlas AI agent: role, capabilities, and status.
+// Extend in Phase 2 with D1-backed persistence and operator management.
+// ---------------------------------------------------------------------------
+const AGENT_REGISTRY = [
+  {
+    id: "atlas-core",
+    name: "Atlas Core",
+    role: "general",
+    description: "General-purpose DevOps AI assistant for CoreOps users.",
+    capabilities: ["chat", "qa", "code-review"],
+    status: "active",
+  },
+  {
+    id: "atlas-debate",
+    name: "Atlas Debate Engine",
+    role: "debate",
+    description: "Structured AI debate transcript generator with Vector and Cipher personas.",
+    capabilities: ["debate", "rebuttal", "summary"],
+    status: "active",
+  },
+  {
+    id: "atlas-forum",
+    name: "Atlas Forum Intelligence",
+    role: "forum",
+    description: "Forum post generation, reply assistance, summarization, and categorization.",
+    capabilities: ["generate", "assist", "summarize", "categorize", "analyze"],
+    status: "active",
+  },
+  {
+    id: "atlas-moderator",
+    name: "Atlas Moderator",
+    role: "moderation",
+    description: "AI-powered content moderation and safety analysis for the Forge Atlas platform.",
+    capabilities: ["flag", "classify", "report"],
+    status: "active",
+  },
+  {
+    id: "atlas-prompts",
+    name: "Atlas Prompts",
+    role: "prompts",
+    description: "Prompt generation, expansion, and suggestion for DevOps and platform workflows.",
+    capabilities: ["generate", "expand", "suggest"],
+    status: "active",
+  },
+];
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -354,6 +418,11 @@ export default {
     if (request.method === "OPTIONS") {
       const sensitivePaths = new Set([
         "/api/atlas",
+        "/api/atlas/chat",
+        "/api/atlas/debate",
+        "/api/atlas/forum-assist",
+        "/api/atlas/moderate",
+        "/api/atlas/prompts",
         "/api/paypal/create-order",
         "/api/paypal/capture-order",
         "/api/debate/generate",
@@ -404,7 +473,7 @@ export default {
       return handlePayPalWebhook(request, env);
     }
 
-    // ── AI system routes ─────────────────────────────────────────────────────
+    // ── AI system routes (legacy paths — kept for backward compatibility) ────
     if (url.pathname === "/api/debate/generate" && request.method === "POST") {
       return handleDebateGenerate(request, env);
     }
@@ -415,6 +484,35 @@ export default {
 
     if (url.pathname === "/api/forum/generate" && request.method === "POST") {
       return handleForumGenerate(request, env);
+    }
+
+    // ── Atlas AI orchestration routes (canonical) ────────────────────────────
+    if (url.pathname === "/api/atlas/agents" && request.method === "GET") {
+      return handleAtlasAgents();
+    }
+
+    if (url.pathname === "/api/atlas/chat" && request.method === "POST") {
+      return handleAtlasChat(request, env);
+    }
+
+    if (url.pathname === "/api/atlas/debate" && request.method === "POST") {
+      return handleDebateGenerate(request, env);
+    }
+
+    if (url.pathname === "/api/atlas/forum-assist" && request.method === "POST") {
+      return handleAtlasForumAssist(request, env);
+    }
+
+    if (url.pathname === "/api/atlas/moderate" && request.method === "POST") {
+      return handleAtlasModerate(request, env);
+    }
+
+    if (url.pathname === "/api/atlas/prompts" && request.method === "POST") {
+      return handleAtlasPrompts(request, env);
+    }
+
+    if (url.pathname === "/api/atlas/admin/status" && request.method === "GET") {
+      return handleAtlasAdminStatus(request, env);
     }
 
     // ── Profile route ────────────────────────────────────────────────────────
@@ -1392,4 +1490,391 @@ function sanitizeSystemContext(text) {
   return String(text)
     .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
     .replace(/[\u200B-\u200D\uFEFF]/g, "");
+}
+
+// ---------------------------------------------------------------------------
+// Atlas AI orchestration — agent registry — GET /api/atlas/agents
+// Returns the AGENT_REGISTRY array. Public, read-only, no secrets required.
+// ---------------------------------------------------------------------------
+function handleAtlasAgents() {
+  return Response.json(AGENT_REGISTRY, {
+    headers: { "Content-Type": "application/json", ...CORS_HEADERS },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Atlas AI chat — POST /api/atlas/chat
+// Enhanced Atlas AI endpoint with mode selection.
+// Body: { message: string, mode?: "devops"|"general"|"operator", systemContext?: string }
+// ---------------------------------------------------------------------------
+async function handleAtlasChat(request, env) {
+  const guard = guardSensitiveRequest(request, "ai", env);
+  if (guard) return guard;
+
+  const rh = { "Content-Type": "application/json", ...sensitiveHeaders(env) };
+
+  const { body, bodyError } = await parseJsonBody(request);
+  if (bodyError) return Response.json({ error: bodyError }, { status: 400, headers: rh });
+
+  const message = typeof body?.message === "string" ? body.message.trim() : "";
+  if (!message) {
+    return Response.json({ error: "message field is required" }, { status: 400, headers: rh });
+  }
+  if (message.length > MAX_ATLAS_MSG_LENGTH) {
+    return Response.json({ error: "message exceeds maximum allowed length" }, { status: 400, headers: rh });
+  }
+
+  const apiKey = env.ATLAS_AI_API_KEY;
+  if (!apiKey) {
+    return Response.json({ error: "AI service not configured" }, { status: 503, headers: rh });
+  }
+
+  const endpoint = env.ATLAS_AI_ENDPOINT || "https://api.openai.com/v1/chat/completions";
+  const model = env.OPENAI_MODEL || "gpt-4o-mini";
+
+  // mode selects the Atlas AI persona
+  const ALLOWED_MODES = new Set(["devops", "general", "operator"]);
+  const rawMode = typeof body?.mode === "string" ? body.mode.trim().toLowerCase() : "";
+  const mode = ALLOWED_MODES.has(rawMode) ? rawMode : "devops";
+
+  const systemExtra =
+    typeof body?.systemContext === "string"
+      ? " " + sanitizeSystemContext(body.systemContext.slice(0, MAX_SYSTEM_CONTEXT_LENGTH))
+      : "";
+
+  const systemPrompts = {
+    devops:
+      "You are Atlas, an AI assistant for CoreOps — a mobile-first DevOps CLI platform built for Termux and Linux. " +
+      "Help users with DevOps questions, CLI usage, networking, TLS audits, automation, and shell scripting. " +
+      "Keep responses concise, technical, and actionable. Use code blocks when sharing commands.",
+    general:
+      "You are Atlas, an intelligent assistant for Forge Atlas. " +
+      "Help users with platform questions, features, navigation, and general queries. " +
+      "Be friendly, clear, and concise.",
+    operator:
+      "You are Atlas Operator, an advanced AI assistant for Forge Atlas platform operators. " +
+      "You assist with configuration, monitoring, troubleshooting, and platform administration. " +
+      "Be precise, technical, and thorough.",
+  };
+
+  const systemContent = systemPrompts[mode] + systemExtra;
+
+  try {
+    const raw = await callAI(endpoint, apiKey, {
+      model,
+      messages: [
+        { role: "system", content: systemContent },
+        { role: "user", content: message },
+      ],
+      max_tokens: 1024,
+    }, "Atlas Chat");
+
+    if (raw === null) {
+      return Response.json({ error: "Atlas is temporarily unavailable" }, { status: 502, headers: rh });
+    }
+    return Response.json({ reply: raw || "Atlas has no response right now.", mode }, { headers: rh });
+  } catch (err) {
+    console.error("Atlas chat error:", err);
+    return Response.json({ error: "Atlas is temporarily unavailable" }, { status: 502, headers: rh });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Atlas Forum Assist — POST /api/atlas/forum-assist
+// AI assistance for forum actions: draft, reply, summarize, categorize, analyze.
+// Body: { action: "draft"|"reply"|"summarize"|"categorize"|"analyze", content?: string, context?: string }
+// ---------------------------------------------------------------------------
+async function handleAtlasForumAssist(request, env) {
+  const guard = guardSensitiveRequest(request, "ai", env);
+  if (guard) return guard;
+
+  const rh = { "Content-Type": "application/json", ...sensitiveHeaders(env) };
+
+  const { body, bodyError } = await parseJsonBody(request);
+  if (bodyError) return Response.json({ error: bodyError }, { status: 400, headers: rh });
+
+  const ALLOWED_ACTIONS = new Set(["draft", "reply", "summarize", "categorize", "analyze"]);
+  const rawAction = typeof body?.action === "string" ? body.action.trim().toLowerCase() : "";
+  const action = ALLOWED_ACTIONS.has(rawAction) ? rawAction : "draft";
+
+  const content = typeof body?.content === "string" ? body.content.trim().slice(0, 2000) : "";
+  const context = typeof body?.context === "string"
+    ? sanitizeSystemContext(body.context.slice(0, 500))
+    : "";
+
+  if (!content && action !== "draft") {
+    return Response.json({ error: "content is required for action: " + action }, { status: 400, headers: rh });
+  }
+
+  const apiKey = env.ATLAS_AI_API_KEY;
+  if (!apiKey) {
+    return Response.json({ error: "Forum AI not configured — ATLAS_AI_API_KEY required" }, { status: 503, headers: rh });
+  }
+
+  const endpoint = env.ATLAS_AI_ENDPOINT || "https://api.openai.com/v1/chat/completions";
+  const model = env.OPENAI_MODEL || "gpt-4o-mini";
+
+  const systemPrompt =
+    "You are Atlas Forum Intelligence, an AI assistant for the Forge Atlas DevOps community forum. " +
+    "Help users draft posts, write replies, summarize threads, categorize content, and analyze discussion quality. " +
+    "Be concise, helpful, and technically accurate. Output clean text or valid JSON as requested.";
+
+  const actionPrompts = {
+    draft: context
+      ? "Draft a forum post on: " + context
+      : "Draft an engaging DevOps forum post.",
+    reply: "Write a helpful, on-topic reply to this forum post:\n" + content,
+    summarize: "Summarize this forum thread in 2-3 sentences:\n" + content,
+    categorize:
+      "Categorize this forum post and suggest 3-5 relevant tags. " +
+      "Output ONLY valid JSON: {\"category\":\"...\",\"tags\":[\"...\",\"...\"]}.\nPost:\n" + content,
+    analyze:
+      "Analyze the quality and technical accuracy of this forum post. " +
+      "Output ONLY valid JSON: {\"quality\":\"high|medium|low\",\"technical_accuracy\":\"accurate|mixed|inaccurate\",\"feedback\":\"...\"}.\nPost:\n" +
+      content,
+  };
+
+  const userPrompt = actionPrompts[action];
+
+  try {
+    const raw = await callAI(endpoint, apiKey, {
+      model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      max_tokens: 600,
+      temperature: 0.7,
+    }, "Forum Assist AI");
+
+    if (raw === null) {
+      return Response.json({ error: "Forum AI temporarily unavailable" }, { status: 502, headers: rh });
+    }
+
+    let result;
+    if (action === "categorize" || action === "analyze") {
+      try {
+        result = JSON.parse(raw);
+      } catch {
+        result = { output: raw };
+      }
+    } else {
+      result = { output: raw };
+    }
+
+    return Response.json({ action, ...result }, { headers: rh });
+  } catch (err) {
+    console.error("Forum assist error:", err);
+    return Response.json({ error: "Forum AI temporarily unavailable" }, { status: 503, headers: rh });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Atlas Moderate — POST /api/atlas/moderate
+// AI content moderation. Returns verdict: safe | warn | flag.
+// Body: { content: string, contentType?: "post"|"reply"|"title" }
+// ---------------------------------------------------------------------------
+async function handleAtlasModerate(request, env) {
+  const guard = guardSensitiveRequest(request, "ai", env);
+  if (guard) return guard;
+
+  const rh = { "Content-Type": "application/json", ...sensitiveHeaders(env) };
+
+  const { body, bodyError } = await parseJsonBody(request);
+  if (bodyError) return Response.json({ error: bodyError }, { status: 400, headers: rh });
+
+  const content = typeof body?.content === "string" ? body.content.trim().slice(0, 3000) : "";
+  if (!content) {
+    return Response.json({ error: "content is required" }, { status: 400, headers: rh });
+  }
+
+  const ALLOWED_TYPES = new Set(["post", "reply", "title"]);
+  const rawType = typeof body?.contentType === "string" ? body.contentType.trim().toLowerCase() : "";
+  const contentType = ALLOWED_TYPES.has(rawType) ? rawType : "post";
+
+  const apiKey = env.ATLAS_AI_API_KEY;
+  if (!apiKey) {
+    return Response.json({ error: "Moderation service not configured — ATLAS_AI_API_KEY required" }, { status: 503, headers: rh });
+  }
+
+  const endpoint = env.ATLAS_AI_ENDPOINT || "https://api.openai.com/v1/chat/completions";
+  const model = env.OPENAI_MODEL || "gpt-4o-mini";
+
+  const systemPrompt =
+    "You are Atlas Moderator, an AI content moderation assistant for the Forge Atlas platform. " +
+    "Analyze content for policy violations, harmful content, spam, or inappropriate material. " +
+    "Respond ONLY with valid JSON in this exact shape (no markdown fencing):\n" +
+    "{\"verdict\":\"safe|warn|flag\",\"reason\":\"...\",\"categories\":[],\"confidence\":0.0}";
+
+  const userPrompt = "Moderate this " + contentType + ":\n" + content;
+
+  try {
+    const raw = await callAI(endpoint, apiKey, {
+      model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      max_tokens: 300,
+      temperature: 0.1,
+    }, "Moderator AI");
+
+    if (raw === null) {
+      return Response.json({ error: "Moderation service temporarily unavailable" }, { status: 502, headers: rh });
+    }
+
+    let result;
+    try {
+      result = JSON.parse(raw);
+    } catch {
+      result = { verdict: "warn", reason: "Unable to parse moderation result.", categories: [], confidence: 0 };
+    }
+
+    return Response.json(result, { headers: rh });
+  } catch (err) {
+    console.error("Moderation error:", err);
+    return Response.json({ error: "Moderation service temporarily unavailable" }, { status: 503, headers: rh });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Atlas Prompts — POST /api/atlas/prompts
+// AI prompt generation, expansion, and suggestion.
+// Body: { action?: "generate"|"expand"|"suggest", prompt?: string, category?: string, count?: number }
+// ---------------------------------------------------------------------------
+async function handleAtlasPrompts(request, env) {
+  const guard = guardSensitiveRequest(request, "ai", env);
+  if (guard) return guard;
+
+  const rh = { "Content-Type": "application/json", ...sensitiveHeaders(env) };
+
+  const { body, bodyError } = await parseJsonBody(request);
+  if (bodyError) return Response.json({ error: bodyError }, { status: 400, headers: rh });
+
+  const ALLOWED_ACTIONS = new Set(["generate", "expand", "suggest"]);
+  const rawAction = typeof body?.action === "string" ? body.action.trim().toLowerCase() : "";
+  const action = ALLOWED_ACTIONS.has(rawAction) ? rawAction : "generate";
+
+  const prompt = typeof body?.prompt === "string" ? body.prompt.trim().slice(0, 1000) : "";
+  const category = typeof body?.category === "string" ? body.category.trim().slice(0, 50) : "devops";
+  const count = Math.min(Math.max(parseInt(body?.count, 10) || 5, 1), 10);
+
+  if ((action === "expand" || action === "suggest") && !prompt) {
+    return Response.json({ error: "prompt is required for action: " + action }, { status: 400, headers: rh });
+  }
+
+  const apiKey = env.ATLAS_AI_API_KEY;
+  if (!apiKey) {
+    return Response.json({ error: "Prompts service not configured — ATLAS_AI_API_KEY required" }, { status: 503, headers: rh });
+  }
+
+  const endpoint = env.ATLAS_AI_ENDPOINT || "https://api.openai.com/v1/chat/completions";
+  const model = env.OPENAI_MODEL || "gpt-4o-mini";
+
+  const systemPrompt =
+    "You are Atlas Prompts, an AI assistant for generating and refining prompts for DevOps, " +
+    "automation, and platform engineering workflows. Output clean, actionable prompts that are " +
+    "specific and useful. Respond with valid JSON only (no markdown fencing).";
+
+  const actionPrompts = {
+    generate:
+      "Generate " + count + " useful AI prompts for category: " + category +
+      ". Output JSON: {\"prompts\":[{\"title\":\"...\",\"prompt\":\"...\",\"category\":\"...\"}]}",
+    expand:
+      "Expand and improve this prompt to be more specific and actionable: \"" + prompt +
+      "\". Output JSON: {\"original\":\"...\",\"expanded\":\"...\",\"suggestions\":[\"...\"]}",
+    suggest:
+      "Suggest " + count + " related prompts similar to: \"" + prompt +
+      "\". Output JSON: {\"prompts\":[{\"title\":\"...\",\"prompt\":\"...\"}]}",
+  };
+
+  const userPrompt = actionPrompts[action];
+
+  try {
+    const raw = await callAI(endpoint, apiKey, {
+      model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      max_tokens: 800,
+      temperature: 0.8,
+    }, "Prompts AI");
+
+    if (raw === null) {
+      return Response.json({ error: "Prompts service temporarily unavailable" }, { status: 502, headers: rh });
+    }
+
+    let result;
+    try {
+      result = JSON.parse(raw);
+    } catch {
+      result = { output: raw };
+    }
+
+    return Response.json({ action, ...result }, { headers: rh });
+  } catch (err) {
+    console.error("Prompts error:", err);
+    return Response.json({ error: "Prompts service temporarily unavailable" }, { status: 503, headers: rh });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Atlas Admin Status — GET /api/atlas/admin/status
+// Returns full system status. Requires ATLAS_INTERNAL_SECRET in Authorization header.
+// Header: Authorization: Bearer <ATLAS_INTERNAL_SECRET>
+// ---------------------------------------------------------------------------
+async function handleAtlasAdminStatus(request, env) {
+  const authHeader = request.headers.get("Authorization") || "";
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+  const secret = env.ATLAS_INTERNAL_SECRET;
+
+  if (!secret || !token || token !== secret) {
+    return Response.json(
+      { error: "Unauthorized" },
+      {
+        status: 401,
+        headers: {
+          "Content-Type": "application/json",
+          "WWW-Authenticate": "Bearer",
+        },
+      },
+    );
+  }
+
+  const rh = { "Content-Type": "application/json" };
+
+  let dbConnected = false;
+  if (env.DB) {
+    try {
+      await env.DB.prepare("SELECT 1").run();
+      dbConnected = true;
+    } catch {
+      dbConnected = false;
+    }
+  }
+
+  return Response.json(
+    {
+      ok: true,
+      service: "atlas-core-api",
+      version: "2.0.0",
+      env: env.APP_ENV || "production",
+      capabilities: {
+        ai: {
+          configured: Boolean(env.ATLAS_AI_API_KEY),
+          provider: env.AI_PROVIDER || "openai",
+          model: env.OPENAI_MODEL || "gpt-4o-mini",
+          endpoint: env.ATLAS_AI_ENDPOINT || "https://api.openai.com/v1/chat/completions",
+        },
+        database: { connected: dbConnected },
+        kv: { configured: Boolean(env.ATLAS_KV) },
+        forum: { enabled: env.FORUM_AI_ENABLED !== "false" },
+        debate: { enabled: env.DEBATE_AI_ENABLED !== "false" },
+      },
+      agents: AGENT_REGISTRY.map((a) => ({ id: a.id, name: a.name, role: a.role, status: a.status })),
+      timestamp: new Date().toISOString(),
+    },
+    { headers: rh },
+  );
 }

@@ -8,6 +8,9 @@ modules/
 install.sh
 worker/
 
+# Database schema (server-side only)
+db/
+
 # CI / tooling
 ci/
 .github/
