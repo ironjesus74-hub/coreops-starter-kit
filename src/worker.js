@@ -186,6 +186,49 @@ function guardSensitiveRequest(request, type, env) {
 }
 
 // ---------------------------------------------------------------------------
+// Checkout architecture
+// ---------------------------------------------------------------------------
+//
+// CURRENT MODE: "dynamic"
+//   The PayPal JS SDK is loaded per-buyer; each order is created server-side.
+//   The frontend sends only a trusted productId — the backend resolves title,
+//   description, amount, and fulfillment path from PRODUCT_CATALOG.
+//   The browser NEVER supplies a price field that reaches PayPal.
+//
+// HOSTED BUTTON FALLBACK (CHECKOUT_HOSTED_BUTTON_ID):
+//   "HZFNB8NTJADW2" is a static PayPal hosted button saved in the PayPal
+//   dashboard. It is fixed to a single saved product configuration (the
+//   legacy $400 item). It CANNOT dynamically reflect catalog items.
+//   It must be treated as a manual "default PayPal rail" fallback only.
+//   Do NOT bind catalog products to it as if it were per-item aware.
+//   Surface it only when the dynamic SDK + backend path is unavailable
+//   (i.e. PAYPAL_CLIENT_ID is not configured in this Worker environment).
+//
+// MIGRATION PATH:
+//   Phase 1 (current) : JS SDK + Worker create-order + capture-order
+//   Phase 2 (planned) : per-item button configs, fulfillment automation
+//   Phase 3 (future)  : retire hosted button entirely once live credentials
+//                       and per-item orders are verified end-to-end
+//
+// ---------------------------------------------------------------------------
+
+// "dynamic"  — PayPal JS SDK + backend order creation (current default)
+// "fallback" — returned by /api/paypal/config when credentials are absent;
+//              signals the frontend to surface the hosted button fallback rail
+//
+// Note: this constant is intentionally not an env var. The mode is already
+// auto-determined by the presence or absence of PAYPAL_CLIENT_ID:
+//   • PAYPAL_CLIENT_ID present  → dynamic mode (handlePayPalConfig returns CHECKOUT_MODE)
+//   • PAYPAL_CLIENT_ID absent   → fallback mode (handlePayPalConfig returns "fallback")
+// Adding a separate CHECKOUT_MODE env var would duplicate that logic. To switch
+// modes, set or unset PAYPAL_CLIENT_ID via `wrangler secret put PAYPAL_CLIENT_ID`.
+const CHECKOUT_MODE = "dynamic";
+
+// Static hosted button ID — saved in PayPal dashboard, fixed to one product.
+// NEVER use this as if it were per-item aware. Treat as a last-resort rail.
+const CHECKOUT_HOSTED_BUTTON_ID = "HZFNB8NTJADW2";
+
+// ---------------------------------------------------------------------------
 // Product catalog — source of truth for pricing (never trust the browser)
 // ---------------------------------------------------------------------------
 const PRODUCT_CATALOG = [
@@ -690,15 +733,35 @@ async function getPayPalToken(env) {
 
 // ---------------------------------------------------------------------------
 // PayPal config — GET /api/paypal/config
-// Returns public client ID only. Safe to expose to the browser.
+// Returns public client ID and checkout mode. Safe to expose to the browser.
+//
+// checkoutMode values:
+//   "dynamic"  — JS SDK + backend order creation is available (normal path)
+//   "fallback" — PAYPAL_CLIENT_ID not configured; frontend must surface the
+//                hosted button fallback rail (CHECKOUT_HOSTED_BUTTON_ID).
+//                The hosted button is a fixed static product — NOT per-item.
 // ---------------------------------------------------------------------------
 function handlePayPalConfig(env) {
   const rh = { "Content-Type": "application/json", ...CORS_HEADERS };
   if (!env.PAYPAL_CLIENT_ID) {
-    return Response.json({ error: "PayPal not configured" }, { status: 503, headers: rh });
+    // Dynamic checkout unavailable — tell the browser to use the hosted
+    // button fallback rail. Remind callers it is NOT per-item aware.
+    return Response.json(
+      {
+        checkoutMode: "fallback",
+        // hostedButtonId is intentionally omitted here; it is baked into the
+        // HTML fallback block to avoid exposing it via an unauthenticated API.
+      },
+      { status: 200, headers: rh },
+    );
   }
   return Response.json(
-    { clientId: env.PAYPAL_CLIENT_ID, env: env.PAYPAL_ENV || "sandbox" },
+    {
+      clientId: env.PAYPAL_CLIENT_ID,
+      env: env.PAYPAL_ENV || "sandbox",
+      // checkoutMode tells the frontend which path is active.
+      checkoutMode: CHECKOUT_MODE,
+    },
     { headers: rh },
   );
 }
@@ -706,7 +769,16 @@ function handlePayPalConfig(env) {
 // ---------------------------------------------------------------------------
 // PayPal create order — POST /api/paypal/create-order
 // Body: { productId: string }
-// Server resolves price from catalog — browser cannot override it.
+//
+// Architecture rules enforced here:
+//   • Only productId comes from the browser — never a price, title, or amount.
+//   • PRODUCT_CATALOG (server-side) is the single source of truth for pricing.
+//   • The hosted button fallback (CHECKOUT_HOSTED_BUTTON_ID) does NOT call
+//     this endpoint — it bypasses the backend entirely (static product only).
+//
+// Migration path:
+//   When the JS SDK buttons are replaced with per-item PayPal button configs,
+//   this handler remains unchanged — productId → catalog lookup → PayPal order.
 // ---------------------------------------------------------------------------
 async function handlePayPalCreateOrder(request, env) {
   const guard = guardSensitiveRequest(request, "payment", env);
@@ -775,6 +847,14 @@ async function handlePayPalCreateOrder(request, env) {
 // ---------------------------------------------------------------------------
 // PayPal capture order — POST /api/paypal/capture-order
 // Body: { orderId: string }
+//
+// Architecture notes:
+//   • orderId comes from PayPal's own createOrder response — not from the
+//     browser's product card. It cannot be used to re-price an order.
+//   • After capture, product metadata is re-resolved from PRODUCT_CATALOG
+//     using the custom_id stored server-side at order creation time.
+//   • The hosted button fallback does NOT call this endpoint — hosted button
+//     payments flow entirely through PayPal's dashboard, not through here.
 // ---------------------------------------------------------------------------
 async function handlePayPalCaptureOrder(request, env) {
   const guard = guardSensitiveRequest(request, "payment", env);

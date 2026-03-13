@@ -1,4 +1,22 @@
-/* Forge Atlas — Market commerce + PayPal checkout logic */
+/* Forge Atlas — Market commerce + PayPal checkout logic
+ *
+ * Checkout architecture:
+ *   Normal path ("dynamic"):
+ *     1. /api/paypal/config returns { clientId, env, checkoutMode: "dynamic" }
+ *     2. PayPal JS SDK is loaded with that clientId
+ *     3. createOrder → POST /api/paypal/create-order { productId }
+ *        Backend resolves price from PRODUCT_CATALOG — browser sends no price.
+ *     4. onApprove → POST /api/paypal/capture-order { orderId }
+ *
+ *   Fallback path ("fallback"):
+ *     /api/paypal/config returns { checkoutMode: "fallback" } when
+ *     PAYPAL_CLIENT_ID is not configured in the Worker environment.
+ *     market.js reveals #checkout-fallback — a clearly-labeled block
+ *     linking to hosted button HZFNB8NTJADW2 (static product, NOT
+ *     per-item aware). This is a manual last-resort rail only.
+ *
+ *   Fallback is also shown if the PayPal SDK fails to load.
+ */
 (function () {
   "use strict";
 
@@ -8,21 +26,28 @@
   let selectedProduct = null;
   let paypalLoaded = false;
   let paypalScriptPending = false;
+  // checkoutMode is populated from /api/paypal/config:
+  //   "dynamic"  — JS SDK + backend order creation (normal path)
+  //   "fallback" — PAYPAL_CLIENT_ID absent; surface hosted button fallback rail
+  let checkoutMode = null;
 
   // ── DOM refs ──────────────────────────────────────────────────────────────
-  const skeletonGrid   = document.getElementById("skeleton-grid");
-  const productGrid    = document.getElementById("product-grid");
-  const filterBar      = document.getElementById("filter-bar");
-  const checkoutModal  = document.getElementById("checkout-modal");
-  const modalProductEl = document.getElementById("modal-product-name");
-  const modalPriceEl   = document.getElementById("modal-price");
-  const modalDescEl    = document.getElementById("modal-desc");
-  const modalError     = document.getElementById("modal-error");
-  const paypalContainer= document.getElementById("paypal-button-container");
-  const modalLoading   = document.getElementById("modal-loading");
-  const modalSuccess   = document.getElementById("modal-success");
-  const modalSuccessSub= document.getElementById("modal-success-sub");
-  const modalClose     = document.getElementById("modal-close");
+  const skeletonGrid      = document.getElementById("skeleton-grid");
+  const productGrid       = document.getElementById("product-grid");
+  const filterBar         = document.getElementById("filter-bar");
+  const checkoutModal     = document.getElementById("checkout-modal");
+  const modalProductEl    = document.getElementById("modal-product-name");
+  const modalPriceEl      = document.getElementById("modal-price");
+  const modalDescEl       = document.getElementById("modal-desc");
+  const modalError        = document.getElementById("modal-error");
+  const paypalContainer   = document.getElementById("paypal-button-container");
+  const modalLoading      = document.getElementById("modal-loading");
+  const modalPriceVerified= document.getElementById("modal-price-verified");
+  const modalSuccess      = document.getElementById("modal-success");
+  const modalSuccessSub   = document.getElementById("modal-success-sub");
+  const modalClose        = document.getElementById("modal-close");
+  // Fallback rail — revealed when dynamic checkout is unavailable.
+  const checkoutFallback  = document.getElementById("checkout-fallback");
 
   // ── Boot ──────────────────────────────────────────────────────────────────
   loadProducts();
@@ -128,6 +153,8 @@
     modalError.hidden = true;
     modalError.textContent = "";
     modalSuccess.hidden = true;
+    modalPriceVerified.hidden = true;
+    checkoutFallback.hidden = true;
     modalLoading.textContent = "Loading PayPal…";
     paypalContainer.innerHTML = "";
     paypalContainer.appendChild(modalLoading);
@@ -144,37 +171,56 @@
     // Clear the PayPal buttons to avoid stale renders
     const container = document.getElementById("paypal-button-container");
     if (container) container.innerHTML = "";
+    modalPriceVerified.hidden = true;
+    checkoutFallback.hidden = true;
   }
 
   // ── Load PayPal SDK and render buttons ────────────────────────────────────
   async function initPayPal(product) {
-    // Fetch the public client ID from our worker
+    // Fetch the public client ID and checkout mode from the Worker.
     let clientId;
     try {
       const resp = await fetch("/api/paypal/config");
       if (!resp.ok) throw new Error("HTTP " + resp.status);
       const data = await resp.json();
+
+      // Store the mode for this session so subsequent openCheckout calls
+      // skip the config fetch and reuse the already-known mode.
+      checkoutMode = data.checkoutMode || "dynamic";
       clientId = data.clientId;
     } catch (err) {
-      showModalError("PayPal is not available right now. Please try again later.");
       console.error("PayPal config error:", err);
+      // Config fetch failed — cannot determine mode. Surface fallback.
+      showFallback();
       return;
     }
 
-    // Load the PayPal SDK script once
+    // If the Worker explicitly signals "fallback" (credentials absent), skip
+    // the SDK entirely and surface the hosted button fallback rail.
+    // IMPORTANT: the hosted button is NOT per-item aware — see #checkout-fallback.
+    if (checkoutMode === "fallback") {
+      showFallback();
+      return;
+    }
+
+    // Load the PayPal SDK script once per page load
     if (!paypalLoaded && !paypalScriptPending) {
       paypalScriptPending = true;
       try {
         await loadPayPalScript(clientId);
         paypalLoaded = true;
       } catch {
-        showModalError("Failed to load PayPal SDK. Check your connection and try again.");
+        // SDK load failed — fall back to hosted button rail rather than blank error.
         paypalScriptPending = false;
+        showFallback(
+          "PayPal SDK could not load. Use the manual fallback link below, " +
+          "or check your connection and try again.",
+        );
         return;
       }
       paypalScriptPending = false;
     } else if (paypalScriptPending) {
-      // Wait briefly for pending load
+      // Wait briefly for an in-progress SDK load
       await wait(1500);
     }
 
@@ -201,7 +247,8 @@
 
   function renderPayPalButtons(product) {
     if (typeof window.paypal === "undefined") {
-      showModalError("PayPal SDK failed to load. Please refresh and try again.");
+      // SDK not available — surface fallback instead of blank error.
+      showFallback("PayPal SDK failed to initialize. Use the manual fallback link below.");
       return;
     }
 
@@ -224,6 +271,8 @@
         createOrder: async () => {
           modalError.hidden = true;
           try {
+            // Only the productId is sent — the backend resolves the price.
+            // The browser cannot inject or override the charge amount.
             const resp = await fetch("/api/paypal/create-order", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -234,6 +283,8 @@
               throw new Error(err.error || "Order creation failed");
             }
             const data = await resp.json();
+            // Show "price locked by server" badge once order is created server-side.
+            modalPriceVerified.hidden = false;
             return data.orderId;
           } catch (err) {
             showModalError(err.message || "Failed to create order. Try again.");
@@ -259,6 +310,7 @@
             const result = await resp.json();
             if (result.success) {
               container.innerHTML = "";
+              modalPriceVerified.hidden = true;
               modalSuccess.hidden = false;
               modalSuccessSub.textContent =
                 "Order #" + result.orderId.slice(0, 12) + " confirmed. " +
@@ -285,6 +337,24 @@
   }
 
   // ── Utilities ─────────────────────────────────────────────────────────────
+
+  /**
+   * Surface the hosted button fallback rail and optionally show a message.
+   *
+   * IMPORTANT: The fallback links to hosted button HZFNB8NTJADW2.
+   * That button is a STATIC product saved in the PayPal dashboard.
+   * It does NOT reflect the per-item catalog — it is a manual last-resort rail.
+   * Only use when the dynamic SDK + backend path is genuinely unavailable.
+   */
+  function showFallback(msg) {
+    paypalContainer.innerHTML = "";
+    modalLoading.textContent = "";
+    if (msg) {
+      showModalError(msg);
+    }
+    checkoutFallback.hidden = false;
+  }
+
   function showModalError(msg) {
     modalError.textContent = msg;
     modalError.hidden = false;
