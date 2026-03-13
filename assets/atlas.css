@@ -345,6 +345,24 @@
   }
 }
 
+/* ── Busy state — driven by panel[data-busy="1"] ─────────────────────────── */
+#atlas-panel[data-busy="1"] .atlas-status-dot {
+  background: #f0a32a;
+  box-shadow: 0 0 6px rgba(240, 163, 42, 0.7);
+  animation: atlas-dot-pulse 1s ease-in-out infinite;
+}
+
+#atlas-panel[data-busy="1"] .atlas-avatar {
+  box-shadow: 0 0 16px rgba(240, 163, 42, 0.5);
+  background: #f0a32a;
+  color: #0d1117;
+}
+
+@keyframes atlas-dot-pulse {
+  0%, 100% { opacity: 1;   transform: scale(1);    }
+  50%       { opacity: 0.5; transform: scale(0.85); }
+}
+
 /* ── Reduced motion ──────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   #atlas-toggle,
@@ -356,5 +374,8 @@
   .atlas-typing span {
     animation: none;
     opacity: 0.5;
+  }
+  #atlas-panel[data-busy="1"] .atlas-status-dot {
+    animation: none;
   }
 }
