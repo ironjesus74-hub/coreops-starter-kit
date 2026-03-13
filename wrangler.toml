@@ -36,6 +36,16 @@ binding = "ATLAS_KV"
 id      = "YOUR_KV_NAMESPACE_ID"
 
 # ---------------------------------------------------------------------------
+# D1 database — persistent relational storage.
+# Create the database: wrangler d1 create forge-core
+# Then replace YOUR_D1_DATABASE_ID with the returned id.
+# ---------------------------------------------------------------------------
+[[d1_databases]]
+binding       = "DB"
+database_name = "forge-core"
+database_id   = "YOUR_D1_DATABASE_ID"
+
+# ---------------------------------------------------------------------------
 # Future Cloudflare resources — add when ready to scale
 # ---------------------------------------------------------------------------
 # Cloudflare Queues — async digital delivery after successful payment

@@ -7,6 +7,8 @@
  *   3. Consistent CORS/security header application
  *
  * Routes:
+ *   GET   /api/health                — Service health check (DB connectivity)
+ *   GET   /api/db-test               — D1 database smoke test
  *   POST  /api/atlas                 — Atlas AI assistant
  *   POST  /api/contact               — Contact form
  *   GET   /api/products              — Product catalog (public)
@@ -22,6 +24,9 @@
  *   GET   /api/purchases             — Read purchase history (KV-backed; ?userId=)
  *   OPTIONS *                        — CORS preflight
  *   *                                — Static assets via ASSETS binding
+ *
+ * D1 Database:
+ *   DB                    — forge-core D1 database (health + db-test endpoints)
  *
  * Secrets (set via: wrangler secret put <NAME>):
  *   ATLAS_AI_API_KEY      — OpenAI-compatible API key
@@ -84,7 +89,7 @@ const SECURITY_HEADERS = {
   "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
   "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=(self)",
   "Content-Security-Policy":
-    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://api-m.paypal.com https://api-m.sandbox.paypal.com https://www.paypal.com; frame-src https://www.paypal.com https://www.sandbox.paypal.com; object-src 'none'; base-uri 'self'; form-action 'self';",
+    "default-src 'self'; script-src 'self' https://www.paypal.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://api-m.paypal.com https://api-m.sandbox.paypal.com https://www.paypal.com; frame-src https://www.paypal.com https://www.sandbox.paypal.com; object-src 'none'; base-uri 'self'; form-action 'self';",
 };
 
 // ---------------------------------------------------------------------------
@@ -319,6 +324,14 @@ export default {
     }
 
     // ── API routes ──────────────────────────────────────────────────────────
+    if (url.pathname === "/api/health" && request.method === "GET") {
+      return handleHealth(env);
+    }
+
+    if (url.pathname === "/api/db-test" && request.method === "GET") {
+      return handleDbTest(env);
+    }
+
     if (url.pathname === "/api/atlas" && request.method === "POST") {
       return handleAtlas(request, env);
     }
@@ -377,6 +390,51 @@ export default {
     return applyHeaders(assetResponse);
   },
 };
+
+// ---------------------------------------------------------------------------
+// Health check — GET /api/health
+// Returns service status and D1 connectivity.
+// ---------------------------------------------------------------------------
+async function handleHealth(env) {
+  const rh = { "Content-Type": "application/json", ...CORS_HEADERS };
+  let dbConnected = false;
+  if (env.DB) {
+    try {
+      await env.DB.prepare("SELECT 1").run();
+      dbConnected = true;
+    } catch {
+      dbConnected = false;
+    }
+  }
+  return Response.json(
+    { ok: true, service: "atlas-core-api", db_connected: dbConnected },
+    { headers: rh },
+  );
+}
+
+// ---------------------------------------------------------------------------
+// D1 database smoke test — GET /api/db-test
+// Executes a minimal D1 query and returns the result.
+// ---------------------------------------------------------------------------
+async function handleDbTest(env) {
+  const rh = { "Content-Type": "application/json", ...CORS_HEADERS };
+  if (!env.DB) {
+    return Response.json(
+      { ok: false, error: "DB binding not configured" },
+      { status: 503, headers: rh },
+    );
+  }
+  try {
+    const result = await env.DB.prepare("SELECT datetime('now') as time").first();
+    return Response.json({ ok: true, db: result }, { headers: rh });
+  } catch (err) {
+    console.error("D1 test error:", err);
+    return Response.json(
+      { ok: false, error: "D1 query failed" },
+      { status: 500, headers: rh },
+    );
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Atlas AI endpoint — POST /api/atlas
