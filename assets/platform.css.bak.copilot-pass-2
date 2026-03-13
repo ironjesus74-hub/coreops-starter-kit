@@ -19,13 +19,6 @@
   --glass-border:rgba(232, 236, 240, 0.08);
 }
 
-/* ===== Global focus ring ===== */
-:focus-visible {
-  outline: 2px solid var(--cyan, #00d4ff);
-  outline-offset: 3px;
-  border-radius: 3px;
-}
-
 /* ===== Platform nav bar ===== */
 .platform-nav {
   position: sticky;
@@ -73,10 +66,4 @@
   font-size: 0.65rem;
   padding: 0 0.1rem;
   user-select: none;
-}
-
-/* ===== Mobile nav padding tweak ===== */
-@media (max-width: 640px) {
-  .platform-nav { padding: 0 0.75rem; }
-  .platform-nav li a { padding: 0.65rem 0.65rem; }
 }

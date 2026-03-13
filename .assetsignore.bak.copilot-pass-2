@@ -30,10 +30,9 @@ node_modules/
 # Misc
 *.txt
 *.backup.*
+*.png
+audit-demo.png
+coreops-live-dashboard.png
 
 # Copilot-pass backup files
 *.bak.*
-
-# Screenshots served on the homepage only — DO NOT exclude
-# audit-demo.png         (served at /audit-demo.png)
-# coreops-live-dashboard.png  (served at /coreops-live-dashboard.png)
