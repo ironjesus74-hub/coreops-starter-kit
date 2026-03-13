@@ -156,11 +156,28 @@ grep -nE "YOUR_" wrangler.toml
 The prompt library is purely static HTML — no backend calls, no build step.
 
 Adding a new prompt:
-1. Choose a `data-group` value: `devops`, `network`, `shell`, or `audit`
+1. Choose a `data-group` value: `devops`, `network`, `shell`, `audit`, or `operator`
 2. Copy an existing `.prompt-card` block
 3. Update `data-target` to the next sequential index (check existing max)
 4. Add the prompt text in the `<pre class="prompt-text">` element
 5. Verify the filter bar correctly shows/hides it
+
+## Page Structure
+
+All HTML pages now carry a `data-page` attribute on `<body>` for CSS page-targeting:
+
+| Page | `data-page` value |
+| --- | --- |
+| `index.html` | `home` |
+| `prompts.html` | `prompts` |
+| `gauntlet.html` | `gauntlet` |
+| `market.html` | `market` |
+| `forum.html` | `forum` |
+| `debate.html` | `debate` |
+| `profile.html` | `profile` |
+
+Page-specific CSS should use `body[data-page="xxx"]` selectors to avoid cross-page bleed.
+The homepage preview section uses `data-homepage-only="true"` as an additional guard.
 
 ---
 
