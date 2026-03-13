@@ -49,7 +49,7 @@ Replace `<your-worker>` with the `.workers.dev` subdomain shown in the dashboard
 | `https://<your-worker>.workers.dev/api/health` | `{"ok":true,"service":"atlas-core-api","db_connected":true}` (or `false` if D1 not yet bound) |
 | `https://<your-worker>.workers.dev/api/db-test` | `{"ok":true,"db":{"time":"..."}}` (requires D1 binding `DB`) |
 | `https://<your-worker>.workers.dev/api/products` | JSON product catalog array |
-| `https://<your-worker>.workers.dev/api/paypal/config` | `{"clientId":"..."}` (after secret set) |
+| `https://<your-worker>.workers.dev/api/paypal/config` | JSON PayPal config object, e.g. `{"clientId":"...","checkoutMode":"...","env":"..."}` when secrets are set, or a fallback config object that may omit `clientId` if not yet configured |
 
 See `docs/cloudflare-dashboard-deploy.md` for the full post-deploy test checklist.
 
