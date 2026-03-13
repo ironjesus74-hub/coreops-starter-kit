@@ -1,0 +1,82 @@
+/* ===== CoreOps Platform — Shared Styles ===== */
+/* Shared across all platform pages (index.html, gauntlet.html, market.html, …) */
+
+/*
+ * Design tokens:
+ *   CoreOps legacy pages  → --cyan / --magenta accent scheme
+ *   Forge Atlas new pages → --red  / --chrome  accent scheme
+ * Both share the same jet-black background and glass panel variables.
+ */
+
+/* ===== Forge Atlas design tokens ===== */
+:root {
+  --red:         #e52020;
+  --red-dim:     rgba(229, 32, 32, 0.18);
+  --red-glow:    0 0 20px rgba(229, 32, 32, 0.45), 0 0 48px rgba(229, 32, 32, 0.15);
+  --chrome:      #e8ecf0;
+  --chrome-dim:  rgba(232, 236, 240, 0.55);
+  --glass-bg:    rgba(22, 27, 34, 0.72);
+  --glass-border:rgba(232, 236, 240, 0.08);
+}
+
+/* ===== Global focus ring ===== */
+:focus-visible {
+  outline: 2px solid var(--cyan, #00d4ff);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+/* ===== Platform nav bar ===== */
+.platform-nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--bg-dark);
+  border-bottom: 1px solid var(--border);
+  padding: 0 2rem;
+}
+
+.platform-nav ul {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  list-style: none;
+  max-width: 1200px;
+  margin: 0 auto;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.platform-nav ul::-webkit-scrollbar { display: none; }
+
+.platform-nav li a {
+  display: block;
+  padding: 0.7rem 1rem;
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--faint);
+  white-space: nowrap;
+  transition: color 0.2s;
+}
+.platform-nav li a:hover { color: var(--muted); }
+.platform-nav li a[aria-current="page"] {
+  color: var(--cyan);
+  border-bottom: 2px solid var(--cyan);
+}
+.platform-nav li a[aria-disabled="true"] {
+  pointer-events: none;
+  opacity: 0.4;
+}
+.platform-nav .sep {
+  color: var(--border);
+  font-size: 0.65rem;
+  padding: 0 0.1rem;
+  user-select: none;
+}
+
+/* ===== Mobile nav padding tweak ===== */
+@media (max-width: 640px) {
+  .platform-nav { padding: 0 0.75rem; }
+  .platform-nav li a { padding: 0.65rem 0.65rem; }
+}

@@ -320,24 +320,19 @@
 
     /* ===== Platform preview screenshot (homepage only) ===== */
     /* NOTE: This block must NOT be copied to other pages.     */
-    .preview-outer {
-      max-width: 860px;
-      margin: 0 auto;
-    }
-
     .preview-wrap {
       border: 1px solid var(--border);
       border-radius: var(--radius);
       overflow: hidden;
       background: var(--bg-panel);
-      box-shadow: 0 8px 40px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(0, 212, 255, 0.06);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
     }
 
     .preview-img {
       display: block;
       width: 100%;
       height: auto;
-      opacity: 0.9;
+      opacity: 0.88;
       transition: opacity 0.3s;
     }
 
@@ -502,18 +497,16 @@ coreops help</code>
 
   <section class="section" aria-labelledby="preview-heading">
     <h2 id="preview-heading" class="section-label">See It In Action</h2>
-    <div class="preview-outer">
-      <div class="preview-wrap">
-        <img
-          src="audit-demo.png"
-          alt="CoreOps audit command output showing HTTP, TLS certificate, and DNS results in Termux terminal"
-          class="preview-img"
-          loading="lazy"
-          decoding="async"
-          width="1440"
-          height="1088"
-        >
-      </div>
+    <div class="preview-wrap">
+      <img
+        src="audit-demo.png"
+        alt="CoreOps audit command output showing HTTP, TLS certificate, and DNS results in Termux terminal"
+        class="preview-img"
+        loading="lazy"
+        decoding="async"
+        width="1440"
+        height="1088"
+      >
     </div>
   </section>
 

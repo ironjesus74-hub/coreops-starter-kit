@@ -171,7 +171,7 @@ Listed in order of impact-to-effort ratio:
 | 🟡 7 | **Discussions** | `coreops-starter-kit` or `coreopssystems-site` | Better than Issues for Q&A and community feedback; maps well to the "Signal Feed" product concept |
 | 🟢 8 | **CODEOWNERS** | `coreops-starter-kit` | Documents who owns which layer (shell scripts vs Worker code) — useful once you add collaborators |
 | 🟢 9 | **Environments** (Cloudflare staging vs production) | `coreops-starter-kit` → Settings → Environments | Gives `PAYPAL_ENV=live` a required-reviewer gate separate from sandbox |
-| 🟢 10 | **Reduce ATLAS Status Feed schedule** | `.github/workflows/atlas-status-feed.yml` | `cron: "*/30 * * * *"` = 48 runs/day on a free-tier account. Reduce to hourly (`0 * * * *`) to avoid burning Actions minutes |
+| 🟢 10 | **Reduce ATLAS Status Feed schedule** | `.github/workflows/atlas-status-feed.yml` | ✅ Already fixed — reduced from `*/30 * * * *` (48 runs/day) to `0 * * * *` (hourly). |
 
 ---
 
@@ -179,46 +179,35 @@ Listed in order of impact-to-effort ratio:
 
 ### 🔴 CRITICAL
 
-**4.1 — CORS wildcard on payment-adjacent API endpoints**
-- File: `src/worker.js` lines 51–54
-- `"Access-Control-Allow-Origin": "*"` is applied to **all** API routes including `/api/paypal/create-order`, `/api/paypal/capture-order`, and `/api/paypal/webhook`.
-- Any page on any domain can call your PayPal order-creation endpoint via the browser.
-- **Fix in Phase 2:** Restrict `Access-Control-Allow-Origin` to `https://forge-atlas.io` (and optionally `https://atlas.coreopssystems.com`) on payment and profile routes. Keep wildcard only on purely public read-only routes like `/api/products`.
+**4.1 — CORS wildcard on payment-adjacent API endpoints** ✅ FIXED (Phase 2)
+- ~~`"Access-Control-Allow-Origin": "*"` applied to all API routes~~
+- **Fixed:** `sensitiveHeaders(env)` function returns dynamic `ALLOWED_ORIGIN` (from env var or `DEPLOYED_ORIGIN` fallback) on all payment, profile, and AI endpoints. Public read-only routes keep the wildcard only.
 
-**4.2 — No rate limiting on AI and payment endpoints**
-- `/api/atlas`, `/api/debate/generate`, `/api/forum/generate`, `/api/paypal/create-order` all make outbound API calls that cost real money.
-- There is **zero IP-level or token-level throttling** in the Worker.
-- A single bot could drain the OpenAI/PayPal quota in minutes.
-- **Fix in Phase 2:** Add Cloudflare rate-limit rules (Workers rate limiting API or Cloudflare dashboard rules) — these are free at the Cloudflare layer, no Worker code change needed for basic protection.
+**4.2 — No rate limiting on AI and payment endpoints** ✅ FIXED (Phase 2)
+- ~~Zero IP-level throttling~~
+- **Fixed:** `checkRateLimit()` + `guardSensitiveRequest()` added. Payment: 10 req/min/IP, AI: 20 req/min/IP. Applied to all payment and AI handlers.
 
 ### 🟠 HIGH
 
-**4.3 — Open ShellCheck CI failure (Issue #1)**
-- Has been open since 2026-02-22.
-- Every PR and push to `main` is showing a failing check, which will erode trust from any collaborators.
-- **Fix in Phase 2:** Run `shellcheck -S error bin/*.sh modules/*.sh lib/*.sh` locally, fix the flagged errors, close the issue.
+**4.3 — Open ShellCheck CI failure (Issue #1)** ✅ FIXED
+- ~~ShellCheck failing since 2026-02-22~~
+- **Fixed:** Shell scripts pass `shellcheck -S error` cleanly. CI check passes on `main`.
 
-**4.4 — Missing Content-Security-Policy and Strict-Transport-Security headers**
-- `src/worker.js` `SECURITY_HEADERS` has `X-Content-Type-Options`, `X-Frame-Options`, and `Referrer-Policy` but **omits CSP and HSTS**.
-- Static HTML pages (market.html, debate.html, forum.html, profile.html) load external fonts and scripts that CSP should govern.
-- **Fix in Phase 2:** Add `Content-Security-Policy` with a tight allowlist and `Strict-Transport-Security: max-age=31536000; includeSubDomains`.
+**4.4 — Missing Content-Security-Policy and Strict-Transport-Security headers** ✅ FIXED (Phase 2)
+- ~~CSP and HSTS absent from SECURITY_HEADERS~~
+- **Fixed:** Full `Content-Security-Policy` (including PayPal domains in `script-src`, `connect-src`, `frame-src`) and `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload` added to `SECURITY_HEADERS`.
 
-**4.5 — No `deploy.yml` workflow — deployments are manual**
-- Repo memories reference a deploy workflow, but it is absent from `.github/workflows/`.
-- Without CI/CD, deploys rely on a developer remembering to run `npm run deploy` locally with the right credentials.
-- **Fix in Phase 2:** Add `.github/workflows/deploy.yml` triggered on push to `main` with `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` secrets.
+**4.5 — No `deploy.yml` workflow** ✅ FIXED (Phase 2)
+- ~~No CI/CD deploy pipeline~~
+- **Fixed:** `.github/workflows/deploy.yml` added. Deploys on push to `main`. Skips automatically when `wrangler.toml` contains placeholder values.
 
 ### 🟡 MEDIUM
 
-**4.6 — Four repos have no LICENSE**
-- `ironjesus-lab`, `vite-react-template`, `projectatlas`, `ironjesus74-hub` (profile repo) have no license.
-- Under GitHub's default, **all rights are reserved** — no one can legally use or contribute to those repos.
-- **Fix in Phase 2:** Add `LICENSE` (MIT) to each.
+**4.6 — Four repos have no LICENSE** ⚠️ OPEN (other repos — out of scope for this repo)
 
-**4.7 — `wrangler` npm dependency not covered by Dependabot**
-- `wrangler ^3.101.0` is the only npm dependency; Cloudflare regularly ships security-relevant `wrangler` patches.
-- Current `dependabot.yml` only monitors `github-actions`.
-- **Fix in Phase 2:** Add an `npm` block to `dependabot.yml`.
+**4.7 — `wrangler` npm dependency not covered by Dependabot** ✅ FIXED (Phase 2)
+- ~~Only github-actions ecosystem monitored~~
+- **Fixed:** `npm` ecosystem added to `.github/dependabot.yml`.
 
 ---
 
@@ -270,11 +259,12 @@ Listed in order of impact-to-effort ratio:
 |---|---|---|
 | Profile completeness | 2 / 10 | Nearly empty — highest-visibility quick win |
 | Repo hygiene (descriptions, topics, licenses) | 3 / 10 | Most repos missing basics |
-| CI / CD coverage | 6 / 10 | Good ShellCheck + CodeQL; missing deploy pipeline |
-| Security posture | 5 / 10 | Secrets managed correctly; CORS + rate limiting + CSP are gaps |
-| GitHub feature utilization | 4 / 10 | Dependabot partial; branch protection absent; Pro features unused |
-| Code quality | 7 / 10 | Worker is well-structured; open ShellCheck issue drags score |
+| CI / CD coverage | 9 / 10 | ShellCheck ✅ · CodeQL ✅ · Repo Audit ✅ · Deploy pipeline ✅ |
+| Security posture | 8 / 10 | CORS restricted ✅ · Rate limiting ✅ · CSP + HSTS ✅ · Secrets never hardcoded ✅ |
+| GitHub feature utilization | 5 / 10 | Dependabot (actions + npm) ✅ · branch protection: not set · Pro features unused |
+| Code quality | 9 / 10 | Worker well-structured · ShellCheck clean · Audit CI passing |
 
 ---
 
-*Phase 2 will generate targeted patches for each item flagged 🔴 or 🟠 above.*
+*Phase 2 patches issued. Phase 3 targets: branch protection on `main`, platform improvements, and prompt library expansion.*
+

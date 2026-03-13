@@ -385,17 +385,16 @@
     <div class="intro-item"><span class="intro-dot"></span>Network diagnostics</div>
     <div class="intro-item"><span class="intro-dot"></span>Shell &amp; scripting</div>
     <div class="intro-item"><span class="intro-dot"></span>System audit prompts</div>
-    <div class="intro-item"><span class="intro-dot"></span>Operator &amp; system tools</div>
     <div class="intro-item"><span class="intro-dot"></span>AI-ready, copy-paste ready</div>
   </div>
 
   <!-- ===== FILTER BAR ===== -->
   <div class="filter-bar" role="toolbar" aria-label="Filter prompts by category">
-    <button class="filter-btn" data-filter="all"      aria-pressed="true">All</button>
-    <button class="filter-btn" data-filter="devops"   aria-pressed="false">DevOps</button>
-    <button class="filter-btn" data-filter="network"  aria-pressed="false">Network</button>
-    <button class="filter-btn" data-filter="shell"    aria-pressed="false">Shell</button>
-    <button class="filter-btn" data-filter="audit"    aria-pressed="false">Audit</button>
+    <button class="filter-btn" data-filter="all"     aria-pressed="true">All</button>
+    <button class="filter-btn" data-filter="devops"  aria-pressed="false">DevOps</button>
+    <button class="filter-btn" data-filter="network" aria-pressed="false">Network</button>
+    <button class="filter-btn" data-filter="shell"   aria-pressed="false">Shell</button>
+    <button class="filter-btn" data-filter="audit"   aria-pressed="false">Audit</button>
   </div>
 
   <!-- ===== DEVOPS CORE ===== -->
@@ -604,72 +603,6 @@ Flag: packages with known CVEs, major version drift from latest stable, abandone
         <div class="prompt-actions">
           <button class="btn-copy" data-target="11" aria-label="Copy prompt text">Copy</button>
           <button class="btn-try" data-target="11" aria-label="Open in Atlas AI">Try in Atlas</button>
-        </div>
-      </div>
-
-    </div>
-  </section>
-
-  <!-- ===== OPERATOR TOOLKIT ===== -->
-  <div class="divider" role="separator">
-    <div class="divider-line"></div>
-    <div class="divider-label"><span>Operator Toolkit</span></div>
-  </div>
-
-  <section class="section" aria-labelledby="operator-heading">
-    <h2 id="operator-heading" class="section-label">Operator &amp; System Prompts</h2>
-    <div class="prompt-grid">
-
-      <div class="prompt-card" data-group="devops">
-        <span class="prompt-category">Release</span>
-        <div class="prompt-title">Deployment Readiness Gatekeeper</div>
-        <div class="prompt-desc">Run a strict go/no-go check before any production deploy.</div>
-        <pre class="prompt-text">You are a deployment gatekeeper for a [Cloudflare Worker / Node.js API / static site]. Here is the current state:
-
-- Branch: [name]
-- Last commit: [message]
-- Env vars confirmed: [list]
-- Secrets confirmed: [list]
-- Wrangler / deploy config: [paste relevant lines]
-
-Evaluate readiness. Flag any blocker (missing secret, placeholder value, untested path, rollback gap). Output: GO / NO-GO with reasons.</pre>
-        <div class="prompt-actions">
-          <button class="btn-copy" data-target="12" aria-label="Copy prompt text">Copy</button>
-          <button class="btn-try" data-target="12" aria-label="Open in Atlas AI">Try in Atlas</button>
-        </div>
-      </div>
-
-      <div class="prompt-card" data-group="audit">
-        <span class="prompt-category">Post-Mortem</span>
-        <div class="prompt-title">Incident Post-Mortem Generator</div>
-        <div class="prompt-desc">Turn an incident timeline into a structured blameless post-mortem.</div>
-        <pre class="prompt-text">Write a blameless post-mortem for this incident:
-
-- What happened: [brief description]
-- Timeline: [paste events with timestamps]
-- Services affected: [list]
-- Duration: [start → end]
-- Root cause: [known or suspected]
-
-Include: executive summary, timeline table, contributing factors, impact assessment, corrective actions (short-term + long-term), and a "lessons learned" section.</pre>
-        <div class="prompt-actions">
-          <button class="btn-copy" data-target="13" aria-label="Copy prompt text">Copy</button>
-          <button class="btn-try" data-target="13" aria-label="Open in Atlas AI">Try in Atlas</button>
-        </div>
-      </div>
-
-      <div class="prompt-card" data-group="devops">
-        <span class="prompt-category">Config Review</span>
-        <div class="prompt-title">Wrangler / Worker Config Auditor</div>
-        <div class="prompt-desc">Audit a wrangler.toml for security, correctness, and deploy-readiness.</div>
-        <pre class="prompt-text">Audit this wrangler.toml for production-readiness:
-
-[paste wrangler.toml here]
-
-Check for: placeholder values (YOUR_*), missing KV / D1 bindings, insecure ALLOWED_ORIGIN, missing secrets documentation, routes pointing to wrong zones, and any pattern that would cause a silent deploy failure. List issues by severity.</pre>
-        <div class="prompt-actions">
-          <button class="btn-copy" data-target="14" aria-label="Copy prompt text">Copy</button>
-          <button class="btn-try" data-target="14" aria-label="Open in Atlas AI">Try in Atlas</button>
         </div>
       </div>
 
