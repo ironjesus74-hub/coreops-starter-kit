@@ -34,7 +34,6 @@ node_modules/
 # Copilot-pass backup files
 *.bak.*
 
-# Screenshots: audit-demo.png is homepage-only (index.html) — DO NOT exclude
-# audit-demo.png            (served at /audit-demo.png — used by index.html)
-# assets/coreops-live-dashboard.png  (served at /assets/coreops-live-dashboard.png — README only)
-# Note: root coreops-live-dashboard.png removed (was a stale duplicate; README uses assets/ path)
+# Screenshots served on the homepage only — DO NOT exclude
+# audit-demo.png         (served at /audit-demo.png)
+# coreops-live-dashboard.png  (served at /coreops-live-dashboard.png)
