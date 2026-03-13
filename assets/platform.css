@@ -23,6 +23,7 @@
   --cyan:       #00d4ff;
   --cyan-dim:   rgba(0, 212, 255, 0.18);
   --magenta:    #ff2d78;
+  --footer-link-hover: var(--muted);
   --white:      #e6edf3;
   --muted:      #8b949e;
   --faint:      #484f58;
@@ -128,6 +129,10 @@ body:not([data-page="home"]) [data-homepage-only] {
   color: var(--faint);
   text-decoration: none;
   transition: color 0.18s;
+}
+
+.footer a:hover {
+  color: var(--footer-link-hover);
 }
 
 /* ===== Shared page-header (non-home inner pages) ===== */
