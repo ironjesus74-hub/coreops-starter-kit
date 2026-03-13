@@ -39,19 +39,37 @@ Cloudflare Worker  ─── src/worker.js  (unified API gateway)
 
 ## Required Cloudflare Secrets
 
-Set these via the Cloudflare dashboard **or** with `wrangler secret put <NAME>`:
-
-| Secret                  | Purpose                                              | Required |
-|-------------------------|------------------------------------------------------|----------|
-| `ATLAS_AI_API_KEY`      | OpenAI-compatible API key for all AI routes          | Yes      |
-| `ATLAS_INTERNAL_SECRET` | Bearer token for `/api/atlas/admin/status` access    | Yes      |
-| `PAYPAL_CLIENT_ID`      | PayPal app client ID                                 | Commerce |
-| `PAYPAL_CLIENT_SECRET`  | PayPal app client secret                             | Commerce |
-| `PAYPAL_WEBHOOK_ID`     | PayPal webhook ID for signature verification         | Commerce |
-| `CONTACT_WEBHOOK_URL`   | Webhook URL for contact form delivery (optional)     | Optional |
-
 > **Never put real secret values in `wrangler.toml`, HTML files, or JavaScript files.**
-> Use `xxxx` as a placeholder only. Real values go in Cloudflare Worker settings only.
+> Real values must only be set via Cloudflare dashboard secrets or `wrangler secret put`.
+
+### Exact placement in Cloudflare Dashboard
+
+**Path:** Cloudflare Dashboard → Workers & Pages → `coreops` → **Settings** → **Variables and Secrets**
+
+| Secret name              | Where to set it                              | Required for                                  |
+|--------------------------|----------------------------------------------|-----------------------------------------------|
+| `ATLAS_AI_API_KEY`       | Settings → Variables and Secrets → Add secret | All AI routes (chat, debate, forum, moderate) |
+| `ATLAS_INTERNAL_SECRET`  | Settings → Variables and Secrets → Add secret | `/api/atlas/admin/status` (Bearer token)      |
+| `PAYPAL_CLIENT_ID`       | Settings → Variables and Secrets → Add secret | PayPal checkout (create-order/capture-order)  |
+| `PAYPAL_CLIENT_SECRET`   | Settings → Variables and Secrets → Add secret | PayPal order creation and webhook auth        |
+| `PAYPAL_WEBHOOK_ID`      | Settings → Variables and Secrets → Add secret | PayPal webhook signature verification         |
+| `CONTACT_WEBHOOK_URL`    | Settings → Variables and Secrets → Add secret | Contact form forwarding (optional)            |
+
+Equivalent `wrangler` CLI commands (run from your repo root):
+
+```bash
+wrangler secret put ATLAS_AI_API_KEY        # OpenAI-compatible API key
+wrangler secret put ATLAS_INTERNAL_SECRET   # Admin endpoint bearer token (generate a long random string)
+wrangler secret put PAYPAL_CLIENT_ID        # PayPal app client ID
+wrangler secret put PAYPAL_CLIENT_SECRET    # PayPal app client secret
+wrangler secret put PAYPAL_WEBHOOK_ID       # PayPal webhook ID
+wrangler secret put CONTACT_WEBHOOK_URL     # Optional: webhook URL for contact form
+```
+
+> **Minimum required secrets to get AI features working:**
+> Only `ATLAS_AI_API_KEY` is required for all AI routes (chat, debate, forum, moderation, prompts).
+> `ATLAS_INTERNAL_SECRET` is required for the admin status endpoint.
+> PayPal secrets are only needed if you want the dynamic checkout flow.
 
 ---
 
@@ -63,10 +81,12 @@ Set these via the Cloudflare dashboard **or** with `wrangler secret put <NAME>`:
 | `OPENAI_MODEL`       | `gpt-4o-mini`                                        | Model to use for AI completions      |
 | `AI_PROVIDER`        | `openai`                                             | Provider label for observability     |
 | `APP_ENV`            | `production`                                         | Environment label                    |
-| `FORUM_AI_ENABLED`   | `true`                                               | Enable/disable forum AI routes       |
-| `DEBATE_AI_ENABLED`  | `true`                                               | Enable/disable debate AI routes      |
-| `PAYPAL_ENV`         | `sandbox`                                            | PayPal environment                   |
+| `FORUM_AI_ENABLED`   | `true`                                               | Set to `"false"` to disable forum AI |
+| `DEBATE_AI_ENABLED`  | `true`                                               | Set to `"false"` to disable debate AI|
+| `PAYPAL_ENV`         | `sandbox`                                            | Set to `"live"` for production       |
 | `ALLOWED_ORIGIN`     | `https://forge-atlas.io`                             | Restricts sensitive CORS endpoints   |
+
+These variables are safe to set in `wrangler.toml` (no secret values; they are non-sensitive config).
 
 ---
 
@@ -152,7 +172,7 @@ Follow these steps in order after pushing code to GitHub and confirming the Work
 |--------|---------------------------|----------------------------------------------|------------------------------------|
 | POST   | `/api/atlas/chat`         | `message`, `mode?`, `systemContext?`         | Atlas AI chat (modes: devops/general/operator) |
 | POST   | `/api/atlas/debate`       | `topic`, `rounds?`                           | Generate AI debate transcript      |
-| POST   | `/api/atlas/forum-assist` | `action`, `content?`, `context?`             | Forum AI assistance                |
+| POST   | `/api/atlas/forum-assist` | `action`, `topic?`, `category?`, `content?`, `context?` | Forum AI assistance (actions: generate/draft/reply/summarize/categorize/analyze) |
 | POST   | `/api/atlas/moderate`     | `content`, `contentType?`                    | AI content moderation              |
 | POST   | `/api/atlas/prompts`      | `action?`, `prompt?`, `category?`, `count?`  | Prompt generation/expansion        |
 
