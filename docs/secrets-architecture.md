@@ -96,7 +96,7 @@ in the repo. It must be a Cloudflare Worker secret only.
 | Hardcoded key in `wrangler.toml` | ✅ None | `[vars]` section contains no secret values |
 | CORS restriction on AI endpoints | ✅ Present | `sensitiveHeaders(env)` uses `ALLOWED_ORIGIN` |
 | Prompt injection guard (Atlas AI) | ✅ Present | `sanitizeSystemContext()` strips control chars |
-| Debate / Forum endpoints | ✅ Backend-only | No direct browser → OpenAI path |
+| Debate / Forum endpoints | ✅ Worker-proxied | Browser → Worker → OpenAI; no direct browser → OpenAI access |
 
 ---
 
