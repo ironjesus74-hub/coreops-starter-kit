@@ -36,6 +36,7 @@ node_modules/
 # Copilot-pass backup files
 *.bak.*
 
-# Screenshots served on the homepage only — DO NOT exclude
-# audit-demo.png         (served at /audit-demo.png)
-# coreops-live-dashboard.png  (served at /coreops-live-dashboard.png)
+# Screenshots served by the site — DO NOT exclude from Cloudflare asset serving
+# audit-demo.png              (root — served at /audit-demo.png, used by index.html)
+# coreops-live-dashboard.png  (root — served at /coreops-live-dashboard.png, used by OG meta tags on all pages)
+# assets/coreops-live-dashboard.png  (assets/ — served at /assets/coreops-live-dashboard.png, used by README)

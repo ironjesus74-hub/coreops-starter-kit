@@ -2,7 +2,7 @@ name: ATLAS Status Feed
 
 on:
   workflow_run:
-    workflows: ["ShellCheck", "Repo Guard", "pages-build-deployment", "Pages", "CI"]
+    workflows: ["ShellCheck", "Repo Guard"]
     types: [completed]
   schedule:
     - cron: "0 * * * *"   # every hour
