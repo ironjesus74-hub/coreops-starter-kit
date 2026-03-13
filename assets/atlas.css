@@ -34,7 +34,7 @@
 }
 
 /* ── Toggle pulse ring while AI is busy ─────────────────────────────────── */
-#atlas-root:has(#atlas-panel[data-busy="1"]) #atlas-toggle {
+#atlas-toggle[data-busy="1"] {
   box-shadow: 0 0 0 0 rgba(0, 212, 255, 0.55);
   animation: atlas-btn-pulse 1.5s ease-out infinite;
 }
