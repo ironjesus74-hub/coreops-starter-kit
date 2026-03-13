@@ -516,6 +516,15 @@ coreops help</code>
     &nbsp;·&nbsp; CoreOps Platform &nbsp;·&nbsp; MIT License
   </footer>
 
+  <!-- ===== PAYPAL HOSTED BUTTON (home page only) ===== -->
+  <!--
+    Renders only when PAYPAL_CLIENT_ID is configured in the Worker.
+    Container is empty until home-paypal.js boots the SDK.
+    This block must NOT be copied to other pages.
+  -->
+  <div id="paypal-hosted-btn-wrap" role="region" style="display:flex;justify-content:center;padding:1.5rem 2rem 2rem;" aria-label="Support via PayPal"></div>
+
   <script src="assets/atlas.js" defer></script>
+  <script src="assets/home-paypal.js" defer></script>
 </body>
 </html>
