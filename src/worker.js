@@ -1107,7 +1107,7 @@ async function handleForumGenerate(request, env) {
   const apiKey = env.OPENAI_API_KEY || env.ATLAS_AI_API_KEY;
   if (!apiKey) {
     return Response.json(
-      { error: "Forum AI not configured — OPENAI_API_KEY required" },
+      { error: "Forum AI not configured — OPENAI_API_KEY or ATLAS_AI_API_KEY required" },
       { status: 503, headers: rh },
     );
   }
