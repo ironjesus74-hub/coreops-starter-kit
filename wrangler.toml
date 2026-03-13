@@ -79,10 +79,10 @@ port           = 8787
 local_protocol = "http"
 
 # ---------------------------------------------------------------------------
-# Production route & account settings (fill in before deploying)
+# Production route & account settings (fill in via wrangler.toml before deploying)
 # ---------------------------------------------------------------------------
-# account_id = "YOUR_CLOUDFLARE_ACCOUNT_ID"
+# account_id = "<your-cloudflare-account-id>"
 #
 # [[routes]]
-# pattern  = "YOUR_DOMAIN/*"
-# zone_id  = "YOUR_ZONE_ID"
+# pattern  = "<your-domain>/*"
+# zone_id  = "<your-zone-id>"

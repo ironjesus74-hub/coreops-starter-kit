@@ -15,10 +15,11 @@ permissions:
   actions: read
   pull-requests: read
 
-# Prevent concurrent scans from interfering with each other.
+# Queue concurrent scans rather than cancelling them — cancel-in-progress
+# caused runs to be marked "failure" with 0 jobs on rapid pushes to main.
 concurrency:
   group: codeql-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   analyze:
