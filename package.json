@@ -9,6 +9,7 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "deploy:pages": "wrangler pages deploy .",
+    "secrets:set-openai-key": "wrangler secret put OPENAI_API_KEY",
     "secrets:set-atlas-key": "wrangler secret put ATLAS_AI_API_KEY"
   },
   "devDependencies": {

@@ -17,11 +17,16 @@ binding   = "ASSETS"
 
 # ---------------------------------------------------------------------------
 # Environment variable placeholders.
-# Set real secrets via:  wrangler secret put ATLAS_AI_API_KEY
+# NEVER commit a real API key here.  Set the real value as a Worker secret:
+#   wrangler secret put OPENAI_API_KEY
+# The placeholder below (xxxx) is intentionally non-functional.
 # ---------------------------------------------------------------------------
 [vars]
 ATLAS_AI_ENDPOINT = "https://api.openai.com/v1/chat/completions"
 PAYPAL_ENV        = "sandbox"
+# OPENAI_API_KEY is intentionally NOT listed under [vars] — it must be set
+# exclusively via `wrangler secret put OPENAI_API_KEY` so it is encrypted
+# at rest and never exposed in repo files or Cloudflare dashboard plain-text.
 # Set to your production origin (e.g. "https://forge-atlas.io") to restrict
 # sensitive CORS endpoints.  Leave as the placeholder during local dev.
 ALLOWED_ORIGIN    = "https://forge-atlas.io"

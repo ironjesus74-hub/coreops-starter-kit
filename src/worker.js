@@ -29,7 +29,8 @@
  *   DB                    — forge-core D1 database (health + db-test endpoints)
  *
  * Secrets (set via: wrangler secret put <NAME>):
- *   ATLAS_AI_API_KEY      — OpenAI-compatible API key
+ *   OPENAI_API_KEY        — OpenAI-compatible API key (preferred)
+ *   ATLAS_AI_API_KEY      — Legacy alias; checked when OPENAI_API_KEY is absent
  *   PAYPAL_CLIENT_ID      — PayPal app client ID
  *   PAYPAL_CLIENT_SECRET  — PayPal app client secret
  *   PAYPAL_WEBHOOK_ID     — PayPal webhook ID for signature verification
@@ -507,7 +508,7 @@ async function handleAtlas(request, env) {
     );
   }
 
-  const apiKey = env.ATLAS_AI_API_KEY;
+  const apiKey = env.OPENAI_API_KEY || env.ATLAS_AI_API_KEY;
   if (!apiKey) {
     return Response.json(
       { error: "AI service not configured" },
@@ -1014,10 +1015,10 @@ async function handleDebateGenerate(request, env) {
     Math.max(parseInt(body?.rounds, 10) || DEBATE_DEFAULT_ROUNDS, DEBATE_MIN_ROUNDS),
     DEBATE_MAX_ROUNDS,
   );
-  const apiKey = env.ATLAS_AI_API_KEY;
+  const apiKey = env.OPENAI_API_KEY || env.ATLAS_AI_API_KEY;
   if (!apiKey) {
     return Response.json(
-      { error: "Debate engine not configured — ATLAS_AI_API_KEY required" },
+      { error: "Debate engine not configured — OPENAI_API_KEY required" },
       { status: 503, headers: rh },
     );
   }
@@ -1103,10 +1104,10 @@ async function handleForumGenerate(request, env) {
   if (bodyError) return Response.json({ error: bodyError }, { status: 400, headers: rh });
   const topic = typeof body?.topic === "string" ? body.topic.trim().slice(0, 200) : "";
   const category = typeof body?.category === "string" ? body.category.trim() : "general";
-  const apiKey = env.ATLAS_AI_API_KEY;
+  const apiKey = env.OPENAI_API_KEY || env.ATLAS_AI_API_KEY;
   if (!apiKey) {
     return Response.json(
-      { error: "Forum AI not configured — ATLAS_AI_API_KEY required" },
+      { error: "Forum AI not configured — OPENAI_API_KEY required" },
       { status: 503, headers: rh },
     );
   }
