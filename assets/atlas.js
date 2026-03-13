@@ -5,6 +5,14 @@
 (function () {
   "use strict";
 
+  // ── Markdown rendering — module-level regex constants ────────────────────
+  // Compiled once when the script loads rather than on every message render.
+  const _RE_FENCED_CODE  = /```[\w]*\n?([\s\S]*?)```/g;
+  const _RE_INLINE_CODE  = /`([^`\n]+)`/g;
+  const _RE_BOLD         = /\*\*([^*\n]+)\*\*/g;
+  const _RE_NEWLINE      = /\n/g;
+  const _RE_RESTORE_BLOCK = /\x00BLOCK(\d+)\x00/g;
+
   // ── Homepage-only guard ──────────────────────────────────────────────────
   // Hide any section marked data-homepage-only="true" on non-home pages.
   // platform.css provides a CSS fallback; this JS guard runs after the DOM
@@ -221,18 +229,18 @@
     let html = escapeHtml(text);
     // Extract fenced code blocks first so newline conversion leaves them intact
     const blocks = [];
-    html = html.replace(/```[\w]*\n?([\s\S]*?)```/g, (_, code) => {
+    html = html.replace(_RE_FENCED_CODE, (_, code) => {
       blocks.push(`<pre><code>${code}</code></pre>`);
       return `\x00BLOCK${blocks.length - 1}\x00`;
     });
     // Inline code
-    html = html.replace(/`([^`\n]+)`/g, "<code>$1</code>");
+    html = html.replace(_RE_INLINE_CODE, "<code>$1</code>");
     // Bold
-    html = html.replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>");
+    html = html.replace(_RE_BOLD, "<strong>$1</strong>");
     // Newlines → <br> (only in non-code-block text)
-    html = html.replace(/\n/g, "<br>");
+    html = html.replace(_RE_NEWLINE, "<br>");
     // Restore fenced code blocks (newlines inside are kept as-is)
-    html = html.replace(/\x00BLOCK(\d+)\x00/g, (_, i) => blocks[parseInt(i, 10)]);
+    html = html.replace(_RE_RESTORE_BLOCK, (_, i) => blocks[parseInt(i, 10)]);
     return html;
   }
 })();

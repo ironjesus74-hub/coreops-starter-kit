@@ -177,6 +177,15 @@ const _rateLimitStore = new Map();
  */
 function checkRateLimit(key, limit) {
   const now = Date.now();
+  // Prune stale entries once the store grows large to prevent unbounded memory
+  // growth. Iterating the full map is cheaper than the alternative (memory leak).
+  if (_rateLimitStore.size > 500) {
+    for (const [k, entry] of _rateLimitStore) {
+      if (now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
+        _rateLimitStore.delete(k);
+      }
+    }
+  }
   const entry = _rateLimitStore.get(key) || { count: 0, windowStart: now };
   if (now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
     entry.count = 1;
@@ -410,26 +419,70 @@ const FORUM_SEED_THREADS = [
   },
 ];
 
+// ---------------------------------------------------------------------------
+// Performance: O(1) product lookups — keyed by product ID.
+// Built once at module load from the immutable PRODUCT_CATALOG array.
+// ---------------------------------------------------------------------------
+/** @type {Map<string, object>} */
+const PRODUCT_MAP = new Map(PRODUCT_CATALOG.map((p) => [p.id, p]));
+
+// ---------------------------------------------------------------------------
+// Performance: pre-computed AGENT_REGISTRY summary for the status endpoint.
+// Avoids re-mapping the full registry array on every GET /api/atlas/admin/status.
+// ---------------------------------------------------------------------------
+const AGENT_REGISTRY_STATUS = AGENT_REGISTRY.map((a) => ({
+  id: a.id,
+  name: a.name,
+  role: a.role,
+  status: a.status,
+}));
+
+// ---------------------------------------------------------------------------
+// Performance: module-level Sets for input validation.
+// Building a new Set on every request is wasteful — these are immutable.
+// ---------------------------------------------------------------------------
+const SENSITIVE_PATHS = new Set([
+  "/api/atlas",
+  "/api/atlas/chat",
+  "/api/atlas/debate",
+  "/api/atlas/forum-assist",
+  "/api/atlas/moderate",
+  "/api/atlas/prompts",
+  "/api/paypal/create-order",
+  "/api/paypal/capture-order",
+  "/api/debate/generate",
+  "/api/forum/generate",
+  "/api/profile",
+]);
+const ATLAS_ALLOWED_MODES    = new Set(["devops", "general", "operator"]);
+const FORUM_ALLOWED_ACTIONS  = new Set(["generate", "draft", "reply", "summarize", "categorize", "analyze"]);
+const MOD_ALLOWED_TYPES      = new Set(["post", "reply", "title"]);
+const PROMPT_ALLOWED_ACTIONS = new Set(["generate", "expand", "suggest"]);
+
+// ---------------------------------------------------------------------------
+// Performance: module-level regexes for sanitizeSystemContext.
+// Compiling a regex literal on every function call is unnecessary overhead.
+// ---------------------------------------------------------------------------
+const _RE_CONTROL_CHARS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g;
+const _RE_ZERO_WIDTH     = /[\u200B-\u200D\uFEFF]/g;
+
+// ---------------------------------------------------------------------------
+// Performance: module-level PayPal token cache.
+// PayPal access tokens are valid for ~9 hours; we cache for 30 minutes so the
+// same isolate instance does not re-authenticate on every payment request.
+// The cache is keyed by PAYPAL_CLIENT_ID so a credential rotation is detected.
+// ---------------------------------------------------------------------------
+const PAYPAL_TOKEN_CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
+/** @type {{ clientId: string, token: string, base: string, expiresAt: number } | null} */
+let _paypalTokenCache = null;
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
     // ── CORS preflight ──────────────────────────────────────────────────────
     if (request.method === "OPTIONS") {
-      const sensitivePaths = new Set([
-        "/api/atlas",
-        "/api/atlas/chat",
-        "/api/atlas/debate",
-        "/api/atlas/forum-assist",
-        "/api/atlas/moderate",
-        "/api/atlas/prompts",
-        "/api/paypal/create-order",
-        "/api/paypal/capture-order",
-        "/api/debate/generate",
-        "/api/forum/generate",
-        "/api/profile",
-      ]);
-      const preflightHeaders = sensitivePaths.has(url.pathname)
+      const preflightHeaders = SENSITIVE_PATHS.has(url.pathname)
         ? sensitiveHeaders(env)
         : CORS_HEADERS;
       return new Response(null, { status: 204, headers: preflightHeaders });
@@ -704,6 +757,15 @@ async function getPayPalToken(env) {
   if (!env.PAYPAL_CLIENT_ID || !env.PAYPAL_CLIENT_SECRET) {
     throw new Error("PayPal credentials not configured");
   }
+  const now = Date.now();
+  // Return cached token if it belongs to the same client ID and hasn't expired.
+  if (
+    _paypalTokenCache &&
+    _paypalTokenCache.clientId === env.PAYPAL_CLIENT_ID &&
+    _paypalTokenCache.expiresAt > now
+  ) {
+    return { token: _paypalTokenCache.token, base: _paypalTokenCache.base };
+  }
   const base = paypalBase(env);
   // PayPal client IDs and secrets are guaranteed ASCII, making btoa safe here.
   const credentials = btoa(env.PAYPAL_CLIENT_ID + ":" + env.PAYPAL_CLIENT_SECRET);
@@ -721,6 +783,12 @@ async function getPayPalToken(env) {
     throw new Error("PayPal authentication failed");
   }
   const data = await resp.json();
+  _paypalTokenCache = {
+    clientId: env.PAYPAL_CLIENT_ID,
+    token: data.access_token,
+    base,
+    expiresAt: now + PAYPAL_TOKEN_CACHE_TTL_MS,
+  };
   return { token: data.access_token, base };
 }
 
@@ -785,7 +853,7 @@ async function handlePayPalCreateOrder(request, env) {
   if (!productId) {
     return Response.json({ error: "productId is required" }, { status: 400, headers: rh });
   }
-  const product = PRODUCT_CATALOG.find((p) => p.id === productId);
+  const product = PRODUCT_MAP.get(productId);
   if (!product) {
     return Response.json({ error: "Product not found" }, { status: 404, headers: rh });
   }
@@ -890,7 +958,7 @@ async function handlePayPalCaptureOrder(request, env) {
     const unit = captureData?.purchase_units?.[0];
     const capture = unit?.payments?.captures?.[0];
     const pid = unit?.reference_id || unit?.custom_id || "";
-    const product = PRODUCT_CATALOG.find((p) => p.id === pid);
+    const product = PRODUCT_MAP.get(pid);
     console.log(
       "Order captured: " + captureData.id + " | product: " + pid +
       " | amount: " + (capture?.amount?.value || "?") + " " + (capture?.amount?.currency_code || ""),
@@ -988,7 +1056,7 @@ async function handlePayPalWebhook(request, env) {
     console.log("PayPal webhook event: " + parsedEvent.event_type + " | resource: " + parsedEvent.resource?.id);
     if (parsedEvent.event_type === "PAYMENT.CAPTURE.COMPLETED") {
       const customId = parsedEvent.resource?.custom_id || "";
-      const product = PRODUCT_CATALOG.find((p) => p.id === customId);
+      const product = PRODUCT_MAP.get(customId);
       console.log(
         "Delivery trigger: product=" + customId +
         " | capture=" + parsedEvent.resource?.id +
@@ -1444,8 +1512,8 @@ function isValidPayPalCertUrl(url) {
  */
 function sanitizeSystemContext(text) {
   return String(text)
-    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
-    .replace(/[\u200B-\u200D\uFEFF]/g, "");
+    .replace(_RE_CONTROL_CHARS, "")
+    .replace(_RE_ZERO_WIDTH, "");
 }
 
 // ---------------------------------------------------------------------------
@@ -1489,9 +1557,8 @@ async function handleAtlasChat(request, env) {
   const model = env.OPENAI_MODEL || "gpt-4o-mini";
 
   // mode selects the Atlas AI persona
-  const ALLOWED_MODES = new Set(["devops", "general", "operator"]);
   const rawMode = typeof body?.mode === "string" ? body.mode.trim().toLowerCase() : "";
-  const mode = ALLOWED_MODES.has(rawMode) ? rawMode : "devops";
+  const mode = ATLAS_ALLOWED_MODES.has(rawMode) ? rawMode : "devops";
 
   const systemExtra =
     typeof body?.systemContext === "string"
@@ -1554,9 +1621,8 @@ async function handleAtlasForumAssist(request, env) {
   if (bodyError) return Response.json({ error: bodyError }, { status: 400, headers: rh });
 
   // "generate" creates a full structured thread; the rest are assistance actions.
-  const ALLOWED_ACTIONS = new Set(["generate", "draft", "reply", "summarize", "categorize", "analyze"]);
   const rawAction = typeof body?.action === "string" ? body.action.trim().toLowerCase() : "";
-  const action = ALLOWED_ACTIONS.has(rawAction) ? rawAction : "draft";
+  const action = FORUM_ALLOWED_ACTIONS.has(rawAction) ? rawAction : "draft";
 
   // "generate" action: return a fully structured forum thread object (same shape
   // as /api/forum/generate) so the forum frontend can consume it directly.
@@ -1661,9 +1727,8 @@ async function handleAtlasModerate(request, env) {
     return Response.json({ error: "content is required" }, { status: 400, headers: rh });
   }
 
-  const ALLOWED_TYPES = new Set(["post", "reply", "title"]);
   const rawType = typeof body?.contentType === "string" ? body.contentType.trim().toLowerCase() : "";
-  const contentType = ALLOWED_TYPES.has(rawType) ? rawType : "post";
+  const contentType = MOD_ALLOWED_TYPES.has(rawType) ? rawType : "post";
 
   const apiKey = env.ATLAS_AI_API_KEY;
   if (!apiKey) {
@@ -1724,9 +1789,8 @@ async function handleAtlasPrompts(request, env) {
   const { body, bodyError } = await parseJsonBody(request);
   if (bodyError) return Response.json({ error: bodyError }, { status: 400, headers: rh });
 
-  const ALLOWED_ACTIONS = new Set(["generate", "expand", "suggest"]);
   const rawAction = typeof body?.action === "string" ? body.action.trim().toLowerCase() : "";
-  const action = ALLOWED_ACTIONS.has(rawAction) ? rawAction : "generate";
+  const action = PROMPT_ALLOWED_ACTIONS.has(rawAction) ? rawAction : "generate";
 
   const prompt = typeof body?.prompt === "string" ? body.prompt.trim().slice(0, 1000) : "";
   const category = typeof body?.category === "string" ? body.category.trim().slice(0, 50) : "devops";
@@ -1845,7 +1909,7 @@ async function handleAtlasAdminStatus(request, env) {
         forum: { enabled: env.FORUM_AI_ENABLED !== "false" },
         debate: { enabled: env.DEBATE_AI_ENABLED !== "false" },
       },
-      agents: AGENT_REGISTRY.map((a) => ({ id: a.id, name: a.name, role: a.role, status: a.status })),
+      agents: AGENT_REGISTRY_STATUS,
       timestamp: new Date().toISOString(),
     },
     { headers: rh },

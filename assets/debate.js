@@ -146,11 +146,10 @@
     wrapper.appendChild(bubble);
     transcript.appendChild(wrapper);
 
-    // Trigger CSS transition
+    // Trigger CSS transition — a single rAF gives the browser one paint cycle
+    // to register the new element before the "visible" class is applied.
     requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        wrapper.classList.add("visible");
-      });
+      wrapper.classList.add("visible");
     });
 
     transcript.scrollTop = transcript.scrollHeight;
