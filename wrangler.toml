@@ -24,7 +24,7 @@ ATLAS_AI_ENDPOINT = "https://api.openai.com/v1/chat/completions"
 PAYPAL_ENV        = "sandbox"
 # Set to your production origin (e.g. "https://forge-atlas.io") to restrict
 # sensitive CORS endpoints.  Leave as the placeholder during local dev.
-ALLOWED_ORIGIN    = "https://forgeatlas.example"
+ALLOWED_ORIGIN    = "https://forge-atlas.io"
 
 # ---------------------------------------------------------------------------
 # KV namespace for persistent profile and purchase storage.

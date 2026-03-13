@@ -62,7 +62,7 @@ const PROFILE_TTL_SECONDS = 60 * 60 * 24 * 365; // 1 year
 const PURCHASE_TTL_SECONDS = 60 * 60 * 24 * 365 * 5; // 5 years — purchase records kept longer
 
 // Fallback deployed origin — override via the ALLOWED_ORIGIN wrangler var.
-const DEPLOYED_ORIGIN = "https://forgeatlas.example";
+const DEPLOYED_ORIGIN = "https://forge-atlas.io";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",

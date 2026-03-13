@@ -27,7 +27,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if grep -qE "YOUR_CLOUDFLARE_ACCOUNT_ID|YOUR_KV_NAMESPACE_ID" wrangler.toml; then
+          if grep -qE "YOUR_CLOUDFLARE_ACCOUNT_ID|YOUR_KV_NAMESPACE_ID|YOUR_D1_DATABASE_ID" wrangler.toml; then
             echo "::warning::wrangler.toml contains placeholder values — skipping deploy."
             echo "SKIP_DEPLOY=true" >> "$GITHUB_ENV"
           else
