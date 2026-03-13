@@ -118,6 +118,7 @@
       text-transform: uppercase;
       color: var(--faint);
       margin-bottom: 1.5rem;
+      text-align: center;
     }
 
     /* ===== Divider ===== */
@@ -291,7 +292,7 @@
       gap: 0.5rem;
       flex-wrap: wrap;
       justify-content: center;
-      padding: 0 2rem 3rem;
+      padding: 0 2rem 1.5rem;
       max-width: 1200px;
       margin: 0 auto;
     }
@@ -326,6 +327,93 @@
     /* Hidden card when filter is active */
     .prompt-card[hidden] { display: none; }
 
+    /* ===== Search bar ===== */
+    .search-wrap {
+      display: flex;
+      justify-content: center;
+      padding: 0 2rem 2.5rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .search-input {
+      width: 100%;
+      max-width: 480px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 2em;
+      padding: 0.5rem 1.1rem;
+      font-family: inherit;
+      font-size: 0.68rem;
+      color: var(--white);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .search-input::placeholder { color: var(--faint); }
+
+    .search-input:focus {
+      border-color: rgba(0, 212, 255, 0.5);
+      box-shadow: 0 0 12px rgba(0, 212, 255, 0.1);
+    }
+
+    /* ===== No-results message ===== */
+    .no-results {
+      text-align: center;
+      padding: 3rem 2rem;
+      color: var(--faint);
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      display: none;
+    }
+
+    /* ===== Compose section ===== */
+    .compose-wrap {
+      background: var(--bg-card);
+      border: 1px solid var(--border-sub);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .compose-label {
+      font-size: 0.62rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .compose-textarea {
+      width: 100%;
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.85rem;
+      font-family: inherit;
+      font-size: 0.65rem;
+      color: var(--white);
+      line-height: 1.65;
+      resize: vertical;
+      min-height: 90px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .compose-textarea::placeholder { color: var(--faint); }
+
+    .compose-textarea:focus {
+      border-color: rgba(0, 212, 255, 0.45);
+      box-shadow: 0 0 12px rgba(0, 212, 255, 0.08);
+    }
+
+    .compose-actions {
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+
     /* ===== Footer ===== */
     .footer {
       border-top: 1px solid var(--border);
@@ -357,6 +445,7 @@
       .section { padding: 0 1rem 3rem; }
       .divider { padding: 0 1rem; }
       .prompt-grid { grid-template-columns: 1fr; }
+      .search-wrap { padding: 0 1rem 2rem; }
     }
   </style>
 </head>
@@ -409,6 +498,24 @@
     <button class="filter-btn" data-filter="shell"    aria-pressed="false">Shell</button>
     <button class="filter-btn" data-filter="audit"    aria-pressed="false">Audit</button>
   </div>
+
+  <!-- ===== SEARCH BAR ===== -->
+  <div class="search-wrap">
+    <input
+      type="search"
+      id="prompt-search"
+      class="search-input"
+      placeholder="Search prompts…"
+      aria-label="Search prompts by title, description, or content"
+      autocomplete="off"
+      spellcheck="false"
+    >
+  </div>
+
+  <!-- No-results message (shown by JS when search/filter yields 0 cards) -->
+  <p class="no-results" id="no-results" role="status" aria-live="polite">
+    No prompts match your search. Try different keywords or clear the filter.
+  </p>
 
   <!-- ===== DEVOPS CORE ===== -->
   <div class="divider" role="separator">
@@ -688,6 +795,31 @@ Check for: placeholder values (YOUR_*), missing KV / D1 bindings, insecure ALLOW
     </div>
   </section>
 
+  <!-- ===== COMPOSE YOUR OWN ===== -->
+  <div class="divider" role="separator">
+    <div class="divider-line"></div>
+    <div class="divider-label"><span>Compose</span></div>
+  </div>
+
+  <section class="section" aria-labelledby="compose-heading">
+    <h2 id="compose-heading" class="section-label">Write Your Own Prompt</h2>
+    <div class="compose-wrap">
+      <p class="compose-label">Custom prompt</p>
+      <textarea
+        id="compose-input"
+        class="compose-textarea"
+        placeholder="Write or paste your custom prompt here, then copy it or send it directly to Atlas AI…"
+        rows="4"
+        aria-label="Custom prompt input"
+        spellcheck="false"
+      ></textarea>
+      <div class="compose-actions">
+        <button class="btn-copy" id="compose-copy" aria-label="Copy custom prompt">Copy</button>
+        <button class="btn-try" id="compose-try" aria-label="Send custom prompt to Atlas AI">Try in Atlas</button>
+      </div>
+    </div>
+  </section>
+
   <!-- ===== FOOTER ===== -->
   <footer class="footer">
     <a href="https://github.com/ironjesus74-hub/coreops-starter-kit">
@@ -698,27 +830,14 @@ Check for: placeholder values (YOUR_*), missing KV / D1 bindings, insecure ALLOW
 
   <script src="assets/atlas.js" defer></script>
 
-  <!-- ===== PROMPT COPY + TRY IN ATLAS ===== -->
+  <!-- ===== PROMPT COPY + TRY IN ATLAS + SEARCH + COMPOSE ===== -->
   <script>
   (function () {
     "use strict";
 
-    // Collect all prompt text elements in DOM order — index matches data-target
-    const promptTexts = Array.from(document.querySelectorAll(".prompt-text"));
+    // ── Shared helpers ────────────────────────────────────────────────────────
 
-    function getPromptText(index) {
-      const el = promptTexts[index];
-      return el ? el.textContent.trim() : "";
-    }
-
-    // Copy button handler
-    document.addEventListener("click", function (e) {
-      const btn = e.target.closest(".btn-copy");
-      if (!btn) return;
-      const idx = parseInt(btn.dataset.target, 10);
-      const text = getPromptText(idx);
-      if (!text) return;
-
+    function copyTextToClipboard(text, btn) {
       navigator.clipboard.writeText(text).then(function () {
         const original = btn.textContent;
         btn.textContent = "Copied!";
@@ -728,61 +847,135 @@ Check for: placeholder values (YOUR_*), missing KV / D1 bindings, insecure ALLOW
           btn.classList.remove("copied");
         }, 1600);
       }).catch(function () {
-        // Fallback for environments without clipboard API
         btn.textContent = "Copy failed";
         setTimeout(function () { btn.textContent = "Copy"; }, 1600);
       });
-    });
+    }
 
-    // "Try in Atlas" handler — opens the Atlas chat panel with the prompt pre-filled
-    document.addEventListener("click", function (e) {
-      const btn = e.target.closest(".btn-try");
-      if (!btn) return;
-      const idx = parseInt(btn.dataset.target, 10);
-      const text = getPromptText(idx);
-      if (!text) return;
-
-      // Open Atlas panel
+    function sendToAtlas(text) {
       const toggle = document.getElementById("atlas-toggle");
       const panel  = document.getElementById("atlas-panel");
       const input  = document.getElementById("atlas-input");
       if (!toggle || !panel || !input) return;
-
-      // Open if not already open
-      if (panel.hidden) {
-        toggle.click();
-      }
-
-      // Fill the input with the prompt text
+      if (panel.hidden) { toggle.click(); }
       input.value = text;
       input.style.height = "auto";
       input.style.height = Math.min(input.scrollHeight, 100) + "px";
       input.focus();
+    }
+
+    // ── Prompt card helpers ───────────────────────────────────────────────────
+
+    // Collect all prompt text elements in DOM order — index matches data-target
+    const promptTexts = Array.from(document.querySelectorAll(".prompt-text"));
+
+    function getPromptText(index) {
+      const el = promptTexts[index];
+      return el ? el.textContent.trim() : "";
+    }
+
+    // ── Prompt card: Copy ─────────────────────────────────────────────────────
+    document.addEventListener("click", function (e) {
+      const btn = e.target.closest(".btn-copy[data-target]");
+      if (!btn) return;
+      const text = getPromptText(parseInt(btn.dataset.target, 10));
+      if (text) copyTextToClipboard(text, btn);
     });
 
-    // ===== Category filter =====
-    const filterBtns = Array.from(document.querySelectorAll(".filter-btn"));
-    const allCards   = Array.from(document.querySelectorAll(".prompt-card[data-group]"));
+    // ── Prompt card: Try in Atlas ─────────────────────────────────────────────
+    document.addEventListener("click", function (e) {
+      const btn = e.target.closest(".btn-try[data-target]");
+      if (!btn) return;
+      const text = getPromptText(parseInt(btn.dataset.target, 10));
+      if (text) sendToAtlas(text);
+    });
 
-    function applyFilter(active) {
-      filterBtns.forEach(function (b) {
-        b.setAttribute("aria-pressed", b.dataset.filter === active ? "true" : "false");
-      });
+    // ── Compose section ───────────────────────────────────────────────────────
+    const composeCopy = document.getElementById("compose-copy");
+    const composeTry  = document.getElementById("compose-try");
+    const composeInput = document.getElementById("compose-input");
 
-      allCards.forEach(function (card) {
-        if (active === "all" || card.dataset.group === active) {
-          card.hidden = false;
+    function flashComposeFeedback(btn, message) {
+      const original = btn.textContent;
+      btn.textContent = message;
+      setTimeout(function () { btn.textContent = original; }, 1600);
+    }
+
+    if (composeCopy && composeInput) {
+      composeCopy.addEventListener("click", function () {
+        const text = composeInput.value.trim();
+        if (text) {
+          copyTextToClipboard(text, composeCopy);
         } else {
-          card.hidden = true;
+          flashComposeFeedback(composeCopy, "Empty");
         }
       });
     }
 
-    filterBtns.forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        applyFilter(btn.dataset.filter);
+    if (composeTry && composeInput) {
+      composeTry.addEventListener("click", function () {
+        const text = composeInput.value.trim();
+        if (text) {
+          sendToAtlas(text);
+        } else {
+          flashComposeFeedback(composeTry, "Write a prompt first");
+        }
       });
+    }
+
+    // ── Category filter + live search ─────────────────────────────────────────
+    const filterBtns  = Array.from(document.querySelectorAll(".filter-btn"));
+    const allCards     = Array.from(document.querySelectorAll(".prompt-card[data-group]"));
+    const searchInput  = document.getElementById("prompt-search");
+    const noResults    = document.getElementById("no-results");
+
+    // Cache searchable text per card once at startup for performance
+    const cardSearchData = allCards.map(function (card) {
+      return [
+        (card.querySelector(".prompt-title") || {textContent: ""}).textContent.toLowerCase(),
+        (card.querySelector(".prompt-desc")  || {textContent: ""}).textContent.toLowerCase(),
+        (card.querySelector(".prompt-text")  || {textContent: ""}).textContent.toLowerCase(),
+      ].join(" ");
     });
+
+    let activeFilter = "all";
+    let searchQuery  = "";
+
+    function applyFilterAndSearch() {
+      const q = searchQuery.toLowerCase();
+
+      let visibleCount = 0;
+      allCards.forEach(function (card, i) {
+        const matchesFilter = activeFilter === "all" || card.dataset.group === activeFilter;
+        const matchesSearch = !q || cardSearchData[i].includes(q);
+
+        card.hidden = !(matchesFilter && matchesSearch);
+        if (!card.hidden) visibleCount++;
+      });
+
+      if (noResults) {
+        noResults.style.display = visibleCount === 0 ? "block" : "none";
+      }
+    }
+
+    function setFilter(filter) {
+      activeFilter = filter;
+      filterBtns.forEach(function (b) {
+        b.setAttribute("aria-pressed", b.dataset.filter === filter ? "true" : "false");
+      });
+      applyFilterAndSearch();
+    }
+
+    filterBtns.forEach(function (btn) {
+      btn.addEventListener("click", function () { setFilter(btn.dataset.filter); });
+    });
+
+    if (searchInput) {
+      searchInput.addEventListener("input", function () {
+        searchQuery = searchInput.value;
+        applyFilterAndSearch();
+      });
+    }
   })();
   </script>
 </body>
