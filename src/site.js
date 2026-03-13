@@ -2,12 +2,27 @@
  * Connects to POST /api/atlas (Cloudflare Worker, src/worker.js)
  * No local shell mode — all AI responses come from the real worker route.
  * Branding: "Atlas AI — Build Different."
+ *
+ * SOURCE OF TRUTH: this file is the canonical source.
+ * Deployed as: assets/atlas.js (copied by npm run build).
+ * Keep both files in sync.
  */
 (function () {
   "use strict";
 
+  // ── Markdown rendering — module-level regex constants ────────────────────
+  // Compiled once when the script loads rather than on every message render.
+  const _RE_FENCED_CODE   = /```[\w]*\n?([\s\S]*?)```/g;
+  const _RE_INLINE_CODE   = /`([^`\n]+)`/g;
+  const _RE_BOLD          = /\*\*([^*\n]+)\*\*/g;
+  const _RE_NEWLINE       = /\n/g;
+  const _RE_RESTORE_BLOCK = /\x00BLOCK(\d+)\x00/g;
+
   // ── Homepage-only guard ──────────────────────────────────────────────────
   // Hide any section marked data-homepage-only="true" on non-home pages.
+  // platform.css provides a CSS fallback; this JS guard runs after the DOM
+  // is ready (script is deferred) and sets the hidden attribute so AT/screen
+  // readers also skip the section.
   if (document.body.dataset.page !== "home") {
     document.querySelectorAll("[data-homepage-only]").forEach(function (el) {
       el.hidden = true;
@@ -31,6 +46,7 @@
       <div class="atlas-tagline">Build Different. How can I help?</div>
     </div>
     <span class="atlas-status-dot" title="Online" aria-label="Online"></span>
+    <button id="atlas-close" aria-label="Close Atlas AI chat" title="Close">✕</button>
   </div>
 
   <div class="atlas-messages" id="atlas-messages" role="log" aria-live="polite" aria-label="Chat messages">
@@ -69,6 +85,7 @@
   const messages = document.getElementById("atlas-messages");
   const input    = document.getElementById("atlas-input");
   const sendBtn  = document.getElementById("atlas-send");
+  const closeBtn = document.getElementById("atlas-close");
 
   let isOpen = false;
   let isBusy = false;
@@ -88,14 +105,18 @@
     }
   });
 
-  // ── Close on Escape ──────────────────────────────────────────────────────
+  // ── Close on Escape or close button ─────────────────────────────────────
+  function closePanel() {
+    isOpen = false;
+    panel.hidden = true;
+    toggle.setAttribute("aria-expanded", "false");
+    toggle.focus();
+  }
+
+  closeBtn.addEventListener("click", closePanel);
+
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && isOpen) {
-      isOpen = false;
-      panel.hidden = true;
-      toggle.setAttribute("aria-expanded", "false");
-      toggle.focus();
-    }
+    if (e.key === "Escape" && isOpen) closePanel();
   });
 
   // ── Send on Enter (Shift+Enter = newline) ────────────────────────────────
@@ -213,20 +234,25 @@
       .replace(/'/g, "&#039;");
   }
 
-  // Minimal markdown: **bold**, `code`, ```fenced blocks```, newlines
+  // Minimal markdown rendering: **bold**, `code`, ```code blocks```, newlines
   // Safety: escapeHtml runs on the full string first, so all regex matches
   // operate on already-escaped content — no XSS vector from code blocks.
   function renderMarkdown(text) {
     let html = escapeHtml(text);
+    // Extract fenced code blocks first so newline conversion leaves them intact
     const blocks = [];
-    html = html.replace(/```[\w]*\n?([\s\S]*?)```/g, (_, code) => {
+    html = html.replace(_RE_FENCED_CODE, (_, code) => {
       blocks.push(`<pre><code>${code}</code></pre>`);
       return `\x00BLOCK${blocks.length - 1}\x00`;
     });
-    html = html.replace(/`([^`\n]+)`/g, "<code>$1</code>");
-    html = html.replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>");
-    html = html.replace(/\n/g, "<br>");
-    html = html.replace(/\x00BLOCK(\d+)\x00/g, (_, i) => blocks[parseInt(i, 10)]);
+    // Inline code
+    html = html.replace(_RE_INLINE_CODE, "<code>$1</code>");
+    // Bold
+    html = html.replace(_RE_BOLD, "<strong>$1</strong>");
+    // Newlines → <br> (only in non-code-block text)
+    html = html.replace(_RE_NEWLINE, "<br>");
+    // Restore fenced code blocks (newlines inside are kept as-is)
+    html = html.replace(_RE_RESTORE_BLOCK, (_, i) => blocks[parseInt(i, 10)]);
     return html;
   }
 })();
