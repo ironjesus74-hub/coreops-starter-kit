@@ -2,12 +2,34 @@
 
 > **Use this guide when Wrangler CLI is unavailable** (e.g. Android/Termux).
 > All steps are performed in the Cloudflare web dashboard.
+>
+> ⚠️ **Production deploy:** copy the full `src/worker.js` file from this repository.
+> See [cloudflare-dashboard-deploy.md](cloudflare-dashboard-deploy.md) for the complete
+> step-by-step production guide including bindings, secrets, and verification.
 
 ---
 
-## 1 · Exact code to paste
+## 1 · Code to paste (production)
 
-Copy the entire block below and paste it into the Cloudflare editor.
+The production Worker is `src/worker.js` in this repository (1400+ lines).
+
+**Do not paste the minimal stub below for production.** The stub is only for
+verifying that the Cloudflare Worker plumbing (account, zone, Workers.dev subdomain)
+is working before a full deploy.
+
+**For production:**
+1. Open `src/worker.js` in GitHub (or a local copy).
+2. Click **Raw** (GitHub) or open the file in your editor.
+3. Select all (`Ctrl+A` / `Cmd+A`) and copy.
+4. Paste into the Cloudflare editor (see section 2 below).
+5. Click **Save and deploy**.
+
+---
+
+## 1a · Minimal connectivity stub (testing only)
+
+Use this *only* to confirm the Worker plumbing is working before deploying the
+real code. It does not serve any site pages or API routes.
 
 ```js
 export default {
@@ -78,7 +100,7 @@ export default {
    `worker.js` or shown as the first tab. Click that tab to make sure it is active.
 6. Press **Ctrl+A** (or **Cmd+A** on Mac) to select all existing code.
 7. Press **Delete** or **Backspace** to clear the editor.
-8. Paste the code block from section 1 above.
+8. Paste the code (either `src/worker.js` for production, or the stub from section 1a for testing).
 9. Click **Deploy** (or **Save and deploy**).
 10. Wait for the green **"Deployed"** confirmation banner.
 
@@ -90,14 +112,15 @@ Replace `<your-worker>` with the `.workers.dev` subdomain shown in the dashboard
 
 | URL | Expected result |
 |-----|----------------|
-| `https://<your-worker>.workers.dev/` | Plain text: `Atlas Core API online` |
+| `https://<your-worker>.workers.dev/` | Stub: plain text `Atlas Core API online` · Production: site home page |
 | `https://<your-worker>.workers.dev/api/health` | `{"ok":true,"service":"atlas-core-api","db_connected":true}` (or `false` if D1 not yet bound) |
 | `https://<your-worker>.workers.dev/api/db-test` | `{"ok":true,"db":{"time":"2026-03-13 01:55:33"}}` (requires D1 binding named `DB`) |
 
 ---
 
-## What I still need to do manually
+## What to do next after a successful stub deploy
 
+- [ ] Replace the stub with `src/worker.js` (full production Worker) — see section 1 above
 - [ ] In the Cloudflare dashboard, bind a D1 database to the Worker:
   - **Workers & Pages → atlas-core-api → Settings → Bindings → Add binding → D1 Database**
   - Set **Variable name** to `DB` (exact, uppercase)
@@ -105,4 +128,5 @@ Replace `<your-worker>` with the `.workers.dev` subdomain shown in the dashboard
   - Click **Save**
 - [ ] Visit `/api/health` and confirm `"db_connected": true` after the binding is saved
 - [ ] Visit `/api/db-test` and confirm a JSON row with a `time` field is returned
-- [ ] Add any required secrets (OpenAI, PayPal) via **Settings → Variables → Secrets** when ready
+- [ ] Add required secrets (OpenAI, PayPal) via **Settings → Variables → Secrets**
+  (see [cloudflare-dashboard-deploy.md § 3](cloudflare-dashboard-deploy.md) for the full secrets list)
