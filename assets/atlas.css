@@ -33,23 +33,36 @@
   box-shadow: 0 0 18px rgba(0, 212, 255, 0.25);
 }
 
+/* ── Toggle pulse ring while AI is busy ─────────────────────────────────── */
+#atlas-panel[data-busy="1"] ~ #atlas-root #atlas-toggle,
+#atlas-root:has(#atlas-panel[data-busy="1"]) #atlas-toggle {
+  box-shadow: 0 0 0 0 rgba(0, 212, 255, 0.55);
+  animation: atlas-btn-pulse 1.5s ease-out infinite;
+}
+
+@keyframes atlas-btn-pulse {
+  0%   { box-shadow: 0 0 0 0   rgba(0, 212, 255, 0.55); }
+  70%  { box-shadow: 0 0 0 12px rgba(0, 212, 255, 0);    }
+  100% { box-shadow: 0 0 0 0   rgba(0, 212, 255, 0);     }
+}
+
 /* ── Chat panel ──────────────────────────────────────────────────────────── */
 #atlas-panel {
   position: fixed;
   bottom: 5rem;
   right: 1.5rem;
   z-index: 8999;
-  width: min(420px, calc(100vw - 2rem));
-  max-height: min(600px, calc(100vh - 7rem));
+  width: min(440px, calc(100vw - 2rem));
+  max-height: min(620px, calc(100vh - 7rem));
   background: #0d1117;
   border: 1px solid #1e2633;
   border-radius: 16px;
   display: flex;
   flex-direction: column;
   box-shadow:
-    0 20px 60px rgba(0, 0, 0, 0.8),
-    0 0 0 1px rgba(0, 212, 255, 0.07),
-    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    0 24px 70px rgba(0, 0, 0, 0.85),
+    0 0 0 1px rgba(0, 212, 255, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
   overflow: hidden;
   transform-origin: bottom right;
   animation: atlas-panel-in 0.18s ease;
@@ -69,7 +82,7 @@
   display: flex;
   align-items: center;
   gap: 0.65rem;
-  padding: 0.85rem 1rem;
+  padding: 0.8rem 1rem;
   border-bottom: 1px solid #1e2633;
   background: #111620;
   flex-shrink: 0;
@@ -90,6 +103,12 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   box-shadow: 0 0 12px rgba(0, 212, 255, 0.45);
   letter-spacing: 0.03em;
+  transition: box-shadow 0.25s;
+}
+
+/* Avatar glows amber when Atlas is thinking */
+#atlas-panel[data-busy="1"] .atlas-avatar {
+  box-shadow: 0 0 14px rgba(240, 163, 42, 0.65);
 }
 
 .atlas-header-text {
@@ -107,21 +126,41 @@
 }
 
 .atlas-tagline {
-  font-size: 0.56rem;
+  font-size: 0.58rem;
   color: #6e7681;
   letter-spacing: 0.04em;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  margin-top: 0.14rem;
+  margin-top: 0.15rem;
   line-height: 1;
+  transition: color 0.25s;
+}
+
+/* Tagline shifts to amber while thinking */
+#atlas-panel[data-busy="1"] .atlas-tagline {
+  color: #c08b28;
 }
 
 .atlas-status-dot {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: #2ea043;
   flex-shrink: 0;
   box-shadow: 0 0 6px rgba(46, 160, 67, 0.7);
+  transition: background 0.25s, box-shadow 0.25s;
+}
+
+/* Status dot turns amber + pulses while thinking */
+#atlas-panel[data-busy="1"] .atlas-status-dot {
+  background: #f0a32a;
+  box-shadow: 0 0 8px rgba(240, 163, 42, 0.8);
+  animation: atlas-dot-pulse 1s ease-in-out infinite;
+}
+
+@keyframes atlas-dot-pulse {
+  0%,
+  100% { opacity: 1;   transform: scale(1);    }
+  50%  { opacity: 0.5; transform: scale(0.75); }
 }
 
 #atlas-close {
@@ -129,8 +168,8 @@
   border: none;
   color: #484f58;
   cursor: pointer;
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   border-radius: 5px;
   display: flex;
   align-items: center;
@@ -151,10 +190,10 @@
 .atlas-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 1rem;
+  padding: 0.9rem 1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
+  gap: 0.6rem;
   scrollbar-width: thin;
   scrollbar-color: #21262d transparent;
 }
@@ -167,8 +206,8 @@
 .atlas-msg {
   display: flex;
   flex-direction: column;
-  max-width: 86%;
-  gap: 0.15rem;
+  max-width: 88%;
+  gap: 0.12rem;
 }
 
 .atlas-msg.user {
@@ -182,24 +221,24 @@
 }
 
 .atlas-bubble {
-  padding: 0.6rem 0.8rem;
+  padding: 0.6rem 0.85rem;
   border-radius: 12px;
-  font-size: 0.71rem;
-  line-height: 1.7;
+  font-size: 0.73rem;
+  line-height: 1.65;
   word-break: break-word;
   white-space: pre-wrap;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 .atlas-msg.user .atlas-bubble {
-  background: rgba(0, 212, 255, 0.11);
+  background: rgba(0, 212, 255, 0.10);
   color: #e6edf3;
-  border: 1px solid rgba(0, 212, 255, 0.2);
+  border: 1px solid rgba(0, 212, 255, 0.18);
   border-bottom-right-radius: 3px;
 }
 
 .atlas-msg.bot .atlas-bubble {
-  background: #161b22;
+  background: #141920;
   color: #c9d1d9;
   border: 1px solid #1e2633;
   border-bottom-left-radius: 3px;
@@ -241,8 +280,8 @@
   display: flex;
   gap: 4px;
   align-items: center;
-  padding: 0.5rem 0.68rem;
-  background: #161b22;
+  padding: 0.52rem 0.75rem;
+  background: #141920;
   border: 1px solid #1e2633;
   border-radius: 12px;
   border-bottom-left-radius: 3px;
@@ -267,7 +306,7 @@
 /* ── Input area ──────────────────────────────────────────────────────────── */
 .atlas-input-area {
   display: flex;
-  gap: 0.45rem;
+  gap: 0.5rem;
   padding: 0.75rem 0.9rem;
   border-top: 1px solid #1e2633;
   background: #111620;
@@ -280,23 +319,28 @@
   background: #0d1117;
   border: 1px solid #21262d;
   border-radius: 8px;
-  padding: 0.5rem 0.7rem;
+  padding: 0.52rem 0.75rem;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 0.72rem;
+  font-size: 0.73rem;
   color: #e6edf3;
   outline: none;
   resize: none;
   min-height: 36px;
-  max-height: 96px;
+  max-height: 100px;
   transition: border-color 0.18s, box-shadow 0.18s;
   line-height: 1.5;
 }
 
-#atlas-input::placeholder { color: #30363d; }
+#atlas-input::placeholder { color: #2d3542; }
 
 #atlas-input:focus {
-  border-color: rgba(0, 212, 255, 0.5);
+  border-color: rgba(0, 212, 255, 0.45);
   box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.07);
+}
+
+#atlas-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 #atlas-send {
@@ -323,7 +367,7 @@
 }
 
 #atlas-send:disabled {
-  opacity: 0.35;
+  opacity: 0.28;
   cursor: not-allowed;
   box-shadow: none;
   transform: none;
@@ -335,9 +379,9 @@
     bottom: 0;
     right: 0;
     width: 100vw;
-    max-height: 72vh;
+    max-height: 78vh;
     border-radius: 16px 16px 0 0;
-    box-shadow: 0 -6px 32px rgba(0, 0, 0, 0.7);
+    box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.8);
   }
   #atlas-toggle {
     bottom: 1rem;
@@ -357,4 +401,5 @@
     animation: none;
     opacity: 0.5;
   }
+  #atlas-panel[data-busy="1"] .atlas-status-dot { animation: none; }
 }

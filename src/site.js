@@ -219,6 +219,7 @@
     isBusy = busy;
     sendBtn.disabled = busy;
     input.disabled = busy;
+    panel.dataset.busy = busy ? "1" : "";
   }
 
   function scrollToBottom() {
