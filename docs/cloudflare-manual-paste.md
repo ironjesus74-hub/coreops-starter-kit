@@ -5,66 +5,22 @@
 
 ---
 
-## 1 · Exact code to paste
+## 1 · Source file to paste
 
-Copy the entire block below and paste it into the Cloudflare editor.
+The production Worker source is **`src/worker.js`** in this repository.
+Do **not** paste any other file — previous manual guides contained an outdated
+stub that has since been superseded.
 
-```js
-export default {
-  async fetch(request, env) {
-    const url = new URL(request.url);
-    const path = url.pathname;
+**To get the current source:**
 
-    if (path === "/") {
-      return new Response("Atlas Core API online", {
-        status: 200,
-        headers: { "Content-Type": "text/plain" },
-      });
-    }
+1. Open this repository on GitHub.
+2. Navigate to `src/worker.js`.
+3. Click the **Raw** button (top-right of the file view).
+4. Press **Ctrl+A** / **Cmd+A** to select all, then **Ctrl+C** / **Cmd+C** to copy.
 
-    if (path === "/api/health") {
-      let db_connected = false;
-      if (env.DB) {
-        try {
-          await env.DB.prepare("SELECT 1").run();
-          db_connected = true;
-        } catch (_) {
-          db_connected = false;
-        }
-      }
-      return new Response(
-        JSON.stringify({ ok: true, service: "atlas-core-api", db_connected }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    if (path === "/api/db-test") {
-      if (!env.DB) {
-        return new Response(
-          JSON.stringify({ ok: false, error: "D1 binding DB is not configured" }),
-          { status: 500, headers: { "Content-Type": "application/json" } }
-        );
-      }
-      try {
-        const result = await env.DB.prepare(
-          "SELECT datetime('now') AS time"
-        ).first();
-        return new Response(
-          JSON.stringify({ ok: true, db: result }),
-          { status: 200, headers: { "Content-Type": "application/json" } }
-        );
-      } catch (err) {
-        return new Response(
-          JSON.stringify({ ok: false, error: err.message }),
-          { status: 500, headers: { "Content-Type": "application/json" } }
-        );
-      }
-    }
-
-    return new Response("Not Found", { status: 404 });
-  },
-};
-```
+> The file is approximately 1,400 lines. It includes all API routes, security
+> headers, rate limiting, CORS, PayPal, Atlas AI, forum, debate, profile, and
+> static-asset fallback logic.
 
 ---
 
@@ -78,7 +34,7 @@ export default {
    `worker.js` or shown as the first tab. Click that tab to make sure it is active.
 6. Press **Ctrl+A** (or **Cmd+A** on Mac) to select all existing code.
 7. Press **Delete** or **Backspace** to clear the editor.
-8. Paste the code block from section 1 above.
+8. Paste the full contents of `src/worker.js` copied in section 1.
 9. Click **Deploy** (or **Save and deploy**).
 10. Wait for the green **"Deployed"** confirmation banner.
 
@@ -90,9 +46,12 @@ Replace `<your-worker>` with the `.workers.dev` subdomain shown in the dashboard
 
 | URL | Expected result |
 |-----|----------------|
-| `https://<your-worker>.workers.dev/` | Plain text: `Atlas Core API online` |
 | `https://<your-worker>.workers.dev/api/health` | `{"ok":true,"service":"atlas-core-api","db_connected":true}` (or `false` if D1 not yet bound) |
-| `https://<your-worker>.workers.dev/api/db-test` | `{"ok":true,"db":{"time":"2026-03-13 01:55:33"}}` (requires D1 binding named `DB`) |
+| `https://<your-worker>.workers.dev/api/db-test` | `{"ok":true,"db":{"time":"..."}}` (requires D1 binding `DB`) |
+| `https://<your-worker>.workers.dev/api/products` | JSON product catalog array |
+| `https://<your-worker>.workers.dev/api/paypal/config` | `{"clientId":"..."}` (after secret set) |
+
+See `docs/cloudflare-dashboard-deploy.md` for the full post-deploy test checklist.
 
 ---
 
