@@ -57,52 +57,41 @@
       overflow-x: hidden;
     }
 
-    /* ===== Hero ===== */
-    .hero {
-      text-align: center;
-      padding: 5rem 2rem 4rem;
-      position: relative;
+    /* ===== Page header ===== */
+    .page-header {
+      padding: 2.5rem 2rem 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+      border-bottom: 1px solid var(--border);
     }
 
-    .hero::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(ellipse 70% 55% at 50% 0%,
-                  rgba(0, 212, 255, 0.06) 0%, transparent 70%);
-      pointer-events: none;
-    }
-
-    .hero-badge {
+    .page-badge {
       display: inline-block;
-      font-size: 0.58rem;
-      letter-spacing: 0.22em;
+      font-size: 0.55rem;
+      letter-spacing: 0.24em;
       text-transform: uppercase;
-      color: var(--faint);
-      border: 1px solid var(--border);
-      padding: 0.25rem 0.9rem;
+      color: var(--cyan);
+      border: 1px solid rgba(0, 212, 255, 0.3);
+      padding: 0.2rem 0.75rem;
       border-radius: 2em;
-      margin-bottom: 1.5rem;
+      margin-bottom: 0.9rem;
     }
 
-    .hero-title {
-      font-size: clamp(2.2rem, 7vw, 4rem);
+    .page-title {
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
       font-weight: 800;
-      letter-spacing: -0.03em;
-      line-height: 1.05;
-      margin-bottom: 0.6rem;
+      letter-spacing: -0.02em;
+      color: var(--white);
+      margin-bottom: 0.4rem;
     }
 
-    .hero-title .accent { color: var(--cyan); }
+    .page-title .accent { color: var(--cyan); }
 
-    .hero-sub {
-      font-size: 0.85rem;
+    .page-sub {
+      font-size: 0.7rem;
       color: var(--muted);
-      margin-bottom: 2.5rem;
-      max-width: 520px;
-      margin-left: auto;
-      margin-right: auto;
-      line-height: 1.7;
+      letter-spacing: 0.04em;
+      line-height: 1.6;
     }
 
     /* ===== Section ===== */
@@ -257,33 +246,6 @@
     .btn-try:hover {
       box-shadow: var(--glow-c);
       opacity: 0.9;
-    }
-
-    /* ===== Intro row ===== */
-    .intro-row {
-      display: flex;
-      gap: 2rem;
-      flex-wrap: wrap;
-      justify-content: center;
-      padding: 0 2rem 3.5rem;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    .intro-item {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.7rem;
-      color: var(--muted);
-    }
-
-    .intro-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--cyan);
-      flex-shrink: 0;
     }
 
     /* ===== Category filter bar ===== */
@@ -468,8 +430,7 @@
 
     /* ===== Responsive ===== */
     @media (max-width: 640px) {
-      .hero { padding: 3.5rem 1rem 3rem; }
-      .intro-row { padding: 0 1rem 2.5rem; }
+      .page-header { padding: 2rem 1rem 1.5rem; }
       .section { padding: 0 1rem 3rem; }
       .divider { padding: 0 1rem; }
       .prompt-grid { grid-template-columns: 1fr; }
@@ -498,24 +459,11 @@
     </ul>
   </nav>
 
-  <!-- ===== HERO ===== -->
-  <header class="hero">
-    <div class="hero-badge">⚡ Prompt Library · Atlas AI</div>
-    <h1 class="hero-title"><span class="accent">Atlas</span> Prompts</h1>
-    <p class="hero-sub">
-      Curated prompts for DevOps, network intelligence, and shell automation.<br>
-      Copy any prompt, or send it directly to Atlas AI.
-    </p>
-  </header>
-
-  <!-- ===== INTRO ROW ===== -->
-  <div class="intro-row" aria-label="Library overview">
-    <div class="intro-item"><span class="intro-dot"></span>DevOps &amp; infra patterns</div>
-    <div class="intro-item"><span class="intro-dot"></span>Network diagnostics</div>
-    <div class="intro-item"><span class="intro-dot"></span>Shell &amp; scripting</div>
-    <div class="intro-item"><span class="intro-dot"></span>System audit prompts</div>
-    <div class="intro-item"><span class="intro-dot"></span>Operator &amp; system tools</div>
-    <div class="intro-item"><span class="intro-dot"></span>AI-ready, copy-paste ready</div>
+  <!-- ===== PAGE HEADER ===== -->
+  <div class="page-header">
+    <div class="page-badge">⚡ Prompt Library · Atlas AI</div>
+    <h1 class="page-title"><span class="accent">Atlas</span> Prompts</h1>
+    <p class="page-sub">Curated prompts for DevOps, network intelligence, and shell automation. Copy any prompt, or send it directly to Atlas AI.</p>
   </div>
 
   <!-- ===== FILTER BAR ===== -->

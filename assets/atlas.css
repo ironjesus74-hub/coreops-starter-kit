@@ -38,14 +38,14 @@
   bottom: 5rem;
   right: 1.5rem;
   z-index: 8999;
-  width: min(380px, calc(100vw - 2rem));
-  max-height: min(560px, calc(100vh - 7rem));
+  width: min(400px, calc(100vw - 2rem));
+  max-height: min(600px, calc(100vh - 7rem));
   background: #0d1117;
   border: 1px solid #1e2633;
   border-radius: 14px;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(0, 212, 255, 0.08);
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(0, 212, 255, 0.1);
   overflow: hidden;
   transform-origin: bottom right;
   transition: opacity 0.2s, transform 0.2s;
@@ -59,22 +59,22 @@
 .atlas-header {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  padding: 0.85rem 1rem;
+  gap: 0.65rem;
+  padding: 0.9rem 1rem;
   border-bottom: 1px solid #1e2633;
   background: #111620;
   flex-shrink: 0;
 }
 
 .atlas-avatar {
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background: #00d4ff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 900;
   color: #0d1117;
   flex-shrink: 0;
@@ -87,7 +87,7 @@
 }
 
 .atlas-name {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: #e6edf3;
   letter-spacing: 0.04em;
@@ -95,10 +95,11 @@
 }
 
 .atlas-tagline {
-  font-size: 0.58rem;
+  font-size: 0.6rem;
   color: #8b949e;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  margin-top: 0.1rem;
 }
 
 .atlas-status-dot {
@@ -109,14 +110,29 @@
   flex-shrink: 0;
 }
 
+#atlas-close {
+  background: none;
+  border: none;
+  color: #484f58;
+  cursor: pointer;
+  padding: 0.25rem;
+  line-height: 1;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  transition: color 0.15s;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+#atlas-close:hover { color: #8b949e; }
+
 /* ── Messages area ───────────────────────────────────────────────────────── */
 .atlas-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 0.85rem 0.9rem;
+  padding: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
+  gap: 0.75rem;
   scrollbar-width: thin;
   scrollbar-color: #1e2633 transparent;
 }
@@ -205,10 +221,11 @@
 .atlas-input-area {
   display: flex;
   gap: 0.5rem;
-  padding: 0.75rem 0.9rem;
+  padding: 0.85rem 1rem;
   border-top: 1px solid #1e2633;
   background: #111620;
   flex-shrink: 0;
+  align-items: flex-end;
 }
 
 #atlas-input {
@@ -216,27 +233,29 @@
   background: #0d1117;
   border: 1px solid #1e2633;
   border-radius: 8px;
-  padding: 0.5rem 0.65rem;
+  padding: 0.55rem 0.75rem;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 0.72rem;
+  font-size: 0.73rem;
   color: #e6edf3;
   outline: none;
   resize: none;
-  min-height: 36px;
+  min-height: 38px;
   max-height: 100px;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  line-height: 1.5;
 }
 
 #atlas-input::placeholder { color: #484f58; }
 
 #atlas-input:focus {
-  border-color: rgba(0, 212, 255, 0.4);
+  border-color: rgba(0, 212, 255, 0.45);
+  box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.08);
 }
 
 #atlas-send {
   flex-shrink: 0;
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   border-radius: 8px;
   border: none;
   background: #00d4ff;
@@ -247,7 +266,6 @@
   justify-content: center;
   font-size: 0.85rem;
   transition: opacity 0.2s, box-shadow 0.2s;
-  align-self: flex-end;
 }
 
 #atlas-send:hover { opacity: 0.85; box-shadow: 0 0 12px rgba(0, 212, 255, 0.4); }
