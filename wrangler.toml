@@ -17,8 +17,9 @@ binding   = "ASSETS"
 
 # ---------------------------------------------------------------------------
 # Environment variable placeholders.
-# Set real secrets via:  wrangler secret put ATLAS_AI_API_KEY
-#                        wrangler secret put ATLAS_INTERNAL_SECRET
+# Set real secrets via:  npm run secrets:set-atlas-key        (ATLAS_AI_API_KEY)
+#                        npm run secrets:set-internal-secret  (ATLAS_INTERNAL_SECRET)
+# See docs/cloudflare-vars-secrets.md for the full secrets reference.
 # ---------------------------------------------------------------------------
 [vars]
 ATLAS_AI_ENDPOINT  = "https://api.openai.com/v1/chat/completions"

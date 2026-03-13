@@ -10,7 +10,12 @@
     "deploy": "wrangler deploy",
     "deploy:pages": "wrangler pages deploy .",
     "secrets:set-atlas-key": "wrangler secret put ATLAS_AI_API_KEY",
-    "secrets:set-internal-secret": "wrangler secret put ATLAS_INTERNAL_SECRET"
+    "secrets:set-internal-secret": "wrangler secret put ATLAS_INTERNAL_SECRET",
+    "secrets:set-paypal-client-id": "wrangler secret put PAYPAL_CLIENT_ID",
+    "secrets:set-paypal-client-secret": "wrangler secret put PAYPAL_CLIENT_SECRET",
+    "secrets:set-paypal-webhook-id": "wrangler secret put PAYPAL_WEBHOOK_ID",
+    "secrets:set-contact-webhook": "wrangler secret put CONTACT_WEBHOOK_URL",
+    "check:worker": "node --input-type=module < src/worker.js && echo 'worker.js syntax OK'"
   },
   "devDependencies": {
     "vite": "^8.0.0",
