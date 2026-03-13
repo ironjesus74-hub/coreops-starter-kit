@@ -41,6 +41,7 @@
       <div class="atlas-tagline">Build Different. How can I help?</div>
     </div>
     <span class="atlas-status-dot" title="Online" aria-label="Online"></span>
+    <button id="atlas-close" aria-label="Close Atlas AI chat" title="Close">✕</button>
   </div>
 
   <div class="atlas-messages" id="atlas-messages" role="log" aria-live="polite" aria-label="Chat messages">
@@ -79,6 +80,7 @@
   const messages = document.getElementById("atlas-messages");
   const input    = document.getElementById("atlas-input");
   const sendBtn  = document.getElementById("atlas-send");
+  const closeBtn = document.getElementById("atlas-close");
 
   let isOpen    = false;
   let isBusy    = false;
@@ -99,14 +101,18 @@
     }
   });
 
-  // ── Close on Escape ──────────────────────────────────────────────────────
+  // ── Close on Escape or close button ─────────────────────────────────────
+  function closePanel() {
+    isOpen = false;
+    panel.hidden = true;
+    toggle.setAttribute("aria-expanded", "false");
+    toggle.focus();
+  }
+
+  closeBtn.addEventListener("click", closePanel);
+
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && isOpen) {
-      isOpen = false;
-      panel.hidden = true;
-      toggle.setAttribute("aria-expanded", "false");
-      toggle.focus();
-    }
+    if (e.key === "Escape" && isOpen) closePanel();
   });
 
   // ── Send on Enter (Shift+Enter = newline) ────────────────────────────────

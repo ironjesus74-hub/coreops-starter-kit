@@ -25,6 +25,7 @@ export default defineConfig({
         forum:    resolve(__dirname, 'forum.html'),
         debate:   resolve(__dirname, 'debate.html'),
         profile:  resolve(__dirname, 'profile.html'),
+        operator: resolve(__dirname, 'operator.html'),
       },
     },
   },
