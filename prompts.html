@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Forge Atlas — Prompts</title>
+  <meta name="description" content="Atlas AI prompt library — curated prompts for DevOps, automation, system design, and creative engineering.">
+
+  <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%230d1117' stroke='%2300d4ff' stroke-width='1.5'/%3E%3Ctext x='16' y='21' text-anchor='middle' fill='%2300d4ff' font-family='monospace' font-size='9' font-weight='900'%3EPR%3C/text%3E%3C/svg%3E">
+
+  <link rel="stylesheet" href="assets/platform.css">
+  <link rel="stylesheet" href="assets/atlas.css">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-deep:    #080a0e;
+      --bg-dark:    #0d1117;
+      --bg-card:    #0f1318;
+      --bg-panel:   #141920;
+      --border:     #1e2633;
+      --border-sub: #161c27;
+      --cyan:       #00d4ff;
+      --cyan-dim:   rgba(0, 212, 255, 0.15);
+      --white:      #e8ecf0;
+      --muted:      #8b949e;
+      --faint:      #484f58;
+      --radius:     10px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+                   "Liberation Mono", monospace;
+      background: var(--bg-deep);
+      color: var(--white);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ===== Page header ===== */
+    .page-header {
+      padding: 2.5rem 2rem 2rem;
+      max-width: 960px;
+      margin: 0 auto;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .page-badge {
+      display: inline-block;
+      font-size: 0.55rem;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      border: 1px solid rgba(0, 212, 255, 0.35);
+      padding: 0.25rem 0.9rem;
+      border-radius: 2em;
+      margin-bottom: 1rem;
+    }
+
+    .page-title {
+      font-size: clamp(1.6rem, 5vw, 2.5rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--white);
+      margin-bottom: 0.5rem;
+    }
+
+    .page-title .accent { color: var(--cyan); }
+
+    .page-sub {
+      font-size: 0.85rem;
+      color: var(--muted);
+      max-width: 520px;
+      line-height: 1.6;
+    }
+
+    /* ===== Search & filter bar ===== */
+    .filter-bar {
+      max-width: 960px;
+      margin: 1.5rem auto 0;
+      padding: 0 2rem;
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .search-wrap {
+      flex: 1;
+      min-width: 200px;
+      position: relative;
+    }
+
+    .search-wrap input {
+      width: 100%;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.55rem 0.9rem 0.55rem 2.4rem;
+      color: var(--white);
+      font-family: inherit;
+      font-size: 0.8rem;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .search-wrap input:focus { border-color: var(--cyan); }
+    .search-wrap input::placeholder { color: var(--faint); }
+
+    .search-icon {
+      position: absolute;
+      left: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--faint);
+      pointer-events: none;
+      font-size: 0.85rem;
+    }
+
+    .filter-chips {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 2em;
+      padding: 0.3rem 0.85rem;
+      font-size: 0.72rem;
+      color: var(--muted);
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+      letter-spacing: 0.04em;
+      user-select: none;
+    }
+
+    .chip:hover { border-color: var(--cyan); color: var(--cyan); }
+
+    .chip.active {
+      background: var(--cyan-dim);
+      border-color: var(--cyan);
+      color: var(--cyan);
+    }
+
+    /* ===== Prompt grid ===== */
+    .prompt-grid {
+      max-width: 960px;
+      margin: 2rem auto 4rem;
+      padding: 0 2rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+
+    /* ===== Prompt card ===== */
+    .prompt-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.25rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      transition: border-color 0.15s, transform 0.15s;
+      cursor: default;
+    }
+
+    .prompt-card:hover {
+      border-color: rgba(0, 212, 255, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .prompt-card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .prompt-category {
+      font-size: 0.6rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      padding: 0.2rem 0.6rem;
+      background: var(--cyan-dim);
+      border-radius: 2em;
+    }
+
+    .prompt-difficulty {
+      font-size: 0.6rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--faint);
+    }
+
+    .prompt-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--white);
+      line-height: 1.35;
+    }
+
+    .prompt-text {
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.55;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-sub);
+      border-radius: 6px;
+      padding: 0.65rem 0.75rem;
+      flex: 1;
+      white-space: pre-wrap;
+    }
+
+    .prompt-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.25rem;
+    }
+
+    .btn-copy, .btn-run {
+      flex: 1;
+      padding: 0.45rem 0.5rem;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+      border: 1px solid transparent;
+    }
+
+    .btn-copy {
+      background: var(--bg-panel);
+      border-color: var(--border);
+      color: var(--muted);
+    }
+
+    .btn-copy:hover { border-color: var(--cyan); color: var(--cyan); }
+
+    .btn-copy.copied { color: #22c55e; border-color: #22c55e; }
+
+    .btn-run {
+      background: rgba(0, 212, 255, 0.1);
+      border-color: rgba(0, 212, 255, 0.35);
+      color: var(--cyan);
+    }
+
+    .btn-run:hover { background: rgba(0, 212, 255, 0.2); }
+
+    /* ===== Empty state ===== */
+    .empty-state {
+      max-width: 960px;
+      margin: 2rem auto;
+      padding: 3rem 2rem;
+      text-align: center;
+      color: var(--faint);
+      display: none;
+    }
+
+    .empty-state.visible { display: block; }
+
+    .empty-icon { font-size: 2rem; margin-bottom: 0.75rem; }
+
+    .empty-title {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 0.4rem;
+    }
+
+    /* ===== Footer ===== */
+    .footer {
+      border-top: 1px solid var(--border);
+      padding: 1.5rem 2rem;
+      text-align: center;
+      font-size: 0.72rem;
+      color: var(--faint);
+    }
+
+    .footer a { color: var(--muted); text-decoration: none; }
+    .footer a:hover { color: var(--cyan); }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 640px) {
+      .page-header, .filter-bar, .prompt-grid { padding-left: 1rem; padding-right: 1rem; }
+      .prompt-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== PLATFORM NAV ===== -->
+  <nav class="platform-nav" aria-label="Platform sections">
+    <ul>
+      <li><a href="index.html">Home</a></li>
+      <li class="sep" aria-hidden="true">›</li>
+      <li><a href="gauntlet.html">Atlas Gauntlet</a></li>
+      <li class="sep" aria-hidden="true">›</li>
+      <li><a href="forum.html">Signal Feed</a></li>
+      <li class="sep" aria-hidden="true">›</li>
+      <li><a href="market.html">Market</a></li>
+      <li class="sep" aria-hidden="true">›</li>
+      <li><a href="debate.html">Arena</a></li>
+      <li class="sep" aria-hidden="true">›</li>
+      <li><a href="prompts.html" aria-current="page">Prompts</a></li>
+      <li class="sep" aria-hidden="true">›</li>
+      <li><a href="profile.html">Atlas ID</a></li>
+    </ul>
+  </nav>
+
+  <!-- ===== PAGE HEADER ===== -->
+  <header class="page-header">
+    <div class="page-badge">⚡ Atlas · Prompt Library</div>
+    <h1 class="page-title"><span class="accent">Atlas</span> Prompts</h1>
+    <p class="page-sub">Curated AI prompts for DevOps, automation, system design, and beyond. Copy any prompt or send it directly to Atlas.</p>
+  </header>
+
+  <!-- ===== FILTER BAR ===== -->
+  <div class="filter-bar" role="search">
+    <div class="search-wrap">
+      <span class="search-icon" aria-hidden="true">⌕</span>
+      <input
+        type="search"
+        id="prompt-search"
+        placeholder="Search prompts…"
+        aria-label="Search prompts"
+        autocomplete="off"
+      >
+    </div>
+    <div class="filter-chips" role="group" aria-label="Filter by category">
+      <button class="chip active" data-cat="all">All</button>
+      <button class="chip" data-cat="devops">DevOps</button>
+      <button class="chip" data-cat="automation">Automation</button>
+      <button class="chip" data-cat="security">Security</button>
+      <button class="chip" data-cat="architecture">Architecture</button>
+      <button class="chip" data-cat="debug">Debug</button>
+    </div>
+  </div>
+
+  <!-- ===== PROMPT GRID ===== -->
+  <main class="prompt-grid" id="prompt-grid" aria-label="Prompt library"></main>
+
+  <!-- ===== EMPTY STATE ===== -->
+  <div class="empty-state" id="empty-state" role="status">
+    <div class="empty-icon">◎</div>
+    <div class="empty-title">No prompts match your search.</div>
+  </div>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="footer">
+    <a href="index.html">Forge Atlas</a>
+    &nbsp;·&nbsp; Prompt Library &nbsp;·&nbsp; MIT License
+  </footer>
+
+  <script>
+  (function () {
+    "use strict";
+
+    const COPY_FEEDBACK_DURATION_MS = 1800; // how long the "Copied!" label stays visible
+    const ATLAS_OPEN_DELAY_MS = 120;        // wait for Atlas panel open animation before filling input
+
+    const PROMPTS = [
+      {
+        id: "p01",
+        category: "devops",
+        difficulty: "Intermediate",
+        title: "CI/CD Pipeline Audit",
+        text: "Review my CI/CD pipeline configuration and identify bottlenecks, missing failure guards, and opportunities to cut build time by at least 30%. List issues by severity."
+      },
+      {
+        id: "p02",
+        category: "devops",
+        difficulty: "Beginner",
+        title: "Dockerfile Best Practices",
+        text: "Audit this Dockerfile and rewrite it using current best practices: multi-stage build, minimal base image, layer caching, non-root user, and health check included."
+      },
+      {
+        id: "p03",
+        category: "automation",
+        difficulty: "Advanced",
+        title: "Bash Script Hardener",
+        text: "Harden this bash script: add `set -euo pipefail`, input validation, proper exit codes, error messages to stderr, and idempotent behavior. Explain every change."
+      },
+      {
+        id: "p04",
+        category: "automation",
+        difficulty: "Intermediate",
+        title: "Cron Job Scheduler",
+        text: "Design a reliable cron job scheduler in bash with log rotation, failure alerting via webhook, and a lockfile to prevent overlapping runs. Include a status command."
+      },
+      {
+        id: "p05",
+        category: "security",
+        difficulty: "Advanced",
+        title: "Worker Security Audit",
+        text: "Audit this Cloudflare Worker for security issues: CORS misconfiguration, missing rate limiting, secret leakage, injection vulnerabilities, and weak input validation. Prioritize fixes."
+      },
+      {
+        id: "p06",
+        category: "security",
+        difficulty: "Intermediate",
+        title: "CSP Header Generator",
+        text: "Generate a strict Content-Security-Policy header for a site that uses: inline styles, PayPal SDK from www.paypal.com, a self-hosted API, and no external fonts. Explain each directive."
+      },
+      {
+        id: "p07",
+        category: "architecture",
+        difficulty: "Advanced",
+        title: "Cloudflare Workers Architecture",
+        text: "Design a Cloudflare Workers architecture for a SaaS app with: AI endpoints, payment processing, KV-backed user profiles, rate limiting, and static asset serving. Include routing strategy."
+      },
+      {
+        id: "p08",
+        category: "architecture",
+        difficulty: "Intermediate",
+        title: "API Gateway Design",
+        text: "Design a minimal API gateway pattern using a single Cloudflare Worker: routing, authentication, rate limiting, CORS, error handling, and graceful degradation when upstream services fail."
+      },
+      {
+        id: "p09",
+        category: "debug",
+        difficulty: "Beginner",
+        title: "Error Root Cause Analysis",
+        text: "Analyze this error log and provide: 1) most likely root cause, 2) immediate mitigation, 3) long-term fix, 4) monitoring alert to prevent recurrence. Be specific and concise."
+      },
+      {
+        id: "p10",
+        category: "debug",
+        difficulty: "Intermediate",
+        title: "Performance Profiler",
+        text: "Profile this JavaScript function and identify: O(n²) or worse loops, unnecessary DOM queries, memory leaks, and blocking operations. Rewrite the hot path with explanations."
+      },
+      {
+        id: "p11",
+        category: "devops",
+        difficulty: "Advanced",
+        title: "Zero-Downtime Deployment",
+        text: "Design a zero-downtime deployment strategy for a Cloudflare Worker + KV-backed app: canary rollout, rollback trigger, health check endpoint, and traffic shifting procedure."
+      },
+      {
+        id: "p12",
+        category: "automation",
+        difficulty: "Beginner",
+        title: "Repo Health Check",
+        text: "Write a bash script that audits a git repository for: missing health files (README, LICENSE, SECURITY.md), empty directories, secrets in tracked files, and stale branches over 60 days old."
+      }
+    ];
+
+    const grid = document.getElementById("prompt-grid");
+    const emptyState = document.getElementById("empty-state");
+    const searchInput = document.getElementById("prompt-search");
+    const chips = document.querySelectorAll(".chip");
+
+    let activeCategory = "all";
+    let searchQuery = "";
+
+    function escapeHtml(str) {
+      return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function renderCards(prompts) {
+      if (prompts.length === 0) {
+        grid.innerHTML = "";
+        emptyState.classList.add("visible");
+        return;
+      }
+      emptyState.classList.remove("visible");
+      grid.innerHTML = prompts.map(p => `
+        <article class="prompt-card" data-id="${p.id}" data-cat="${p.category}">
+          <div class="prompt-card-top">
+            <span class="prompt-category">${escapeHtml(p.category)}</span>
+            <span class="prompt-difficulty">${escapeHtml(p.difficulty)}</span>
+          </div>
+          <div class="prompt-title">${escapeHtml(p.title)}</div>
+          <div class="prompt-text">${escapeHtml(p.text)}</div>
+          <div class="prompt-actions">
+            <button class="btn-copy" data-text="${escapeHtml(p.text)}" aria-label="Copy prompt: ${escapeHtml(p.title)}">Copy</button>
+            <button class="btn-run"  data-text="${escapeHtml(p.text)}" aria-label="Run in Atlas: ${escapeHtml(p.title)}">Ask Atlas →</button>
+          </div>
+        </article>
+      `).join("");
+    }
+
+    function filtered() {
+      return PROMPTS.filter(p => {
+        const catOk = activeCategory === "all" || p.category === activeCategory;
+        const q = searchQuery.toLowerCase();
+        const textOk = !q ||
+          p.title.toLowerCase().includes(q) ||
+          p.text.toLowerCase().includes(q) ||
+          p.category.toLowerCase().includes(q);
+        return catOk && textOk;
+      });
+    }
+
+    function refresh() { renderCards(filtered()); }
+
+    // Chip filter
+    chips.forEach(chip => {
+      chip.addEventListener("click", () => {
+        chips.forEach(c => c.classList.remove("active"));
+        chip.classList.add("active");
+        activeCategory = chip.dataset.cat;
+        refresh();
+      });
+    });
+
+    // Search
+    searchInput.addEventListener("input", () => {
+      searchQuery = searchInput.value.trim();
+      refresh();
+    });
+
+    // Copy & Run
+    grid.addEventListener("click", e => {
+      const copyBtn = e.target.closest(".btn-copy");
+      const runBtn  = e.target.closest(".btn-run");
+
+      if (copyBtn) {
+        const text = copyBtn.dataset.text;
+        navigator.clipboard.writeText(text).then(() => {
+          copyBtn.classList.add("copied");
+          copyBtn.textContent = "Copied!";
+          setTimeout(() => {
+            copyBtn.classList.remove("copied");
+            copyBtn.textContent = "Copy";
+          }, COPY_FEEDBACK_DURATION_MS);
+        }).catch(() => {
+          copyBtn.textContent = "Error";
+          setTimeout(() => { copyBtn.textContent = "Copy"; }, COPY_FEEDBACK_DURATION_MS);
+        });
+      }
+
+      if (runBtn) {
+        const text = runBtn.dataset.text;
+        // Open Atlas AI chat and pre-fill with this prompt
+        const toggle = document.getElementById("atlas-toggle");
+        const input  = document.getElementById("atlas-input");
+        if (toggle && input) {
+          toggle.click();
+          setTimeout(() => {
+            input.value = text;
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+            input.focus();
+          }, ATLAS_OPEN_DELAY_MS);
+        }
+      }
+    });
+
+    // Initial render
+    refresh();
+  })();
+  </script>
+
+  <script src="assets/atlas.js" defer></script>
+</body>
+</html>
