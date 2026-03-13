@@ -80,3 +80,13 @@
   .platform-nav { padding: 0 0.75rem; }
   .platform-nav li a { padding: 0.65rem 0.65rem; }
 }
+
+/* ===== Homepage-only guard =====
+   Sections marked data-homepage-only="true" must never render on
+   non-home pages even if the HTML block were accidentally duplicated.
+   The JS guard in atlas.js sets hidden=""; this CSS rule provides a
+   belt-and-suspenders fallback that works before JS runs.
+===== */
+body:not([data-page="home"]) [data-homepage-only] {
+  display: none !important;
+}
