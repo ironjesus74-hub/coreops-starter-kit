@@ -5,12 +5,14 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "build": "vite build && cp assets/*.js dist/assets/ && cp coreops-live-dashboard.png dist/",
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "deploy:pages": "wrangler pages deploy .",
     "secrets:set-atlas-key": "wrangler secret put ATLAS_AI_API_KEY"
   },
   "devDependencies": {
+    "vite": "^8.0.0",
     "wrangler": "^4.72.0"
   },
   "engines": {
