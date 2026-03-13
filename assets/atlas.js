@@ -1,6 +1,6 @@
 /* Atlas AI — Floating Chat UI
  * Connects to POST /api/atlas
- * Branding: "Atlas AI — Build Different."
+ * Branding: "Atlas AI — Built Different."
  */
 (function () {
   "use strict";
@@ -38,7 +38,7 @@
     <div class="atlas-avatar" aria-hidden="true">AI</div>
     <div class="atlas-header-text">
       <div class="atlas-name">Atlas AI</div>
-      <div class="atlas-tagline">Build Different. How can I help?</div>
+      <div class="atlas-tagline">Built Different. How can I help?</div>
     </div>
     <span class="atlas-status-dot" title="Online" aria-label="Online"></span>
     <button id="atlas-close" aria-label="Close Atlas AI chat" title="Close">✕</button>
