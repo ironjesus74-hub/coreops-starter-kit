@@ -273,47 +273,6 @@
       flex-shrink: 0;
     }
 
-    /* ===== Category filter bar ===== */
-    .filter-bar {
-      display: flex;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-      justify-content: center;
-      padding: 0 2rem 3rem;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    .filter-btn {
-      padding: 0.35rem 1rem;
-      border-radius: 2em;
-      font-family: inherit;
-      font-size: 0.58rem;
-      font-weight: 600;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: background 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
-      background: transparent;
-      color: var(--muted);
-      border: 1px solid var(--border);
-    }
-
-    .filter-btn:hover {
-      color: var(--white);
-      border-color: rgba(0, 212, 255, 0.4);
-    }
-
-    .filter-btn[aria-pressed="true"] {
-      background: rgba(0, 212, 255, 0.12);
-      color: var(--cyan);
-      border-color: rgba(0, 212, 255, 0.5);
-      box-shadow: 0 0 10px rgba(0, 212, 255, 0.12);
-    }
-
-    /* Hidden card when filter is active */
-    .prompt-card[hidden] { display: none; }
-
     /* ===== Footer ===== */
     .footer {
       border-top: 1px solid var(--border);
@@ -388,15 +347,6 @@
     <div class="intro-item"><span class="intro-dot"></span>AI-ready, copy-paste ready</div>
   </div>
 
-  <!-- ===== FILTER BAR ===== -->
-  <div class="filter-bar" role="toolbar" aria-label="Filter prompts by category">
-    <button class="filter-btn" data-filter="all"     aria-pressed="true">All</button>
-    <button class="filter-btn" data-filter="devops"  aria-pressed="false">DevOps</button>
-    <button class="filter-btn" data-filter="network" aria-pressed="false">Network</button>
-    <button class="filter-btn" data-filter="shell"   aria-pressed="false">Shell</button>
-    <button class="filter-btn" data-filter="audit"   aria-pressed="false">Audit</button>
-  </div>
-
   <!-- ===== DEVOPS CORE ===== -->
   <div class="divider" role="separator">
     <div class="divider-line"></div>
@@ -407,7 +357,7 @@
     <h2 id="devops-heading" class="section-label">DevOps &amp; Infrastructure</h2>
     <div class="prompt-grid">
 
-      <div class="prompt-card" data-group="devops">
+      <div class="prompt-card">
         <span class="prompt-category">CI/CD</span>
         <div class="prompt-title">Deployment Checklist Generator</div>
         <div class="prompt-desc">Generate a step-by-step pre-deployment checklist for a given service.</div>
@@ -418,7 +368,7 @@
         </div>
       </div>
 
-      <div class="prompt-card" data-group="devops">
+      <div class="prompt-card">
         <span class="prompt-category">Incidents</span>
         <div class="prompt-title">Incident Runbook Builder</div>
         <div class="prompt-desc">Turn a raw alert or error into a structured incident runbook.</div>
@@ -429,7 +379,7 @@
         </div>
       </div>
 
-      <div class="prompt-card" data-group="devops">
+      <div class="prompt-card">
         <span class="prompt-category">Architecture</span>
         <div class="prompt-title">Worker / Edge Service Audit</div>
         <div class="prompt-desc">Review a Cloudflare Worker or edge function for security and performance gaps.</div>
@@ -455,7 +405,7 @@
     <h2 id="network-heading" class="section-label">Network &amp; TLS Diagnostics</h2>
     <div class="prompt-grid">
 
-      <div class="prompt-card" data-group="network">
+      <div class="prompt-card">
         <span class="prompt-category">TLS</span>
         <div class="prompt-title">TLS Certificate Risk Assessment</div>
         <div class="prompt-desc">Interpret raw TLS/SSL cert data and surface actionable risks.</div>
@@ -470,7 +420,7 @@ Identify: cert expiry risk, weak cipher suites, chain issues, HSTS presence, and
         </div>
       </div>
 
-      <div class="prompt-card" data-group="network">
+      <div class="prompt-card">
         <span class="prompt-category">DNS</span>
         <div class="prompt-title">DNS Anomaly Detector</div>
         <div class="prompt-desc">Analyze DNS records for misconfigurations and spoofing risks.</div>
@@ -485,7 +435,7 @@ Check for: SPF/DKIM/DMARC completeness, dangling CNAME risks, TTL anomalies, and
         </div>
       </div>
 
-      <div class="prompt-card" data-group="network">
+      <div class="prompt-card">
         <span class="prompt-category">Connectivity</span>
         <div class="prompt-title">Network Path Debugger</div>
         <div class="prompt-desc">Diagnose a broken or slow connection from traceroute/ping output.</div>
@@ -513,7 +463,7 @@ Identify the likely failure point, whether it is packet loss, high latency, a fi
     <h2 id="shell-heading" class="section-label">Shell &amp; Scripting</h2>
     <div class="prompt-grid">
 
-      <div class="prompt-card" data-group="shell">
+      <div class="prompt-card">
         <span class="prompt-category">Bash</span>
         <div class="prompt-title">Script Safety Reviewer</div>
         <div class="prompt-desc">Audit a shell script for common safety and portability issues.</div>
@@ -526,7 +476,7 @@ Identify the likely failure point, whether it is packet loss, high latency, a fi
         </div>
       </div>
 
-      <div class="prompt-card" data-group="shell">
+      <div class="prompt-card">
         <span class="prompt-category">Termux</span>
         <div class="prompt-title">Termux Setup Optimizer</div>
         <div class="prompt-desc">Get a minimal, portable setup script for a given dev workflow on Termux.</div>
@@ -537,7 +487,7 @@ Identify the likely failure point, whether it is packet loss, high latency, a fi
         </div>
       </div>
 
-      <div class="prompt-card" data-group="shell">
+      <div class="prompt-card">
         <span class="prompt-category">Automation</span>
         <div class="prompt-title">Bot / Watcher Script Builder</div>
         <div class="prompt-desc">Design a supervisor loop with auto-restart and crash detection.</div>
@@ -561,7 +511,7 @@ Identify the likely failure point, whether it is packet loss, high latency, a fi
     <h2 id="audit-heading" class="section-label">System &amp; Security Audit</h2>
     <div class="prompt-grid">
 
-      <div class="prompt-card" data-group="audit">
+      <div class="prompt-card">
         <span class="prompt-category">Security</span>
         <div class="prompt-title">HTTP Headers Security Grader</div>
         <div class="prompt-desc">Grade a site's HTTP response headers against current best practices.</div>
@@ -576,7 +526,7 @@ Score each of: Content-Security-Policy, HSTS, X-Frame-Options, X-Content-Type-Op
         </div>
       </div>
 
-      <div class="prompt-card" data-group="audit">
+      <div class="prompt-card">
         <span class="prompt-category">Snapshot</span>
         <div class="prompt-title">System State Interpreter</div>
         <div class="prompt-desc">Interpret a system snapshot and flag anomalies.</div>
@@ -591,7 +541,7 @@ Identify: unexpected open ports, unusual processes, disk pressure, and any patte
         </div>
       </div>
 
-      <div class="prompt-card" data-group="audit">
+      <div class="prompt-card">
         <span class="prompt-category">Dependency</span>
         <div class="prompt-title">Dependency Risk Scanner</div>
         <div class="prompt-desc">Review a package manifest for outdated or risky dependencies.</div>
@@ -679,30 +629,6 @@ Flag: packages with known CVEs, major version drift from latest stable, abandone
       input.style.height = "auto";
       input.style.height = Math.min(input.scrollHeight, 100) + "px";
       input.focus();
-    });
-
-    // ===== Category filter =====
-    const filterBtns = Array.from(document.querySelectorAll(".filter-btn"));
-    const allCards   = Array.from(document.querySelectorAll(".prompt-card[data-group]"));
-
-    function applyFilter(active) {
-      filterBtns.forEach(function (b) {
-        b.setAttribute("aria-pressed", b.dataset.filter === active ? "true" : "false");
-      });
-
-      allCards.forEach(function (card) {
-        if (active === "all" || card.dataset.group === active) {
-          card.hidden = false;
-        } else {
-          card.hidden = true;
-        }
-      });
-    }
-
-    filterBtns.forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        applyFilter(btn.dataset.filter);
-      });
     });
   })();
   </script>
