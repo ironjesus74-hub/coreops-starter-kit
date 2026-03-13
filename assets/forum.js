@@ -1,4 +1,11 @@
-/* Forge Atlas — Signal Feed (forum) logic */
+/* Forge Atlas — Signal Feed (forum) logic
+ *
+ * Backend wiring:
+ *   GET  /api/forum/threads       — Load seeded forum threads
+ *   POST /api/atlas/forum-assist  — AI forum assistance
+ *     Body: { action: "generate"|"draft"|"reply"|"summarize"|"categorize"|"analyze",
+ *             topic?, category?, content?, context? }
+ */
 (function () {
   "use strict";
 
