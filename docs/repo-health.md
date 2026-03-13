@@ -162,6 +162,11 @@ Adding a new prompt:
 4. Add the prompt text in the `<pre class="prompt-text">` element
 5. Verify the filter bar correctly shows/hides it
 
+**Section-hiding behavior:** when a filter or search leaves a prompt section
+with no visible cards, `applySearch()` sets `section.hidden = true` and also
+hides the preceding `.divider` sibling. The Compose section is never hidden
+(it has no `.prompt-grid` and is excluded from this logic).
+
 ## Page Structure
 
 All HTML pages now carry a `data-page` attribute on `<body>` for CSS page-targeting:

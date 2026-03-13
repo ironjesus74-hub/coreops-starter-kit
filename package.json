@@ -5,7 +5,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "vite build && cp assets/*.js dist/assets/ && cp coreops-live-dashboard.png dist/",
+    "build": "vite build && mkdir -p dist/assets && cp assets/*.js dist/assets/ && cp coreops-live-dashboard.png dist/",
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "deploy:pages": "wrangler pages deploy .",

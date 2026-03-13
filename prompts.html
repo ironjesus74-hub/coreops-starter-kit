@@ -1002,6 +1002,19 @@ Check for: placeholder values (YOUR_*), missing KV / D1 bindings, insecure ALLOW
         if (show) visible++;
       });
 
+      // Hide prompt sections (and their preceding dividers) when all their cards
+      // are hidden by the active filter or search. Sections without a .prompt-grid
+      // (e.g. the Compose section) are never hidden.
+      document.querySelectorAll("section.section").forEach(function (section) {
+        if (!section.querySelector(".prompt-grid")) return;
+        var anyVisible = !!section.querySelector(".prompt-card:not([hidden])");
+        section.hidden = !anyVisible;
+        var prev = section.previousElementSibling;
+        if (prev && prev.classList.contains("divider")) {
+          prev.hidden = !anyVisible;
+        }
+      });
+
       if (noResults) {
         noResults.style.display = visible === 0 ? "block" : "none";
       }
