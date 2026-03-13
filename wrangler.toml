@@ -18,13 +18,19 @@ binding   = "ASSETS"
 # ---------------------------------------------------------------------------
 # Environment variable placeholders.
 # Set real secrets via:  wrangler secret put ATLAS_AI_API_KEY
+#                        wrangler secret put ATLAS_INTERNAL_SECRET
 # ---------------------------------------------------------------------------
 [vars]
-ATLAS_AI_ENDPOINT = "https://api.openai.com/v1/chat/completions"
-PAYPAL_ENV        = "sandbox"
+ATLAS_AI_ENDPOINT  = "https://api.openai.com/v1/chat/completions"
+OPENAI_MODEL       = "gpt-4o-mini"
+AI_PROVIDER        = "openai"
+APP_ENV            = "production"
+FORUM_AI_ENABLED   = "true"
+DEBATE_AI_ENABLED  = "true"
+PAYPAL_ENV         = "sandbox"
 # Set to your production origin (e.g. "https://forge-atlas.io") to restrict
 # sensitive CORS endpoints.  Leave as the placeholder during local dev.
-ALLOWED_ORIGIN    = "https://forge-atlas.io"
+ALLOWED_ORIGIN     = "https://forge-atlas.io"
 
 # ---------------------------------------------------------------------------
 # KV namespace for persistent profile and purchase storage.
