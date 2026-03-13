@@ -6,17 +6,36 @@
  *   CoreOps legacy pages  → --cyan / --magenta accent scheme
  *   Forge Atlas new pages → --red  / --chrome  accent scheme
  * Both share the same jet-black background and glass panel variables.
+ *
+ * Default values below are overridden by each page's own :root block
+ * (the inline <style> loads after this file and wins on equal specificity).
  */
 
-/* ===== Forge Atlas design tokens ===== */
+/* ===== Default token fallbacks (overridden per page) ===== */
 :root {
-  --red:         #e52020;
-  --red-dim:     rgba(229, 32, 32, 0.18);
-  --red-glow:    0 0 20px rgba(229, 32, 32, 0.45), 0 0 48px rgba(229, 32, 32, 0.15);
-  --chrome:      #e8ecf0;
-  --chrome-dim:  rgba(232, 236, 240, 0.55);
-  --glass-bg:    rgba(22, 27, 34, 0.72);
-  --glass-border:rgba(232, 236, 240, 0.08);
+  /* Base palette */
+  --bg-deep:    #080a0e;
+  --bg-dark:    #0d1117;
+  --bg-card:    #111620;
+  --bg-panel:   #161b22;
+  --border:     #1e2633;
+  --border-sub: #161c27;
+  --cyan:       #00d4ff;
+  --cyan-dim:   rgba(0, 212, 255, 0.18);
+  --magenta:    #ff2d78;
+  --white:      #e6edf3;
+  --muted:      #8b949e;
+  --faint:      #484f58;
+  --radius:     12px;
+
+  /* Forge Atlas extended tokens */
+  --red:          #e52020;
+  --red-dim:      rgba(229, 32, 32, 0.18);
+  --red-glow:     0 0 20px rgba(229, 32, 32, 0.45), 0 0 48px rgba(229, 32, 32, 0.15);
+  --chrome:       #e8ecf0;
+  --chrome-dim:   rgba(232, 236, 240, 0.55);
+  --glass-bg:     rgba(22, 27, 34, 0.72);
+  --glass-border: rgba(232, 236, 240, 0.08);
 }
 
 /* ===== Global focus ring ===== */

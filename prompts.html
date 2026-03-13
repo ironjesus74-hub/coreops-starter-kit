@@ -292,7 +292,7 @@
       gap: 0.5rem;
       flex-wrap: wrap;
       justify-content: center;
-       padding: 0 2rem 1.5rem;
+      padding: 0 2rem 1.5rem;
       max-width: 1200px;
       margin: 0 auto;
     }
@@ -497,6 +497,7 @@
     <button class="filter-btn" data-filter="network"  aria-pressed="false">Network</button>
     <button class="filter-btn" data-filter="shell"    aria-pressed="false">Shell</button>
     <button class="filter-btn" data-filter="audit"    aria-pressed="false">Audit</button>
+    <button class="filter-btn" data-filter="operator" aria-pressed="false">Operator</button>
   </div>
 
   <!-- ===== SEARCH BAR ===== -->
@@ -735,7 +736,7 @@ Flag: packages with known CVEs, major version drift from latest stable, abandone
     <h2 id="operator-heading" class="section-label">Operator &amp; System Prompts</h2>
     <div class="prompt-grid">
 
-      <div class="prompt-card" data-group="devops">
+      <div class="prompt-card" data-group="operator">
         <span class="prompt-category">Release</span>
         <div class="prompt-title">Deployment Readiness Gatekeeper</div>
         <div class="prompt-desc">Run a strict go/no-go check before any production deploy.</div>
@@ -754,7 +755,7 @@ Evaluate readiness. Flag any blocker (missing secret, placeholder value, unteste
         </div>
       </div>
 
-      <div class="prompt-card" data-group="audit">
+      <div class="prompt-card" data-group="operator">
         <span class="prompt-category">Post-Mortem</span>
         <div class="prompt-title">Incident Post-Mortem Generator</div>
         <div class="prompt-desc">Turn an incident timeline into a structured blameless post-mortem.</div>
@@ -773,7 +774,7 @@ Include: executive summary, timeline table, contributing factors, impact assessm
         </div>
       </div>
 
-      <div class="prompt-card" data-group="devops">
+      <div class="prompt-card" data-group="operator">
         <span class="prompt-category">Config Review</span>
         <div class="prompt-title">Wrangler / Worker Config Auditor</div>
         <div class="prompt-desc">Audit a wrangler.toml for security, correctness, and deploy-readiness.</div>

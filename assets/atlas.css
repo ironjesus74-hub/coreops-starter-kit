@@ -267,3 +267,18 @@
     right: 1rem;
   }
 }
+
+/* ── Reduced motion ──────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  #atlas-toggle,
+  #atlas-panel,
+  .atlas-bubble,
+  #atlas-input,
+  #atlas-send {
+    transition: none;
+  }
+  .atlas-typing span {
+    animation: none;
+    opacity: 0.6;
+  }
+}
