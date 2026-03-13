@@ -157,10 +157,10 @@ Open each URL in a browser and confirm the expected response:
 | URL | Expected |
 |-----|----------|
 | `https://<worker>.workers.dev/` | Site home page loads |
-| `https://<worker>.workers.dev/api/health` | `{"ok":true,"service":"atlas-core-api","db_connected":true}` |
+| `https://<worker>.workers.dev/api/health` | `{"ok":true,"service":"atlas-core-api","db_connected":true}` (or `false` if D1 not yet bound) |
 | `https://<worker>.workers.dev/api/db-test` | `{"ok":true,"db":{"time":"..."}}` |
 | `https://<worker>.workers.dev/api/products` | JSON array of products |
-| `https://<worker>.workers.dev/api/paypal/config` | `{"clientId":"..."}` (after secret set) |
+| `https://<worker>.workers.dev/api/paypal/config` | `{"checkoutMode":"fallback"}` if `PAYPAL_CLIENT_ID` not set; `{"clientId":"...","env":"sandbox","checkoutMode":"dynamic"}` once set |
 | `https://<worker>.workers.dev/market.html` | Market page loads, PayPal modal works |
 
 ---
@@ -172,12 +172,12 @@ configured in sections 2–4 above.
 
 | Endpoint | Method | Requires |
 |----------|--------|---------|
-| `/api/health` | GET | D1 (`DB`) |
+| `/api/health` | GET | D1 (`DB`) optional — returns 200 with `db_connected: false` when unbound |
 | `/api/db-test` | GET | D1 (`DB`) |
 | `/api/atlas` | POST | `ATLAS_AI_API_KEY`, `ATLAS_AI_ENDPOINT` |
 | `/api/contact` | POST | `CONTACT_WEBHOOK_URL` (optional) |
 | `/api/products` | GET | — |
-| `/api/paypal/config` | GET | `PAYPAL_CLIENT_ID` |
+| `/api/paypal/config` | GET | `PAYPAL_CLIENT_ID` optional — returns `{"checkoutMode":"fallback"}` when unset; use this to check whether dynamic checkout is active |
 | `/api/paypal/create-order` | POST | `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` |
 | `/api/paypal/capture-order` | POST | `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` |
 | `/api/paypal/webhook` | POST | `PAYPAL_WEBHOOK_ID`, `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` |
