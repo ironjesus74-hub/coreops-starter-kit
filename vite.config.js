@@ -1,10 +1,20 @@
-import { defineConfig } from 'vite';
+import { defineConfig, createLogger } from 'vite';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+// Suppress Vite 8 warnings for intentional classic (IIFE) scripts that are
+// served directly via the Cloudflare ASSETS binding — not bundled by Vite.
+const logger = createLogger();
+const originalWarn = logger.warn.bind(logger);
+logger.warn = (msg, options) => {
+  if (msg.includes("can't be bundled") && msg.includes('type="module"')) return;
+  originalWarn(msg, options);
+};
+
 export default defineConfig({
+  customLogger: logger,
   build: {
     rollupOptions: {
       input: {

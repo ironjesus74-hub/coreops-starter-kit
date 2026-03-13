@@ -11,7 +11,7 @@
 
 ## 1 · Code to paste (production)
 
-The production Worker is `src/worker.js` in this repository (1400+ lines).
+The production Worker is `src/worker.js` in this repository (1800+ lines).
 
 **Do not paste the minimal stub below for production.** The stub is only for
 verifying that the Cloudflare Worker plumbing (account, zone, Workers.dev subdomain)
