@@ -5,6 +5,7 @@ snapshot_*.txt
 *.backup
 *.backup.html
 *.bak
+*.bak.*
 
 # Cloudflare / Wrangler build artifacts
 .wrangler/
