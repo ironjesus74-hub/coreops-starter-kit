@@ -1,5 +1,13 @@
 # Phase 1 — GitHub Profile & Repository Audit
 
+> ⚠️ **ARCHIVED / SUPERSEDED** — This is a point-in-time snapshot from 2026-03-12.
+> Several findings below have since been resolved (npm dependabot added, deploy.yml added,
+> ShellCheck CI stabilised, security headers present, 1800+ line worker deployed).
+> Do not use this document as a source of truth for current repo state.
+> See `docs/repo-health.md` and `docs/cloudflare-vars-secrets.md` for current references.
+
+---
+
 > **Scope:** Profile-level audit, repo inventory, settings gap analysis, and risk prioritization.
 > **Date:** 2026-03-12
 > **No patches issued in this phase** — see each section's "Action" notes for Phase 2 work items.

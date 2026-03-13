@@ -212,9 +212,9 @@ jobs:
           set -euo pipefail
           [ -f "wrangler.toml" ] || { echo "::warning::wrangler.toml not found — skipping."; exit 0; }
 
-          if grep -qE "YOUR_CLOUDFLARE_ACCOUNT_ID|YOUR_KV_NAMESPACE_ID|YOUR_ZONE_ID|YOUR_DOMAIN" wrangler.toml; then
+          if grep -qE "YOUR_CLOUDFLARE_ACCOUNT_ID|YOUR_KV_NAMESPACE_ID|YOUR_D1_DATABASE_ID|YOUR_ZONE_ID|YOUR_DOMAIN" wrangler.toml; then
             echo "::warning::wrangler.toml contains placeholder values — set real values before deploying."
-            grep -nE "YOUR_CLOUDFLARE_ACCOUNT_ID|YOUR_KV_NAMESPACE_ID|YOUR_ZONE_ID|YOUR_DOMAIN" wrangler.toml || true
+            grep -nE "YOUR_CLOUDFLARE_ACCOUNT_ID|YOUR_KV_NAMESPACE_ID|YOUR_D1_DATABASE_ID|YOUR_ZONE_ID|YOUR_DOMAIN" wrangler.toml || true
           else
             echo "  ✔  wrangler.toml: no placeholder values."
           fi
