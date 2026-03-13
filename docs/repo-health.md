@@ -56,7 +56,7 @@ cp index.html index.html.bak.copilot-$(date +%Y%m%d)
 ```
 
 Backup files are:
-- **Tracked in git** (so they're recoverable from any clone)
+- **Not tracked in git** — `.gitignore` excludes `*.bak.*` patterns; create local backups only
 - **Excluded from Cloudflare asset serving** via `.assetsignore` (`*.bak.*` rule)
 - **Excluded from npm publish** (not relevant here, but good practice)
 
