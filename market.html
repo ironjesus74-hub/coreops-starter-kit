@@ -32,6 +32,10 @@
       --bg-panel:  #141920;
       --border:    #1e2633;
       --border-sub:#161c27;
+      /* Explicit so this page is self-contained regardless of cascade order */
+      --red:       #e52020;
+      --red-glow:  0 0 20px rgba(229, 32, 32, 0.45), 0 0 48px rgba(229, 32, 32, 0.15);
+      --chrome:    #e8ecf0;
       --white:     #e8ecf0;
       --muted:     #8b949e;
       --faint:     #484f58;
@@ -274,6 +278,10 @@
       padding: 2rem;
       width: 100%;
       max-width: 440px;
+      max-height: calc(100vh - 3rem);
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: #21262d transparent;
     }
 
     .modal-title {
@@ -427,6 +435,37 @@
 
     .modal-success[hidden] { display: none; }
 
+    /* ===== Empty / error states for product grid ===== */
+    .grid-empty {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 4rem 2rem;
+      text-align: center;
+    }
+
+    .grid-empty-icon {
+      font-size: 2rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .grid-empty-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--chrome);
+      margin-bottom: 0.35rem;
+    }
+
+    .grid-empty-sub {
+      font-size: 0.65rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .grid-empty-sub a {
+      color: var(--red);
+      text-decoration: none;
+    }
+
     .btn-modal-close {
       font-family: inherit;
       font-size: 0.6rem;
@@ -496,10 +535,13 @@
     .footer a:hover { color: var(--red); }
 
     @media (max-width: 640px) {
-      .page-header { padding: 2rem 1rem 1.5rem; }
-      .filter-bar  { padding: 0 1rem; }
+      .page-header  { padding: 2rem 1rem 1.5rem; }
+      .filter-bar   { padding: 0 1rem; }
       .product-grid { padding: 0 1rem 3rem; }
       .skeleton-grid { padding: 0 1rem 3rem; }
+      .grid-empty   { padding: 3rem 1rem; }
+      .modal-box    { padding: 1.5rem; border-radius: 12px 12px 0 0; }
+      .modal-overlay { align-items: flex-end; padding: 0; }
     }
   </style>
 </head>
@@ -528,7 +570,7 @@
   <div class="page-header">
     <div class="page-badge">⚙ Forge Atlas · Market</div>
     <h1 class="page-title"><span class="accent">Forge</span> Market</h1>
-    <p class="page-sub">Tools · Licenses · Upgrades — per-item checkout, price set by server</p>
+    <p class="page-sub">Tools · Licenses · Upgrades — prices set and verified by server</p>
   </div>
 
   <!-- ===== FILTER BAR ===== -->
@@ -575,10 +617,10 @@
       <div class="modal-product" id="modal-product-name">—</div>
       <div class="modal-price" id="modal-price">—</div>
 
-      <!-- Shown after SDK buttons render; confirms the amount is server-set. -->
+      <!-- Shown after createOrder succeeds; confirms the amount is server-locked. -->
       <div class="modal-price-verified" id="modal-price-verified" hidden
-           title="The charge amount is resolved by the server from the product catalog — the browser cannot change it.">
-        ✓ Price locked by server
+           title="Charge amount is resolved by the server from the product catalog — the browser cannot change it.">
+        ✓ Price verified &amp; locked by server
       </div>
 
       <div class="modal-desc" id="modal-desc">—</div>
@@ -626,7 +668,7 @@
         <div class="modal-success-sub" id="modal-success-sub">Your order has been confirmed.</div>
       </div>
 
-      <button class="btn-modal-close" id="modal-close">Cancel / Close</button>
+      <button class="btn-modal-close" id="modal-close" aria-label="Close checkout">Close</button>
     </div>
   </div>
 
