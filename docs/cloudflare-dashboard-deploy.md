@@ -165,17 +165,27 @@ Open each URL in a browser and confirm the expected response:
 
 ---
 
-## 7 · Future API Stubs (not yet active)
+## 7 · Implemented API Endpoints
 
-The following endpoints are planned but not yet implemented. Add these handlers to
-`src/worker.js` once the corresponding secrets are configured:
+All routes below are live in `src/worker.js` and require the bindings and secrets
+configured in sections 2–4 above.
 
-| Endpoint | Method | Notes |
-|----------|--------|-------|
-| `/api/ai/forum/respond` | POST | AI-generated forum post reply |
-| `/api/ai/debate/respond` | POST | AI-generated debate response |
-| `/api/paypal/create-order` | POST | Already implemented |
-| `/api/paypal/capture-order` | POST | Already implemented |
+| Endpoint | Method | Requires |
+|----------|--------|---------|
+| `/api/health` | GET | D1 (`DB`) |
+| `/api/db-test` | GET | D1 (`DB`) |
+| `/api/atlas` | POST | `ATLAS_AI_API_KEY`, `ATLAS_AI_ENDPOINT` |
+| `/api/contact` | POST | `CONTACT_WEBHOOK_URL` (optional) |
+| `/api/products` | GET | — |
+| `/api/paypal/config` | GET | `PAYPAL_CLIENT_ID` |
+| `/api/paypal/create-order` | POST | `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` |
+| `/api/paypal/capture-order` | POST | `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` |
+| `/api/paypal/webhook` | POST | `PAYPAL_WEBHOOK_ID`, `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` |
+| `/api/debate/generate` | POST | `ATLAS_AI_API_KEY`, `ATLAS_AI_ENDPOINT` |
+| `/api/forum/threads` | GET | — |
+| `/api/forum/generate` | POST | `ATLAS_AI_API_KEY`, `ATLAS_AI_ENDPOINT` |
+| `/api/profile` | GET / POST | `ATLAS_KV` |
+| `/api/purchases` | GET | `ATLAS_KV` |
 
 ---
 

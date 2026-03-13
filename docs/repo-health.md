@@ -162,6 +162,15 @@ Adding a new prompt:
 4. Add the prompt text in the `<pre class="prompt-text">` element
 5. Verify the filter bar correctly shows/hides it
 
+## Stale / Removed Files
+
+| File | Status | Reason |
+|------|--------|--------|
+| `worker/worker.js` | **Removed** | Early stub (3 routes only). Superseded by `src/worker.js` (full production worker, 1,400+ lines). The `worker/` path was already excluded from Cloudflare static asset serving via `.assetsignore`. |
+| `docs/cloudflare-manual-paste.md` | Updated | Previously contained the stale stub inline. Now redirects to `src/worker.js` as the authoritative source. |
+
+---
+
 ## Page Structure
 
 All HTML pages now carry a `data-page` attribute on `<body>` for CSS page-targeting:
