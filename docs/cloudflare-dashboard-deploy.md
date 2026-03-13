@@ -97,6 +97,7 @@ Go to **Workers & Pages → atlas-core-api → Settings → Variables**.
 | Secret name            | Where to get the value                                        |
 |------------------------|---------------------------------------------------------------|
 | `ATLAS_AI_API_KEY`     | OpenAI dashboard → API Keys                                   |
+| `ATLAS_INTERNAL_SECRET`| Generate a long random string (32+ hex chars) — admin bearer token |
 | `PAYPAL_CLIENT_ID`     | PayPal Developer dashboard → My Apps & Credentials            |
 | `PAYPAL_CLIENT_SECRET` | PayPal Developer dashboard → My Apps & Credentials            |
 | `PAYPAL_WEBHOOK_ID`    | PayPal Developer dashboard → Webhooks                         |
@@ -165,21 +166,7 @@ Open each URL in a browser and confirm the expected response:
 
 ---
 
-## 7 · Future API Stubs (not yet active)
-
-The following endpoints are planned but not yet implemented. Add these handlers to
-`src/worker.js` once the corresponding secrets are configured:
-
-| Endpoint | Method | Notes |
-|----------|--------|-------|
-| `/api/ai/forum/respond` | POST | AI-generated forum post reply |
-| `/api/ai/debate/respond` | POST | AI-generated debate response |
-| `/api/paypal/create-order` | POST | Already implemented |
-| `/api/paypal/capture-order` | POST | Already implemented |
-
----
-
-## 8 · Quick Reference — Where Each Secret Lives
+## 7 · Quick Reference — Where Each Secret Lives
 
 ```
 Cloudflare Dashboard
@@ -192,6 +179,7 @@ Cloudflare Dashboard
             │   └── ALLOWED_ORIGIN      = https://your-domain.com
             └── Secrets (encrypted)
                 ├── ATLAS_AI_API_KEY      ← OpenAI API key
+                ├── ATLAS_INTERNAL_SECRET ← Admin bearer token (long random string)
                 ├── PAYPAL_CLIENT_ID      ← PayPal client ID
                 ├── PAYPAL_CLIENT_SECRET  ← PayPal client secret
                 ├── PAYPAL_WEBHOOK_ID     ← PayPal webhook ID

@@ -1,4 +1,10 @@
-/* Forge Atlas — AI Debate Arena logic */
+/* Forge Atlas — AI Debate Arena logic
+ *
+ * Backend wiring:
+ *   POST /api/atlas/debate  — Generate AI debate transcript (Vector vs Cipher)
+ *     Body: { topic: string, rounds?: number (1-5, default 3) }
+ *     Returns: { ok, debate: { topic, rounds, transcript[] }, pacing }
+ */
 (function () {
   "use strict";
 

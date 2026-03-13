@@ -107,3 +107,37 @@ grep -rnE "(sk-[A-Za-z0-9]{20,}|Bearer [A-Za-z0-9]{30,})" \
   && echo "WARNING: possible secret found" \
   || echo "OK — no hardcoded secrets detected"
 ```
+
+---
+
+## Quick Deploy Checklist
+
+> Copy-paste reference separating **secrets** (must set) from **manual dashboard steps** (one-time setup).
+
+### Secrets to set (CLI)
+
+```bash
+# Required for AI features
+wrangler secret put ATLAS_AI_API_KEY
+wrangler secret put ATLAS_INTERNAL_SECRET
+
+# Required only for PayPal checkout
+wrangler secret put PAYPAL_CLIENT_ID
+wrangler secret put PAYPAL_CLIENT_SECRET
+wrangler secret put PAYPAL_WEBHOOK_ID
+
+# Optional
+wrangler secret put CONTACT_WEBHOOK_URL
+```
+
+Or use the npm helpers: `npm run secrets:set-atlas-key`, `npm run secrets:set-internal-secret`, etc.
+
+### Manual dashboard steps (one-time)
+
+1. **Create D1 database** — Dashboard → D1 → Create → name: `forge-core`
+2. **Copy Database ID** → paste into `wrangler.toml` replacing `YOUR_D1_DATABASE_ID`
+3. **Run schema** — D1 → forge-core → Console → paste `db/schema.sql` → Execute
+4. **Create KV namespace** — Dashboard → KV → Create → name: `ATLAS_KV`
+5. **Copy Namespace ID** → paste into `wrangler.toml` replacing `YOUR_KV_NAMESPACE_ID`
+6. **Push updated `wrangler.toml`** — triggers Worker redeployment
+7. **Verify** — `curl https://<worker>/api/health` → `{"ok":true,"db_connected":true}`

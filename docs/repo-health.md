@@ -37,9 +37,14 @@ grep -r "\.bak\." --include="*.html" --include="*.js" --include="*.css" .
 |---|---|---|
 | `src/worker.js` | All API routes, security headers, rate limiting | Yes — test after every change |
 | `wrangler.toml` | Cloudflare bindings, env vars | Yes — placeholders block deploy |
+| `db/schema.sql` | D1 database schema (5 tables) | Yes — must match Worker expectations |
 | `index.html` | Homepage only — screenshot showcase lives here | Yes |
+| `debate.html` | AI Debate Arena page | Yes |
+| `forum.html` | Signal Feed (forum) page | Yes |
 | `assets/platform.css` | Shared nav and design tokens | Yes |
 | `assets/atlas.js` | Atlas AI chat widget (all pages) | Yes |
+| `assets/debate.js` | Debate Arena frontend → `/api/atlas/debate` | Yes |
+| `assets/forum.js` | Signal Feed frontend → `/api/forum/threads`, `/api/atlas/forum-assist` | Yes |
 | `assets/market.js` | Market page + PayPal checkout | Yes |
 | `prompts.html` | Prompt library (standalone, no backend calls) | Safe |
 
@@ -90,14 +95,15 @@ The platform screenshot (`audit-demo.png`) renders **only on `index.html`**.
 Set all secrets via:
 
 ```bash
-wrangler secret put ATLAS_AI_API_KEY
-wrangler secret put PAYPAL_CLIENT_ID
-wrangler secret put PAYPAL_CLIENT_SECRET
-wrangler secret put PAYPAL_WEBHOOK_ID
-wrangler secret put CONTACT_WEBHOOK_URL   # optional
+wrangler secret put ATLAS_AI_API_KEY         # Required — OpenAI-compatible API key
+wrangler secret put ATLAS_INTERNAL_SECRET    # Required — admin endpoint bearer token
+wrangler secret put PAYPAL_CLIENT_ID         # PayPal only
+wrangler secret put PAYPAL_CLIENT_SECRET     # PayPal only
+wrangler secret put PAYPAL_WEBHOOK_ID        # PayPal only
+wrangler secret put CONTACT_WEBHOOK_URL      # Optional — contact form webhook
 ```
 
-See `src/worker.js` header comment for the full list.
+See `docs/cloudflare-vars-secrets.md` for the full reference and dashboard-only steps.
 
 ---
 
@@ -166,6 +172,25 @@ Adding a new prompt:
 with no visible cards, `applySearch()` sets `section.hidden = true` and also
 hides the preceding `.divider` sibling. The Compose section is never hidden
 (it has no `.prompt-grid` and is excluded from this logic).
+
+## Frontend → Backend Wiring
+
+Each frontend JS file calls specific Worker API routes. If you rename or remove a
+route in `src/worker.js`, update the matching frontend file.
+
+| Frontend file | API endpoint(s) called | Purpose |
+|---|---|---|
+| `assets/atlas.js` | `POST /api/atlas` | Atlas AI chat (delegates to `/api/atlas/chat`) |
+| `assets/debate.js` | `POST /api/atlas/debate` | AI debate generation (Vector vs Cipher) |
+| `assets/forum.js` | `GET /api/forum/threads` | Load seeded forum threads |
+| `assets/forum.js` | `POST /api/atlas/forum-assist` | AI forum thread generation |
+| `assets/market.js` | `GET /api/products` | Product catalog |
+| `assets/market.js` | `GET /api/paypal/config` | PayPal client ID + checkout mode |
+| `assets/market.js` | `POST /api/paypal/create-order` | Create PayPal order |
+| `assets/market.js` | `POST /api/paypal/capture-order` | Capture PayPal payment |
+| `assets/home-paypal.js` | `GET /api/paypal/config` | PayPal client ID (homepage button) |
+
+---
 
 ## Page Structure
 
