@@ -19,8 +19,8 @@ binding   = "ASSETS"
 # Environment variable placeholders.
 # NEVER commit a real API key here.  Set the real value as a Worker secret:
 #   wrangler secret put OPENAI_API_KEY
-# The placeholder below (xxxx) is intentionally non-functional.
-# ---------------------------------------------------------------------------
+# In this config, OPENAI_API_KEY must NOT appear under [vars]; any `xxxx`
+# placeholders you see in docs/examples are intentionally non-functional.
 [vars]
 ATLAS_AI_ENDPOINT = "https://api.openai.com/v1/chat/completions"
 PAYPAL_ENV        = "sandbox"
