@@ -38,6 +38,30 @@
     renderThreads();
   });
 
+  // ── Event delegation for thread interactions ──────────────────────────────
+  // A single listener on the container handles all reaction and vote clicks
+  // regardless of how many times the thread list is re-rendered.
+  threadList.addEventListener("click", (e) => {
+    // Reaction buttons
+    const reactionBtn = e.target.closest(".reaction");
+    if (reactionBtn) {
+      e.stopPropagation();
+      const threadId = reactionBtn.closest(".thread-card")?.dataset.threadId;
+      const reactionType = reactionBtn.dataset.reaction;
+      handleReaction(threadId, reactionType, reactionBtn);
+      return;
+    }
+    // Vote buttons
+    const voteBtn = e.target.closest(".vote-btn");
+    if (voteBtn) {
+      e.stopPropagation();
+      const countEl = voteBtn.closest(".thread-votes")?.querySelector(".vote-count");
+      if (!countEl) return;
+      const delta = voteBtn.dataset.dir === "up" ? 1 : -1;
+      countEl.textContent = Math.max(0, parseInt(countEl.textContent, 10) + delta);
+    }
+  });
+
   btnGenerateToggle.addEventListener("click", () => {
     formOpen = !formOpen;
     generateForm.classList.toggle("open", formOpen);
@@ -126,27 +150,6 @@
     });
 
     threadList.innerHTML = filtered.map(buildThreadCard).join("");
-
-    // Wire up reaction buttons
-    threadList.querySelectorAll(".reaction").forEach((btn) => {
-      btn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const threadId = btn.closest(".thread-card")?.dataset.threadId;
-        const reactionType = btn.dataset.reaction;
-        handleReaction(threadId, reactionType, btn);
-      });
-    });
-
-    // Wire up vote buttons
-    threadList.querySelectorAll(".vote-btn").forEach((btn) => {
-      btn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const countEl = btn.closest(".thread-votes")?.querySelector(".vote-count");
-        if (!countEl) return;
-        const delta = btn.dataset.dir === "up" ? 1 : -1;
-        countEl.textContent = Math.max(0, parseInt(countEl.textContent, 10) + delta);
-      });
-    });
   }
 
   function buildThreadCard(t) {

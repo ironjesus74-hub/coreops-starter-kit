@@ -30,6 +30,8 @@
   //   "dynamic"  — JS SDK + backend order creation (normal path)
   //   "fallback" — PAYPAL_CLIENT_ID absent; surface hosted button fallback rail
   let checkoutMode = null;
+  // Cached PayPal client ID — populated on first config fetch.
+  let paypalClientId = null;
 
   // ── DOM refs ──────────────────────────────────────────────────────────────
   const skeletonGrid      = document.getElementById("skeleton-grid");
@@ -59,6 +61,16 @@
     btn.classList.add("active");
     activeFilter = btn.dataset.filter || "all";
     renderProducts();
+  });
+
+  // ── Event delegation for Buy Now buttons ─────────────────────────────────
+  // A single listener survives grid re-renders; no need to re-attach per render.
+  productGrid.addEventListener("click", (e) => {
+    const btn = e.target.closest(".btn-buy");
+    if (!btn) return;
+    const id = btn.dataset.productId;
+    const product = products.find((p) => p.id === id);
+    if (product) openCheckout(product);
   });
 
   modalClose.addEventListener("click", closeModal);
@@ -100,14 +112,6 @@
     }
 
     productGrid.innerHTML = filtered.map(buildProductCard).join("");
-
-    productGrid.querySelectorAll(".btn-buy").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const id = btn.dataset.productId;
-        const product = products.find((p) => p.id === id);
-        if (product) openCheckout(product);
-      });
-    });
   }
 
   function buildProductCard(p) {
@@ -169,30 +173,36 @@
     checkoutModal.hidden = true;
     selectedProduct = null;
     // Clear the PayPal buttons to avoid stale renders
-    const container = document.getElementById("paypal-button-container");
-    if (container) container.innerHTML = "";
+    paypalContainer.innerHTML = "";
     modalPriceVerified.hidden = true;
     checkoutFallback.hidden = true;
   }
 
   // ── Load PayPal SDK and render buttons ────────────────────────────────────
   async function initPayPal(product) {
-    // Fetch the public client ID and checkout mode from the Worker.
-    let clientId;
-    try {
-      const resp = await fetch("/api/paypal/config");
-      if (!resp.ok) throw new Error("HTTP " + resp.status);
-      const data = await resp.json();
+    // Fetch the public client ID and checkout mode from the Worker only when
+    // not yet known — subsequent modal opens reuse the cached values.
+    if (checkoutMode === null) {
+      try {
+        const resp = await fetch("/api/paypal/config");
+        if (!resp.ok) throw new Error("HTTP " + resp.status);
+        const data = await resp.json();
 
-      // Store the mode for this session so subsequent openCheckout calls
-      // skip the config fetch and reuse the already-known mode.
-      checkoutMode = data.checkoutMode || "dynamic";
-      clientId = data.clientId;
-    } catch (err) {
-      console.error("PayPal config error:", err);
-      // Config fetch failed — cannot determine mode. Surface fallback.
-      showFallback();
-      return;
+        // Store the mode and client ID for this session so subsequent
+        // openCheckout calls skip the config fetch entirely.
+        checkoutMode = data.checkoutMode || "dynamic";
+        paypalClientId = data.clientId || null;
+        // If dynamic mode was requested but no clientId was returned, treat it
+        // as a misconfiguration and fall back to the hosted button rail.
+        if (checkoutMode !== "fallback" && !paypalClientId) {
+          checkoutMode = "fallback";
+        }
+      } catch (err) {
+        console.error("PayPal config error:", err);
+        // Config fetch failed — cannot determine mode. Surface fallback.
+        showFallback();
+        return;
+      }
     }
 
     // If the Worker explicitly signals "fallback" (credentials absent), skip
@@ -207,7 +217,7 @@
     if (!paypalLoaded && !paypalScriptPending) {
       paypalScriptPending = true;
       try {
-        await loadPayPalScript(clientId);
+        await loadPayPalScript(paypalClientId);
         paypalLoaded = true;
       } catch {
         // SDK load failed — fall back to hosted button rail rather than blank error.
