@@ -9,7 +9,7 @@
  * Routes:
  *   GET   /api/health                — Service health check (DB connectivity)
  *   GET   /api/db-test               — D1 database smoke test
- *   POST  /api/atlas                 — Atlas AI assistant (legacy; delegates to /api/atlas/chat)
+ *   POST  /api/atlas                 — Atlas AI chat (primary frontend route; delegates to /api/atlas/chat)
  *   POST  /api/contact               — Contact form
  *   GET   /api/products              — Product catalog (public)
  *   GET   /api/paypal/config         — Return PayPal client ID (safe)
@@ -578,8 +578,10 @@ async function handleDbTest(env) {
 }
 
 // ---------------------------------------------------------------------------
-// Atlas AI endpoint — POST /api/atlas (legacy — delegates to /api/atlas/chat)
-// Kept for backward compatibility. All new callers should use /api/atlas/chat.
+// Atlas AI endpoint — POST /api/atlas
+// Primary route consumed by the Atlas AI chat widget (assets/atlas.js).
+// Delegates to handleAtlasChat; /api/atlas/chat is the equivalent enhanced route.
+// Body: { message: string, mode?: "devops"|"general"|"operator" }
 // ---------------------------------------------------------------------------
 async function handleAtlas(request, env) {
   return handleAtlasChat(request, env);
