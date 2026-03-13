@@ -1,10 +1,12 @@
 # Exclude non-web files from Cloudflare asset serving
 # Shell scripts and CLI tools
 bin/
+boot/
 bots/
 lib/
 modules/
 install.sh
+worker/
 
 # CI / tooling
 ci/
