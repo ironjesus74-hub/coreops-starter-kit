@@ -318,10 +318,8 @@
     .footer a { color: var(--faint); text-decoration: none; }
     .footer a:hover { color: var(--cyan); }
 
-    /* ===== Platform preview screenshot — homepage only =====
-       Only rendered when <body data-page="home"> is present.
-       Must NOT be copied to platform.css (shared styles).
-    ===== */
+    /* ===== Platform preview screenshot (homepage only) ===== */
+    /* NOTE: This block must NOT be copied to other pages.     */
     .preview-wrap {
       border: 1px solid var(--border);
       border-radius: var(--radius);
@@ -367,7 +365,7 @@
     }
   </style>
 </head>
-<body data-page="home">
+<body>
 
   <!-- ===== PLATFORM NAV ===== -->
   <nav class="platform-nav" aria-label="Platform sections">
@@ -491,17 +489,13 @@ coreops help</code>
     </div>
   </section>
 
-  <!-- ===== PLATFORM PREVIEW — homepage only =====
-       GUARD: <body data-page="home"> is required for this section.
-       Do NOT copy this section to other pages.
-       Image: audit-demo.png (root) — served at /audit-demo.png
-  ===== -->
+  <!-- ===== PLATFORM PREVIEW (homepage only — do NOT copy to other pages) ===== -->
   <div class="divider" role="separator">
     <div class="divider-line"></div>
     <div class="divider-label"><span>Live Demo</span></div>
   </div>
 
-  <section class="section" aria-labelledby="preview-heading" data-homepage-only="true">
+  <section class="section" aria-labelledby="preview-heading">
     <h2 id="preview-heading" class="section-label">See It In Action</h2>
     <div class="preview-wrap">
       <img
