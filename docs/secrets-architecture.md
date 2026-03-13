@@ -25,7 +25,9 @@ OpenAI API  (or ATLAS_AI_ENDPOINT override)
 **Key constraint:** The `OPENAI_API_KEY` is read **only inside the Worker**
 (`env.OPENAI_API_KEY`). It is never sent to or readable by the browser.
 All AI features (Atlas chat, debate, forum) are gated behind Worker routes
-that enforce rate-limiting, prompt sanitisation, and CORS restrictions.
+that enforce rate-limiting and CORS restrictions. The Atlas chat route
+additionally sanitises the optional `systemContext` field via
+`sanitizeSystemContext()` to prevent prompt injection.
 
 ---
 
