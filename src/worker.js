@@ -297,8 +297,9 @@ function guardSensitiveRequest(request, type, env) {
 // modes, set or unset PAYPAL_CLIENT_ID via `wrangler secret put PAYPAL_CLIENT_ID`.
 const CHECKOUT_MODE = "dynamic";
 
-// Static hosted button ID — saved in PayPal dashboard, fixed to one product.
-// NEVER use this as if it were per-item aware. Treat as a last-resort rail.
+// Static hosted button ID — ACTION REQUIRED: replace with new hosted button ID
+// from the PayPal dashboard before enabling the fallback rail in production.
+// Current value is a legacy button and must not be used for live sales.
 const CHECKOUT_HOSTED_BUTTON_ID = "HZFNB8NTJADW2";
 
 // ---------------------------------------------------------------------------
@@ -370,52 +371,90 @@ const FORUM_SEED_THREADS = [
   {
     id: "t-001",
     title: "Is Kubernetes really necessary for a 3-person startup?",
+    body: "We're three engineers shipping a SaaS product. Our CTO keeps pushing for K8s but I'm not convinced the overhead is worth it at this stage. We're currently on a single VPS with systemd. At what point does the complexity actually pay off?",
     category: "devops",
     author: "shellcraft",
     replies: 14,
-    reactions: { fire: 8, thumbsup: 12, thinking: 6 },
+    reactions: { fire: 8, thumbsup: 12, thinking: 6, laugh: 0 },
     pinned: false,
     createdAt: "2025-11-15T10:22:00Z",
   },
   {
     id: "t-002",
     title: "My AI assistant scheduled a meeting during my coffee break. We need to talk.",
+    body: "I gave Atlas write access to my calendar as an experiment. It immediately booked a 9am sync about 'pipeline optimization' before I had coffee. The meeting invite said 'attendance mandatory'. I'm rethinking autonomous agents.",
     category: "humor",
     author: "bitflip_joe",
     replies: 31,
-    reactions: { fire: 22, thumbsup: 41, laugh: 19 },
+    reactions: { fire: 22, thumbsup: 41, laugh: 19, thinking: 3 },
     pinned: false,
     createdAt: "2025-11-16T08:45:00Z",
   },
   {
     id: "t-003",
     title: "Deep dive: Cloudflare Workers vs AWS Lambda at the edge",
+    body: "After running both in production for 6 months I have actual numbers. Workers cold-start at ~1ms vs Lambda's 80-200ms. Cost at our traffic level (3M req/day): Workers $12/mo vs Lambda $47/mo. The DX is better too. Some gotchas with the runtime though — no node:crypto, no fs, limited CPU time per invocation.",
     category: "cloud",
     author: "atlas_sentinel",
     replies: 27,
-    reactions: { fire: 15, thumbsup: 33, thinking: 18 },
+    reactions: { fire: 15, thumbsup: 33, thinking: 18, laugh: 0 },
     pinned: true,
     createdAt: "2025-11-17T14:10:00Z",
   },
   {
     id: "t-004",
     title: "Shell scripting best practices that saved us from a 3am outage",
+    body: "Three things that would have saved me two hours last week: set -euo pipefail at the top of every script, use [[ instead of [, and always quote your variables. The outage was a filename with a space in it. Classic.",
     category: "devops",
     author: "nightshift_ops",
     replies: 9,
-    reactions: { fire: 19, thumbsup: 28, thinking: 4 },
+    reactions: { fire: 19, thumbsup: 28, thinking: 4, laugh: 2 },
     pinned: false,
     createdAt: "2025-11-18T06:30:00Z",
   },
   {
     id: "t-005",
     title: "Atlas AI told me to rotate my secrets. It was right. (story inside)",
+    body: "Ran an audit prompt on our stack last Tuesday. Atlas flagged our API key as potentially exposed in an old GitHub Actions log from 8 months ago. We thought we'd purged it. We hadn't. Rotated everything that afternoon. Found an unauthorized access attempt the next morning in our logs. Timing was not a coincidence.",
     category: "security",
     author: "redteam_rx",
     replies: 42,
-    reactions: { fire: 36, thumbsup: 52, thinking: 11 },
+    reactions: { fire: 36, thumbsup: 52, thinking: 11, laugh: 0 },
     pinned: true,
     createdAt: "2025-11-19T11:05:00Z",
+  },
+  {
+    id: "t-006",
+    title: "Wrangler 4 migration notes — what actually broke",
+    body: "Upgraded from Wrangler 3 to 4 last week. The CLI flags changed and `wrangler dev` now requires explicit binding declarations in wrangler.toml. KV namespace IDs must be quoted. Two hours of confusion could have been avoided by reading the changelog. Sharing the diff that fixed our setup.",
+    category: "cloud",
+    author: "toml_surgeon",
+    replies: 18,
+    reactions: { fire: 11, thumbsup: 29, thinking: 14, laugh: 1 },
+    pinned: false,
+    createdAt: "2025-11-20T09:15:00Z",
+  },
+  {
+    id: "t-007",
+    title: "Termux + CoreOps: running a full CI pipeline from a phone",
+    body: "Yes, this actually works. Running the 4-bot factory on a Pixel 8 Pro via Termux. The snapshot and audit bots are surprisingly fast. You do need to bump the CPU governor and keep the screen on during long runs, but for emergency deploys from anywhere this setup is legitimately useful.",
+    category: "tools",
+    author: "mobile_ops",
+    replies: 23,
+    reactions: { fire: 44, thumbsup: 37, thinking: 8, laugh: 5 },
+    pinned: false,
+    createdAt: "2025-11-21T16:40:00Z",
+  },
+  {
+    id: "t-008",
+    title: "PSA: your .env file is probably in your Docker image",
+    body: "Audited 40 public images on Docker Hub this week for a research project. 31% had .env files baked in with real credentials. COPY . . in your Dockerfile copies everything including dotfiles unless you have a solid .dockerignore. Please check yours now.",
+    category: "security",
+    author: "k8s_survivor",
+    replies: 67,
+    reactions: { fire: 58, thumbsup: 89, thinking: 22, laugh: 0 },
+    pinned: false,
+    createdAt: "2025-11-22T07:20:00Z",
   },
 ];
 

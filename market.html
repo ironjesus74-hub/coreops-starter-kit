@@ -636,10 +636,9 @@
         MANUAL CHECKOUT FALLBACK RAIL
         Revealed by market.js when checkoutMode === "fallback" or SDK fails.
 
-        WARNING: This links to hosted button HZFNB8NTJADW2.
-          - That button is fixed to a single saved product in PayPal.
-          - It does NOT sync with the catalog item shown in this modal.
-          - Use only as a last-resort when dynamic checkout is unavailable.
+        ACTION REQUIRED: Replace HZFNB8NTJADW2 with the current hosted button ID
+        from your PayPal dashboard before enabling this fallback in production.
+        The current ID is a legacy static button and must not be used for live sales.
       -->
       <div class="checkout-fallback" id="checkout-fallback" hidden>
         <div class="checkout-fallback-label">⚠ Manual checkout fallback</div>
@@ -651,8 +650,8 @@
           Contact support if you need to purchase a specific item.
         </div>
         <!--
-          HZFNB8NTJADW2 — static hosted button (default PayPal rail).
-          Fixed to one saved product; NOT per-item aware.
+          TODO (owner action required): replace HZFNB8NTJADW2 with the new
+          hosted button ID from your PayPal dashboard.
         -->
         <a class="btn-fallback-checkout"
            href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=HZFNB8NTJADW2"

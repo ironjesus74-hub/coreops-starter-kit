@@ -213,6 +213,7 @@
 
   function setLoading(busy) {
     isBusy = busy;
+    panel.dataset.busy = busy ? "1" : "";
     sendBtn.disabled = busy;
     input.disabled = busy;
   }
