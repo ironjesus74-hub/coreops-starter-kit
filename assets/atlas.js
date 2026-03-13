@@ -5,6 +5,17 @@
 (function () {
   "use strict";
 
+  // ── Homepage-only guard ──────────────────────────────────────────────────
+  // Hide any section marked data-homepage-only="true" on non-home pages.
+  // platform.css provides a CSS fallback; this JS guard runs after the DOM
+  // is ready (script is deferred) and sets the hidden attribute so AT/screen
+  // readers also skip the section.
+  if (document.body.dataset.page !== "home") {
+    document.querySelectorAll("[data-homepage-only]").forEach(function (el) {
+      el.hidden = true;
+    });
+  }
+
   // ── Inject HTML ──────────────────────────────────────────────────────────
   const markup = `
 <button id="atlas-toggle" aria-label="Open Atlas AI chat" aria-expanded="false" aria-controls="atlas-panel" title="Atlas AI">

@@ -292,7 +292,7 @@
       gap: 0.5rem;
       flex-wrap: wrap;
       justify-content: center;
-       padding: 0 2rem 1.5rem;
+      padding: 0 2rem 1.5rem;
       max-width: 1200px;
       margin: 0 auto;
     }
@@ -412,6 +412,34 @@
       display: flex;
       gap: 0.6rem;
       flex-wrap: wrap;
+    }
+
+    .btn-clear {
+      background: transparent;
+      color: var(--faint);
+      border: 1px solid var(--border);
+      padding: 0.4rem 0.9rem;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 0.6rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .btn-clear:hover {
+      color: var(--muted);
+      border-color: var(--border-sub);
+    }
+
+    .compose-count {
+      font-size: 0.58rem;
+      color: var(--faint);
+      text-align: right;
+      letter-spacing: 0.06em;
+      margin-top: -0.25rem;
     }
 
     /* ===== Footer ===== */
@@ -815,9 +843,11 @@ Check for: placeholder values (YOUR_*), missing KV / D1 bindings, insecure ALLOW
         aria-label="Custom prompt composer"
         spellcheck="false"
       ></textarea>
+      <p class="compose-count" id="compose-count" aria-live="polite" aria-atomic="false">0 chars</p>
       <div class="compose-actions">
         <button class="btn-copy" id="compose-copy" aria-label="Copy composed prompt">Copy</button>
         <button class="btn-try" id="compose-try" aria-label="Send composed prompt to Atlas AI">Try in Atlas</button>
+        <button class="btn-clear" id="compose-clear" aria-label="Clear compose area">Clear</button>
       </div>
     </div>
   </section>
@@ -909,6 +939,35 @@ Check for: placeholder values (YOUR_*), missing KV / D1 bindings, insecure ALLOW
       const idx = parseInt(btn.dataset.target, 10);
       sendToAtlas(getPromptText(idx));
     });
+
+    // ── Compose: char counter + clear ────────────────────────────────────────
+    (function () {
+      const ta    = document.getElementById("compose-input");
+      const count = document.getElementById("compose-count");
+      const clear = document.getElementById("compose-clear");
+
+      // Update the counter with a short debounce so screen readers aren't
+      // flooded with announcements on every keystroke.
+      var _countTimer;
+      if (ta && count) {
+        ta.addEventListener("input", function () {
+          clearTimeout(_countTimer);
+          _countTimer = setTimeout(function () {
+            var len = ta.value.length;
+            count.textContent = len === 1 ? "1 char" : len + " chars";
+          }, 400);
+        });
+      }
+
+      if (ta && clear) {
+        clear.addEventListener("click", function () {
+          ta.value = "";
+          clearTimeout(_countTimer);
+          if (count) count.textContent = "0 chars";
+          ta.focus();
+        });
+      }
+    })();
 
     // ===== Category filter + search =====
     const filterBtns  = Array.from(document.querySelectorAll(".filter-btn"));
