@@ -53,7 +53,7 @@ jobs:
     name: Dependency Health
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Check for outdated npm packages
         shell: bash
@@ -87,7 +87,7 @@ jobs:
     name: Health Files
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Check required health files
         shell: bash
@@ -120,7 +120,7 @@ jobs:
     name: Security Headers
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Verify security headers in worker
         shell: bash
@@ -164,7 +164,7 @@ jobs:
     name: Secret Exposure Scan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Scan for common secret patterns
         shell: bash
@@ -196,7 +196,7 @@ jobs:
     name: Stale Branches
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
