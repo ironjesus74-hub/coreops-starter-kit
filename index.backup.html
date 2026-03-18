@@ -5,45 +5,35 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CoreOps — Mobile-First DevOps CLI</title>
   <meta name="description" content="CoreOps: fast, portable DevOps and automation CLI for Termux and Linux. Network checks, TLS audits, snapshots, and a 4-bot automation factory.">
-  <meta name="theme-color" content="#080a0e">
-
-  <!-- Open Graph / social sharing -->
-  <meta property="og:type"        content="website">
-  <meta property="og:url"         content="https://forge-atlas.io/">
-  <meta property="og:title"       content="CoreOps — Mobile-First DevOps CLI">
-  <meta property="og:description" content="Fast, portable DevOps and automation CLI for Termux and Linux. Network checks, TLS audits, snapshots, and a 4-bot factory.">
-  <meta property="og:image"       content="https://forge-atlas.io/coreops-live-dashboard.png">
-  <meta name="twitter:card"       content="summary_large_image">
-  <meta name="twitter:title"      content="CoreOps — Mobile-First DevOps CLI">
-  <meta name="twitter:description" content="Fast, portable DevOps CLI for Termux and Linux. Network checks, TLS, DNS, snapshots.">
-  <meta name="twitter:image"      content="https://forge-atlas.io/coreops-live-dashboard.png">
 
   <link rel="icon" type="image/svg+xml"
-        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%23050505' stroke='%23ff1a1a' stroke-width='1.5'/%3E%3Ctext x='16' y='21' text-anchor='middle' fill='%23ff1a1a' font-family='monospace' font-size='11' font-weight='900'%3ECO%3C/text%3E%3C/svg%3E">
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%230d1117' stroke='%2300d4ff' stroke-width='1.5'/%3E%3Ctext x='16' y='21' text-anchor='middle' fill='%2300d4ff' font-family='monospace' font-size='11' font-weight='900'%3ECO%3C/text%3E%3C/svg%3E">
 
   <link rel="stylesheet" href="assets/platform.css">
-  <link rel="stylesheet" href="assets/atlas.css">
 
   <style>
     /* ===== Reset & base ===== */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg-deep:     #050505;
-      --bg-dark:     #0a0a0a;
-      --bg-card:     #111111;
-      --bg-panel:    #141414;
-      --border:      #2a2a2a;
-      --border-sub:  #1c1c1c;
-      --red:         #ff1a1a;
-      --red-dim:     rgba(255, 26, 26, 0.18);
-      --red-dark:    #e00000;
-      --white:       #ffffff;
-      --muted:       #dcdcdc;
-      --faint:       #6b6b6b;
+      --bg-deep:     #080a0e;
+      --bg-dark:     #0d1117;
+      --bg-card:     #111620;
+      --bg-panel:    #161b22;
+      --border:      #1e2633;
+      --border-sub:  #161c27;
+      --cyan:        #00d4ff;
+      --cyan-dim:    rgba(0, 212, 255, 0.18);
+      --magenta:     #ff2d78;
+      --gold:        #f0a32a;
+      --white:       #e6edf3;
+      --muted:       #8b949e;
+      --faint:       #484f58;
       --radius:      12px;
-      --glow-r:      0 0 24px rgba(255, 26, 26, 0.40), 0 0 48px rgba(255, 26, 26, 0.12);
+      --glow-c:      0 0 24px rgba(0, 212, 255, 0.35), 0 0 48px rgba(0, 212, 255, 0.10);
     }
+
+    /* ===== Hero ===== */
 
     html { scroll-behavior: smooth; }
 
@@ -56,7 +46,6 @@
       overflow-x: hidden;
     }
 
-    /* ===== Hero ===== */
     .hero {
       text-align: center;
       padding: 5rem 2rem 4rem;
@@ -68,7 +57,7 @@
       position: absolute;
       inset: 0;
       background: radial-gradient(ellipse 70% 55% at 50% 0%,
-                  rgba(255, 26, 26, 0.06) 0%, transparent 70%);
+                  rgba(0, 212, 255, 0.06) 0%, transparent 70%);
       pointer-events: none;
     }
 
@@ -92,7 +81,7 @@
       margin-bottom: 0.6rem;
     }
 
-    .hero-title .core { color: var(--red); }
+    .hero-title .core { color: var(--cyan); }
 
     .hero-sub {
       font-size: 0.85rem;
@@ -111,7 +100,6 @@
       flex-wrap: wrap;
     }
 
-    /* ===== Buttons ===== */
     .btn {
       display: inline-block;
       padding: 0.65rem 1.5rem;
@@ -127,20 +115,20 @@
     }
 
     .btn-primary {
-      background: var(--red);
-      color: var(--white);
+      background: var(--cyan);
+      color: var(--bg-dark);
       border: none;
     }
-    .btn-primary:hover { box-shadow: var(--glow-r); opacity: 0.9; }
+    .btn-primary:hover { box-shadow: var(--glow-c); opacity: 0.9; }
 
     .btn-outline {
       background: transparent;
-      color: var(--red);
-      border: 1px solid rgba(255, 26, 26, 0.5);
+      color: var(--cyan);
+      border: 1px solid rgba(0, 212, 255, 0.4);
     }
     .btn-outline:hover {
-      border-color: var(--red);
-      box-shadow: var(--glow-r);
+      border-color: var(--cyan);
+      box-shadow: var(--glow-c);
     }
 
     /* ===== Highlights row ===== */
@@ -166,7 +154,7 @@
       width: 6px;
       height: 6px;
       border-radius: 50%;
-      background: var(--red);
+      background: var(--cyan);
       flex-shrink: 0;
     }
 
@@ -202,14 +190,14 @@
     }
 
     .cmd-card:hover {
-      border-color: rgba(255, 26, 26, 0.35);
-      box-shadow: 0 0 16px rgba(255, 26, 26, 0.10);
+      border-color: rgba(0, 212, 255, 0.3);
+      box-shadow: 0 0 16px rgba(0, 212, 255, 0.08);
     }
 
     .cmd-name {
       font-size: 0.8rem;
       font-weight: 700;
-      color: var(--red);
+      color: var(--cyan);
       margin-bottom: 0.35rem;
     }
 
@@ -259,9 +247,9 @@
       text-transform: uppercase;
       padding: 0.15rem 0.5rem;
       border-radius: 2em;
-      background: rgba(255, 26, 26, 0.08);
-      color: var(--red);
-      border: 1px solid rgba(255, 26, 26, 0.25);
+      background: rgba(0, 212, 255, 0.08);
+      color: var(--cyan);
+      border: 1px solid rgba(0, 212, 255, 0.22);
       white-space: nowrap;
     }
 
@@ -284,7 +272,7 @@
     .qs-code {
       font-family: inherit;
       font-size: 0.75rem;
-      color: var(--red);
+      color: var(--cyan);
       line-height: 1.8;
       white-space: pre;
       overflow-x: auto;
@@ -327,34 +315,7 @@
     }
 
     .footer a { color: var(--faint); text-decoration: none; }
-    .footer a:hover { color: var(--red); }
-
-    /* ===== Platform preview screenshot — homepage only =====
-       Only rendered on <body data-page="home">.
-       Must NOT be copied to platform.css (shared styles).
-    ===== */
-    .preview-outer {
-      max-width: 860px;
-      margin: 0 auto;
-    }
-
-    .preview-wrap {
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
-      background: var(--bg-panel);
-      box-shadow: 0 8px 40px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(0, 212, 255, 0.06);
-    }
-
-    .preview-img {
-      display: block;
-      width: 100%;
-      height: auto;
-      opacity: 0.9;
-      transition: opacity 0.3s;
-    }
-
-    .preview-img:hover { opacity: 1; }
+    .footer a:hover { color: var(--cyan); }
 
     /* ===== Screen-reader only utility ===== */
     .sr-only {
@@ -383,7 +344,7 @@
     }
   </style>
 </head>
-<body data-page="home">
+<body>
 
   <!-- ===== PLATFORM NAV ===== -->
   <nav class="platform-nav" aria-label="Platform sections">
@@ -392,15 +353,13 @@
       <li class="sep" aria-hidden="true">›</li>
       <li><a href="gauntlet.html">Atlas Gauntlet</a></li>
       <li class="sep" aria-hidden="true">›</li>
-      <li><a href="forum.html">Signal Feed</a></li>
+      <li><a href="#" aria-disabled="true">Signal Feed</a></li>
       <li class="sep" aria-hidden="true">›</li>
-      <li><a href="market.html">Market</a></li>
+      <li><a href="#" aria-disabled="true">Market</a></li>
       <li class="sep" aria-hidden="true">›</li>
-      <li><a href="debate.html">Arena</a></li>
+      <li><a href="#" aria-disabled="true">Exchange</a></li>
       <li class="sep" aria-hidden="true">›</li>
-      <li><a href="prompts.html">Prompts</a></li>
-      <li class="sep" aria-hidden="true">›</li>
-      <li><a href="profile.html">Atlas ID</a></li>
+      <li><a href="#" aria-disabled="true">Atlas ID</a></li>
     </ul>
   </nav>
 
@@ -507,33 +466,6 @@ coreops help</code>
     </div>
   </section>
 
-  <!-- ===== PLATFORM PREVIEW — homepage only =====
-       GUARD: <body data-page="home"> is required for this section.
-       Do NOT copy this section to other pages.
-       Image: audit-demo.png (root) — served at /audit-demo.png
-  ===== -->
-  <div class="divider" role="separator">
-    <div class="divider-line"></div>
-    <div class="divider-label"><span>Live Demo</span></div>
-  </div>
-
-  <section class="section" aria-labelledby="preview-heading" data-homepage-only="true">
-    <h2 id="preview-heading" class="section-label">See It In Action</h2>
-    <div class="preview-outer">
-      <div class="preview-wrap">
-        <img
-          src="audit-demo.png"
-          alt="CoreOps audit command output showing HTTP, TLS certificate, and DNS results in Termux terminal"
-          class="preview-img"
-          loading="lazy"
-          decoding="async"
-          width="1440"
-          height="1088"
-        >
-      </div>
-    </div>
-  </section>
-
   <!-- ===== BOT SYSTEM ===== -->
   <div class="divider" role="separator">
     <div class="divider-line"></div>
@@ -583,15 +515,5 @@ coreops help</code>
     &nbsp;·&nbsp; CoreOps Platform &nbsp;·&nbsp; MIT License
   </footer>
 
-  <!-- ===== PAYPAL HOSTED BUTTON (home page only) ===== -->
-  <!--
-    Renders only when PAYPAL_CLIENT_ID is configured in the Worker.
-    Container is empty until home-paypal.js boots the SDK.
-    This block must NOT be copied to other pages.
-  -->
-  <div id="paypal-hosted-btn-wrap" role="region" style="display:flex;justify-content:center;padding:1.5rem 2rem 2rem;" aria-label="Support via PayPal"></div>
-
-  <script src="assets/atlas.js" defer></script>
-  <script src="assets/home-paypal.js" defer></script>
 </body>
 </html>

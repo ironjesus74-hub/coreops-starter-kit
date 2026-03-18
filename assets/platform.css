@@ -80,8 +80,8 @@
 }
 .platform-nav li a:hover { color: var(--muted); }
 .platform-nav li a[aria-current="page"] {
-  color: var(--cyan);
-  border-bottom: 2px solid var(--cyan);
+  color: var(--red);
+  border-bottom: 2px solid var(--red);
 }
 .platform-nav li a[aria-disabled="true"] {
   pointer-events: none;
