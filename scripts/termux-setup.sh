@@ -84,14 +84,15 @@ setup_termux_mirrors() {
 
   # Use termux-change-repo if available (preferred)
   if command -v termux-change-repo >/dev/null 2>&1; then
-    say "Using termux-change-repo to find fastest mirror…"
-    # Non-interactive: pick Grimler (fastest global CDN)
-    # Options: a2hosting, grimler, linode, manjaro, mirrors.mit.edu, nerd-fonts
+    say "Using termux-change-repo to find fastest mirror..."
+    # Default to Grimler: it is the official Termux-maintained CDN mirror with
+    # global PoPs. The manual benchmark fallback below will still pick the
+    # fastest if termux-change-repo is unavailable.
     termux-change-repo <<'EOF' 2>/dev/null || true
 Single Mirror
 Grimler
 EOF
-    ok "Mirror set to Grimler (fast global CDN)"
+    ok "Mirror set to Grimler (official Termux CDN)"
     return
   fi
 
@@ -304,15 +305,19 @@ fix_ssl() {
 # ── DNS fix ──────────────────────────────────────────────────
 fix_dns() {
   hdr "DNS Reliability Fix"
-  # Check if DNS resolves
+  # Check if DNS resolves (google.com and 1.1.1.1 are highly reliable test targets)
   if ! host -t A google.com >/dev/null 2>&1 && ! nslookup google.com >/dev/null 2>&1; then
     warn "DNS seems broken — adding reliable fallbacks"
     if [ "$IS_TERMUX" -eq 1 ]; then
-      echo "nameserver 1.1.1.1" > "${PREFIX}/etc/resolv.conf"
-      echo "nameserver 8.8.8.8" >> "${PREFIX}/etc/resolv.conf"
-    elif [ -w /etc/resolv.conf ]; then
-      echo "nameserver 1.1.1.1" | sudo tee -a /etc/resolv.conf >/dev/null
-      echo "nameserver 8.8.8.8" | sudo tee -a /etc/resolv.conf >/dev/null
+      # Overwrite to avoid duplicate nameserver entries on repeated runs
+      printf 'nameserver 1.1.1.1\nnameserver 8.8.8.8\n' > "${PREFIX}/etc/resolv.conf"
+    elif [ -w /etc/resolv.conf ] || sudo -n true 2>/dev/null; then
+      SUDO=""; [ -w /etc/resolv.conf ] || SUDO="sudo"
+      # Append only if not already present
+      grep -qF "1.1.1.1" /etc/resolv.conf 2>/dev/null \
+        || echo "nameserver 1.1.1.1" | $SUDO tee -a /etc/resolv.conf >/dev/null
+      grep -qF "8.8.8.8" /etc/resolv.conf 2>/dev/null \
+        || echo "nameserver 8.8.8.8" | $SUDO tee -a /etc/resolv.conf >/dev/null
     fi
     ok "DNS fallbacks added (1.1.1.1, 8.8.8.8)"
   else
@@ -366,7 +371,10 @@ fix_debian_env() {
     grep -qF "$1" "$RCFILE" || echo "$1" >> "$RCFILE"
   }
 
-  add_if_missing 'export PATH="${HOME}/.local/bin:${HOME}/.nvm/versions/node/$(nvm current 2>/dev/null)/bin:${PATH}"'
+  # PATH line uses single quotes so $(nvm current) evaluates at shell startup, not now
+  add_if_missing 'export PATH="${HOME}/.local/bin:${PATH}"'
+  add_if_missing '# Load nvm if installed'
+  add_if_missing '[ -s "${HOME}/.nvm/nvm.sh" ] && source "${HOME}/.nvm/nvm.sh"'
   add_if_missing 'export EDITOR=nano'
   add_if_missing '# CoreOps alias shortcuts'
   add_if_missing 'alias ll="ls -la"'

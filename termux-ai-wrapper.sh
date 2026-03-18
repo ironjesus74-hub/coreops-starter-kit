@@ -3,8 +3,9 @@
 #  CoreOps AI Wrapper for Termux / Linux
 #  AI-powered terminal assistant with agent dispatch mode.
 #
-#  Copy-paste install (one command):
-#    curl -fsSL https://raw.githubusercontent.com/ironjesus74-hub/coreops-starter-kit/main/termux-ai-wrapper.sh | bash
+#  Copy-paste install — review the script first, then run:
+#    curl -fsSL https://raw.githubusercontent.com/ironjesus74-hub/coreops-starter-kit/main/termux-ai-wrapper.sh -o termux-ai-wrapper.sh
+#    bash termux-ai-wrapper.sh
 #  Or clone the repo and run:
 #    bash ~/coreops-starter-kit/termux-ai-wrapper.sh
 #
@@ -114,7 +115,10 @@ Key behaviors:
 
 # ── JSON helpers ─────────────────────────────────────────────
 _json_escape() {
-  # Escape a string for safe JSON embedding
+  # Escape a string for safe JSON embedding.
+  # Requires python3 (always present on Termux/Debian).
+  # Fallback sed is provided but may not handle control characters or unicode
+  # correctly — ensure python3 is installed for production use.
   printf '%s' "$1" | python3 -c "import sys,json; print(json.dumps(sys.stdin.read()))" 2>/dev/null \
     || printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g; s/$/\\n/g' | tr -d '\n' | sed 's/\\n$//'
 }
@@ -268,7 +272,9 @@ extract_and_run_blocks() {
         echo -e "${GRAY}$(printf '─%.0s' {1..50})${R}"
 
         if [ "$AUTO_RUN" -eq 1 ]; then
-          echo -e "${AMBER}${WARN} AUTO-RUN: executing…${R}"
+          # WARNING: AUTO_RUN executes AI-generated code without confirmation.
+          # Only enable if you fully trust the AI responses and understand the risks.
+          echo -e "${AMBER}${WARN} AUTO-RUN: executing...${R}"
           _run_block "$block"
         else
           echo -ne "${CYAN}Run this? [y/N/e(dit)] ${R}"
@@ -504,8 +510,14 @@ cmd_run() {
   fi
   [ -z "$shell_cmd" ] && return
 
+  # Execute via a temp file rather than eval to avoid word-splitting surprises.
+  # NOTE: /run executes arbitrary shell commands — use only with commands you trust.
   echo -e "${GRAY}── output ─────────────────────────────────────${R}"
-  eval "$shell_cmd" 2>&1 || true
+  local tmpf; tmpf=$(mktemp /tmp/coreops-run-XXXX.sh)
+  printf '#!/usr/bin/env bash\n%s\n' "$shell_cmd" > "$tmpf"
+  chmod +x "$tmpf"
+  bash "$tmpf" </dev/tty 2>&1 || true
+  rm -f "$tmpf"
   echo -e "${GRAY}───────────────────────────────────────────────${R}"
 }
 
