@@ -183,7 +183,7 @@ setup_debian_mirrors() {
     $SUDO tee /etc/apt/sources.list > /dev/null <<EOF
 deb ${best_url} ${codename} main contrib non-free
 deb ${best_url} ${codename}-updates main contrib non-free
-deb ${best_url}-security ${codename}-security main contrib non-free
+deb https://deb.debian.org/debian-security ${codename}-security main contrib non-free
 EOF
     ok "Updated /etc/apt/sources.list → ${best_name}"
   else
