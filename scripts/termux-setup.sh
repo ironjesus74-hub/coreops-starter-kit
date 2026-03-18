@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/bash
+#!/usr/bin/env bash
 # =============================================================
 # CoreOps — Termux / Debian Environment Setup & Optimizer
 # Copy-paste friendly. Run once to get a clean, fast env.
@@ -161,7 +161,7 @@ setup_debian_mirrors() {
     ["mirror.cs.uchicago"]="https://mirror.cs.uchicago.edu/debian"
   )
 
-  best_url="deb.debian.org/debian"; best_time=9999; best_name="debian-cdn"
+  best_url="https://deb.debian.org/debian"; best_time=9999; best_name="debian-cdn"
   for name in "${!DEB_MIRRORS[@]}"; do
     url="${DEB_MIRRORS[$name]}/dists/stable/Release"
     t=$(curl -o /dev/null -s -w "%{time_total}" --max-time 5 "$url" 2>/dev/null || echo "9999")
@@ -179,11 +179,20 @@ setup_debian_mirrors() {
   if [ -w /etc/apt/sources.list ] || sudo -n true 2>/dev/null; then
     SUDO=""
     [ -w /etc/apt/sources.list ] || SUDO="sudo"
-    codename=$(lsb_release -sc 2>/dev/null || cat /etc/os-release | grep VERSION_CODENAME | cut -d= -f2 || echo "stable")
+    codename=$(lsb_release -sc 2>/dev/null || grep -oP '(?<=VERSION_CODENAME=)\S+' /etc/os-release 2>/dev/null || echo "stable")
+    # Security repo URL differs between Debian and Ubuntu
+    local sec_url sec_suite
+    if grep -qi ubuntu /etc/os-release 2>/dev/null; then
+      sec_url="https://security.ubuntu.com/ubuntu"
+      sec_suite="${codename}-security"
+    else
+      sec_url="https://security.debian.org/debian-security"
+      sec_suite="${codename}-security"
+    fi
     $SUDO tee /etc/apt/sources.list > /dev/null <<EOF
 deb ${best_url} ${codename} main contrib non-free
 deb ${best_url} ${codename}-updates main contrib non-free
-deb https://deb.debian.org/debian-security ${codename}-security main contrib non-free
+deb ${sec_url} ${sec_suite} main contrib non-free
 EOF
     ok "Updated /etc/apt/sources.list → ${best_name}"
   else
@@ -371,7 +380,6 @@ fix_debian_env() {
     grep -qF "$1" "$RCFILE" || echo "$1" >> "$RCFILE"
   }
 
-  # PATH line uses single quotes so $(nvm current) evaluates at shell startup, not now
   add_if_missing 'export PATH="${HOME}/.local/bin:${PATH}"'
   add_if_missing '# Load nvm if installed'
   add_if_missing '[ -s "${HOME}/.nvm/nvm.sh" ] && source "${HOME}/.nvm/nvm.sh"'

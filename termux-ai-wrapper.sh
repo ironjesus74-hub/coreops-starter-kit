@@ -70,10 +70,15 @@ if [ -z "$COREOPS_HOME" ]; then
   [ -f "${_script_dir}/bin/coreops" ] && COREOPS_HOME="$_script_dir"
 fi
 
-# Try to read ATLAS_URL from wrangler.toml if present
+# Try to read ATLAS_URL from wrangler.toml if present (skip commented lines and placeholders)
 if [ -z "$ATLAS_URL" ] && [ -n "$COREOPS_HOME" ] && [ -f "${COREOPS_HOME}/wrangler.toml" ]; then
-  _routes_url=$(grep -A2 'routes' "${COREOPS_HOME}/wrangler.toml" 2>/dev/null | grep 'pattern' | head -1 | sed 's/.*pattern\s*=\s*"\(.*\)".*/\1/' | sed 's/\/.*//' || true)
-  [ -n "$_routes_url" ] && ATLAS_URL="https://${_routes_url}"
+  _routes_url=$(grep -v '^\s*#' "${COREOPS_HOME}/wrangler.toml" 2>/dev/null \
+    | grep -A2 'routes' | grep 'pattern' | head -1 \
+    | sed 's/.*pattern\s*=\s*"\(.*\)".*/\1/' | sed 's/\/.*//' || true)
+  # Skip empty values and template placeholders like <your-domain>
+  if [ -n "$_routes_url" ] && [[ "$_routes_url" != *'<'* ]] && [[ "$_routes_url" != *'>'* ]]; then
+    ATLAS_URL="https://${_routes_url}"
+  fi
 fi
 
 # Determine AI mode
@@ -305,12 +310,13 @@ extract_and_run_blocks() {
 _run_block() {
   local code="$1"
   echo -e "${GRAY}── output ────────────────────────────────────${R}"
-  # Write to a tmp file and source in a subshell for safety
   local tmpf; tmpf=$(mktemp /tmp/coreops-run-XXXX.sh)
   printf '%s\n' "$code" > "$tmpf"
   chmod +x "$tmpf"
-  bash "$tmpf" </dev/tty 2>&1 | head -200 || true
-  local exit_code=$?
+  # Pipe through head for display; capture the script's actual exit status
+  # via PIPESTATUS[0] so failures are not silently swallowed.
+  bash "$tmpf" </dev/tty 2>&1 | head -200
+  local exit_code=${PIPESTATUS[0]}
   rm -f "$tmpf"
   echo -e "${GRAY}─────────────────────────────────────────────${R}"
   [ "$exit_code" -eq 0 ] && ok "Command completed (exit 0)" \
