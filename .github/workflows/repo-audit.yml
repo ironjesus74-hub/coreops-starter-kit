@@ -66,18 +66,36 @@ jobs:
           codeql_file=".github/workflows/codeql.yml"
           [ -f "$codeql_file" ] || { echo "::error::$codeql_file not found."; exit 1; }
 
-          # Use quoted patterns so 'java' does not match 'javascript'
-          if grep -qE "('python'|\"python\"|'go'|\"go\"|'ruby'|\"ruby\"|'java'|\"java\"|'cpp'|\"cpp\"|'csharp'|\"csharp\"|'swift'|\"swift\")" "$codeql_file"; then
-            echo "::error::$codeql_file scans language(s) not present in this repo."
-            grep -E "('python'|\"python\"|'go'|\"go\"|'ruby'|\"ruby\"|'java'|\"java\"|'cpp'|\"cpp\"|'csharp'|\"csharp\"|'swift'|\"swift\")" "$codeql_file" || true
-            exit 1
-          fi
+          fail=0
 
-          if ! grep -q "javascript" "$codeql_file"; then
+          # Extract the languages value(s) from the codeql init step.
+          # Strip quotes, brackets, and whitespace so we get a plain comma-separated
+          # list (e.g. "javascript,python" or just "javascript").
+          langs_raw=$(grep -iE "^[[:space:]]*languages:" "$codeql_file" \
+            | head -1 \
+            | sed 's/^[[:space:]]*languages:[[:space:]]*//' \
+            | tr -d "[]'\" " \
+            | tr '[:upper:]' '[:lower:]' \
+            || true)
+
+          # Verify JavaScript is included
+          if ! echo "$langs_raw" | grep -qE "(^|,)javascript(,|$)"; then
             echo "::error::$codeql_file does not scan JavaScript."
-            exit 1
+            fail=1
+          else
+            echo "  ✔  JavaScript is scanned."
           fi
 
+          # Reject any non-JS language — this repo contains only JavaScript.
+          # Note: 'java' is checked as a full token so it does not match 'javascript'.
+          for bad_lang in python go ruby java cpp csharp swift; do
+            if echo "$langs_raw" | grep -qE "(^|,)${bad_lang}(,|$)"; then
+              echo "::error::$codeql_file scans '${bad_lang}' which is not present in this repo."
+              fail=1
+            fi
+          done
+
+          [ "$fail" -eq 0 ] || exit 1
           echo "CodeQL config scans only JavaScript — OK."
 
   # ---------------------------------------------------------------------------
