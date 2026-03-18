@@ -319,10 +319,18 @@
     .footer a:hover { color: var(--cyan); }
 
     /* ===== Platform preview screenshot — homepage only =====
-       Only rendered when <body data-page="home"> is present.
+       CSS enforces this: [data-homepage-only] is hidden by default;
+       only body[data-page="home"] makes it visible.
+       .preview-wrap / .preview-img are scoped to body[data-page="home"]
+       so the styles are inert if this block is ever copied elsewhere.
        Must NOT be copied to platform.css (shared styles).
     ===== */
-    .preview-wrap {
+
+    /* Safety net: hide on any page that isn't home */
+    [data-homepage-only] { display: none; }
+    body[data-page="home"] [data-homepage-only] { display: block; }
+
+    body[data-page="home"] .preview-wrap {
       border: 1px solid var(--border);
       border-radius: var(--radius);
       overflow: hidden;
@@ -330,7 +338,7 @@
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
     }
 
-    .preview-img {
+    body[data-page="home"] .preview-img {
       display: block;
       width: 100%;
       height: auto;
@@ -338,7 +346,7 @@
       transition: opacity 0.3s;
     }
 
-    .preview-img:hover { opacity: 1; }
+    body[data-page="home"] .preview-img:hover { opacity: 1; }
 
     /* ===== Screen-reader only utility ===== */
     .sr-only {
