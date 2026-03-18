@@ -100,18 +100,24 @@ Usage:
 
   coreops bots <start|stop|status|factory>
   coreops panel
+
+  coreops termux-setup [--debian] [--minimal] [--dev]
+  coreops termux-ai    [--agent] [--fix] [--task "desc"]
+  coreops ai           [--agent] [--fix] [--task "desc"]
 USAGE
     ;;
-  deps)     run_module "deps" "$@" ;;
-  doctor)   run_module "doctor" "$@" ;;
-  netcheck) run_module "netcheck" "$@" ;;
-  sslcheck) run_module "sslcheck" "$@" ;;
-  portscan) run_module "portscan" "$@" ;;
-  audit)    run_module "audit" "$@" ;;
-  scan)     run_module "scan" "$@" ;;
-  live)     run_module "live" "$@" ;;
-  snapshot) run_module "snapshot" "$@" ;;
-  bots)     run_bots_cmd "$@" ;;
+  deps)          run_module "deps" "$@" ;;
+  doctor)        run_module "doctor" "$@" ;;
+  netcheck)      run_module "netcheck" "$@" ;;
+  sslcheck)      run_module "sslcheck" "$@" ;;
+  portscan)      run_module "portscan" "$@" ;;
+  audit)         run_module "audit" "$@" ;;
+  scan)          run_module "scan" "$@" ;;
+  live)          run_module "live" "$@" ;;
+  snapshot)      run_module "snapshot" "$@" ;;
+  termux-setup)  run_module "termux-setup" "$@" ;;
+  termux-ai|ai)  run_module "termux-ai" "$@" ;;
+  bots)          run_bots_cmd "$@" ;;
   panel)
     panel_script="$COREOPS_HOME/bots/control-panel.sh"
     [ -f "$panel_script" ] || die "Control panel not found: $panel_script"
