@@ -1,24 +1,24 @@
 {
   "repo": "ironjesus74-hub/coreops-starter-kit",
-  "generated_at": "2026-03-18T18:04:45.956Z",
+  "generated_at": "2026-03-18T18:08:16.586Z",
   "workflows": {
     "ShellCheck": {
-      "status": "completed",
-      "conclusion": "success",
-      "html_url": "https://github.com/ironjesus74-hub/coreops-starter-kit/actions/runs/23259635237",
-      "run_number": 272,
-      "updated_at": "2026-03-18T18:04:31Z"
+      "status": "in_progress",
+      "conclusion": null,
+      "html_url": "https://github.com/ironjesus74-hub/coreops-starter-kit/actions/runs/23259800905",
+      "run_number": 274,
+      "updated_at": "2026-03-18T18:08:09Z"
     },
     "Repo Guard": {
-      "status": "completed",
-      "conclusion": "success",
-      "html_url": "https://github.com/ironjesus74-hub/coreops-starter-kit/actions/runs/23259635214",
-      "run_number": 372,
-      "updated_at": "2026-03-18T18:04:29Z"
+      "status": "in_progress",
+      "conclusion": null,
+      "html_url": "https://github.com/ironjesus74-hub/coreops-starter-kit/actions/runs/23259800858",
+      "run_number": 376,
+      "updated_at": "2026-03-18T18:08:09Z"
     }
   },
   "overall": {
-    "status": "completed",
-    "conclusion": "success"
+    "status": "in_progress",
+    "conclusion": "unknown"
   }
 }
