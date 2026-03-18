@@ -770,17 +770,55 @@ Flag: packages with known CVEs, major version drift from latest stable, abandone
     function copyTextToClipboard(text, btn) {
       if (!text) return;
       const original = btn.textContent;
-      navigator.clipboard.writeText(text).then(function () {
-        btn.textContent = "Copied!";
-        btn.classList.add("copied");
-        setTimeout(function () {
-          btn.textContent = original;
-          btn.classList.remove("copied");
-        }, 1600);
-      }).catch(function () {
-        btn.textContent = "Copy failed";
-        setTimeout(function () { btn.textContent = original; }, 1600);
-      });
+
+      function showResult(success) {
+        if (success) {
+          btn.textContent = "Copied!";
+          btn.classList.add("copied");
+          setTimeout(function () {
+            btn.textContent = original;
+            btn.classList.remove("copied");
+          }, 1600);
+        } else {
+          btn.textContent = "Copy failed";
+          setTimeout(function () {
+            btn.textContent = original;
+          }, 1600);
+        }
+      }
+
+      // Prefer modern async clipboard API when available
+      if (navigator && navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+        try {
+          navigator.clipboard.writeText(text).then(function () {
+            showResult(true);
+          }).catch(function () {
+            showResult(false);
+          });
+          return;
+        } catch (e) {
+          // Synchronous failure, fall back to legacy path below
+        }
+      }
+
+      // Fallback for older/unsupported contexts
+      try {
+        var textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.setAttribute("readonly", "");
+        textarea.style.position = "absolute";
+        textarea.style.left = "-9999px";
+        document.body.appendChild(textarea);
+        textarea.select();
+        var successful = false;
+        if (document.execCommand) {
+          successful = document.execCommand("copy");
+        }
+        document.body.removeChild(textarea);
+        showResult(!!successful);
+      } catch (e) {
+        showResult(false);
+      }
     }
 
     // ── Send to Atlas helper ─────────────────────────────────────────────────
