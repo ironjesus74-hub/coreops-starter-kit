@@ -435,7 +435,11 @@ cmd_mirror() {
     ok "Done"
   else
     say "Running apt mirror update…"
-    sudo apt-get update -qq && ok "Done"
+    local SUDO=""
+    if [ "$(id -u)" -ne 0 ] && command -v sudo >/dev/null 2>&1; then
+      SUDO="sudo"
+    fi
+    $SUDO apt-get update -qq && ok "Done"
   fi
 }
 
