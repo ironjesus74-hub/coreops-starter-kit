@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/bash
+#!/usr/bin/env bash
 # =============================================================
 #  CoreOps AI Wrapper for Termux / Linux
 #  AI-powered terminal assistant with agent dispatch mode.
