@@ -42,6 +42,8 @@ chmod +x bin/* modules/*.sh lib/*.sh bots/*.sh bots/lib/*.sh bots/tools/*.sh ins
 coreops help
 ```
 
+- On Android 14+ with stricter `/sdcard` writes, use the one-block Termux installer: [docs/termux-android14.md](docs/termux-android14.md).
+
 ---
 
 ## 🤖 Bot System
