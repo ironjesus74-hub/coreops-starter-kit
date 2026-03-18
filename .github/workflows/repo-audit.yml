@@ -212,10 +212,13 @@ jobs:
           set -euo pipefail
           [ -f "wrangler.toml" ] || { echo "::warning::wrangler.toml not found — skipping."; exit 0; }
 
-          # Ignore commented lines and look for actual placeholder tokens used in wrangler.toml templates.
-          if grep -vE '^\s*#' wrangler.toml | grep -qE "YOUR_CLOUDFLARE_ACCOUNT_ID|YOUR_KV_NAMESPACE_ID|YOUR_D1_DATABASE_ID|<your-zone-id>|<your-domain>"; then
+          # Ignore commented lines. Only YOUR_KV_NAMESPACE_ID and YOUR_D1_DATABASE_ID
+          # actually appear as real placeholder values in wrangler.toml — all other
+          # candidate tokens either do not exist in the file or only appear in
+          # instructional comments (e.g. "Then replace YOUR_KV_NAMESPACE_ID …").
+          if grep -vE '^\s*#' wrangler.toml | grep -qE "YOUR_KV_NAMESPACE_ID|YOUR_D1_DATABASE_ID"; then
             echo "::warning::wrangler.toml contains placeholder values — set real values before deploying."
-            grep -nE "YOUR_CLOUDFLARE_ACCOUNT_ID|YOUR_KV_NAMESPACE_ID|YOUR_D1_DATABASE_ID|<your-zone-id>|<your-domain>" wrangler.toml | grep -vE '^\s*#' || true
+            grep -nvE '^\s*#' wrangler.toml | grep -E "YOUR_KV_NAMESPACE_ID|YOUR_D1_DATABASE_ID" || true
           else
             echo "  ✔  wrangler.toml: no placeholder values."
           fi

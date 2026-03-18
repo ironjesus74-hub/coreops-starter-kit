@@ -27,7 +27,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if grep -qE "YOUR_CLOUDFLARE_ACCOUNT_ID|YOUR_KV_NAMESPACE_ID|YOUR_D1_DATABASE_ID" wrangler.toml; then
+          # Only check non-comment lines. YOUR_KV_NAMESPACE_ID and YOUR_D1_DATABASE_ID
+          # are the two real placeholder values in wrangler.toml. YOUR_CLOUDFLARE_ACCOUNT_ID
+          # does not appear in the file (the account_id line uses a different format and is
+          # commented out). Both KV/D1 tokens also appear in instructional comments, so
+          # comment lines must be excluded to avoid false positives after real values are set.
+          if grep -vE '^\s*#' wrangler.toml | grep -qE "YOUR_KV_NAMESPACE_ID|YOUR_D1_DATABASE_ID"; then
             echo "::warning::wrangler.toml contains placeholder values — skipping deploy."
             echo "SKIP_DEPLOY=true" >> "$GITHUB_ENV"
           else
