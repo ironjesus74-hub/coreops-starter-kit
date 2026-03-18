@@ -722,14 +722,23 @@ if [ -p /dev/stdin ] || [ ! -t 0 ]; then
   piped_input=$(cat)
   _single_shot "$piped_input"
 elif [ $# -gt 0 ]; then
-  # Args: `ai "do this"` or `ai /task "do this"`
+  # Args: `ai "do this"` or `ai /task "do this"` or flag variants
   if [[ "$1" == /task* ]]; then
     AGENT_MODE=1
     cmd_task "${*#/task }"
-  elif [[ "$1" == /fix ]]; then
+  elif [[ "$1" == --task ]]; then
+    AGENT_MODE=1
+    shift
+    cmd_task "$*"
+  elif [[ "$1" == /fix || "$1" == --fix ]]; then
     cmd_fix
-  elif [[ "$1" == /agent\ on ]]; then
-    AGENT_MODE=1; shift
+  elif [[ "$1" == /agent && "${2:-}" == on ]]; then
+    AGENT_MODE=1
+    shift 2
+    [ $# -gt 0 ] && cmd_task "$*" || repl
+  elif [[ "$1" == --agent ]]; then
+    AGENT_MODE=1
+    shift
     [ $# -gt 0 ] && cmd_task "$*" || repl
   else
     _single_shot "$*"
