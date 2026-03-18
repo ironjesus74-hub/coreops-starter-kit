@@ -20,7 +20,7 @@ jobs:
     name: Health Files
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Check required health files
         shell: bash
@@ -57,7 +57,7 @@ jobs:
     name: CodeQL Config
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Verify CodeQL scans only JavaScript
         shell: bash
@@ -87,7 +87,7 @@ jobs:
     name: Worker Security
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: CORS — no wildcard on sensitive endpoints
         shell: bash
@@ -204,7 +204,7 @@ jobs:
     name: Wrangler Config
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Check for placeholder values in wrangler.toml
         shell: bash
@@ -226,7 +226,7 @@ jobs:
     name: Dependabot Config
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Verify dependabot.yml covers required ecosystems
         shell: bash
@@ -255,7 +255,7 @@ jobs:
     name: Required Workflows
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Check for required workflow files
         shell: bash
@@ -283,7 +283,7 @@ jobs:
     name: Clutter Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Detect empty directories
         shell: bash
