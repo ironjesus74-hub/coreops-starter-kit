@@ -838,18 +838,53 @@ Check for: placeholder values (YOUR_*), missing KV / D1 bindings, insecure ALLOW
     // ── Shared helpers ────────────────────────────────────────────────────────
 
     function copyTextToClipboard(text, btn) {
-      navigator.clipboard.writeText(text).then(function () {
-        const original = btn.textContent;
-        btn.textContent = "Copied!";
-        btn.classList.add("copied");
-        setTimeout(function () {
-          btn.textContent = original;
-          btn.classList.remove("copied");
-        }, 1600);
-      }).catch(function () {
+      if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+        navigator.clipboard.writeText(text).then(function () {
+          const original = btn.textContent;
+          btn.textContent = "Copied!";
+          btn.classList.add("copied");
+          setTimeout(function () {
+            btn.textContent = original;
+            btn.classList.remove("copied");
+          }, 1600);
+        }).catch(function () {
+          btn.textContent = "Copy failed";
+          setTimeout(function () { btn.textContent = "Copy"; }, 1600);
+        });
+        return;
+      }
+
+      // Fallback for browsers without navigator.clipboard support
+      try {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        // Avoid scrolling to bottom
+        textarea.style.position = "fixed";
+        textarea.style.top = "-9999px";
+        textarea.style.left = "-9999px";
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+
+        const successful = document.execCommand("copy");
+        document.body.removeChild(textarea);
+
+        if (successful) {
+          const original = btn.textContent;
+          btn.textContent = "Copied!";
+          btn.classList.add("copied");
+          setTimeout(function () {
+            btn.textContent = original;
+            btn.classList.remove("copied");
+          }, 1600);
+        } else {
+          btn.textContent = "Copy failed";
+          setTimeout(function () { btn.textContent = "Copy"; }, 1600);
+        }
+      } catch (e) {
         btn.textContent = "Copy failed";
         setTimeout(function () { btn.textContent = "Copy"; }, 1600);
-      });
+      }
     }
 
     function sendToAtlas(text) {
