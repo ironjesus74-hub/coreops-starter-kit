@@ -153,23 +153,50 @@ setup_debian_mirrors() {
   fi
 
   # Manual: pick fastest from a vetted list
-  say "Testing Debian CDN mirrors…"
-  declare -A DEB_MIRRORS=(
-    ["debian-cdn"]="https://deb.debian.org/debian"
-    ["ftp.us.debian"]="https://ftp.us.debian.org/debian"
-    ["mirrors.mit"]="https://mirrors.mit.edu/debian"
-    ["mirror.cs.uchicago"]="https://mirror.cs.uchicago.edu/debian"
-  )
+  local is_ubuntu=false
+  if grep -qi ubuntu /etc/os-release 2>/dev/null; then
+    is_ubuntu=true
+  fi
 
-  best_url="https://deb.debian.org/debian"; best_time=9999; best_name="debian-cdn"
-  for name in "${!DEB_MIRRORS[@]}"; do
-    url="${DEB_MIRRORS[$name]}/dists/stable/Release"
+  declare -A MIRRORS
+  local release_path
+  local best_url best_time best_name
+
+  if [ "$is_ubuntu" = true ]; then
+    say "Testing Ubuntu CDN mirrors…"
+    MIRRORS=(
+      ["ubuntu-archive"]="https://archive.ubuntu.com/ubuntu"
+      ["ubuntu-us"]="https://us.archive.ubuntu.com/ubuntu"
+      ["ubuntu-eu"]="https://eu.archive.ubuntu.com/ubuntu"
+    )
+    # Use the OS codename when probing Ubuntu dists
+    local probe_codename
+    probe_codename=$(lsb_release -sc 2>/dev/null || grep -oP '(?<=VERSION_CODENAME=)\S+' /etc/os-release 2>/dev/null || echo "stable")
+    release_path="dists/${probe_codename}/Release"
+    best_url="https://archive.ubuntu.com/ubuntu"
+    best_name="ubuntu-archive"
+  else
+    say "Testing Debian CDN mirrors…"
+    MIRRORS=(
+      ["debian-cdn"]="https://deb.debian.org/debian"
+      ["ftp.us.debian"]="https://ftp.us.debian.org/debian"
+      ["mirrors.mit"]="https://mirrors.mit.edu/debian"
+      ["mirror.cs.uchicago"]="https://mirror.cs.uchicago.edu/debian"
+    )
+    release_path="dists/stable/Release"
+    best_url="https://deb.debian.org/debian"
+    best_name="debian-cdn"
+  fi
+
+  best_time=9999
+  for name in "${!MIRRORS[@]}"; do
+    url="${MIRRORS[$name]}/${release_path}"
     t=$(curl -o /dev/null -s -w "%{time_total}" --max-time 5 "$url" 2>/dev/null || echo "9999")
     t_int=$(echo "$t" | awk '{printf "%d", $1 * 1000}')
     say "  ${name}: ${t}s"
     if [ "$t_int" -lt "$best_time" ]; then
       best_time=$t_int
-      best_url="${DEB_MIRRORS[$name]}"
+      best_url="${MIRRORS[$name]}"
       best_name="$name"
     fi
   done
