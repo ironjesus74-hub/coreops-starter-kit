@@ -17,10 +17,66 @@ binding   = "ASSETS"
 
 # ---------------------------------------------------------------------------
 # Environment variable placeholders.
-# Set real secrets via:  wrangler secret put ATLAS_AI_API_KEY
+# Set real secrets via:  npm run secrets:set-atlas-key        (ATLAS_AI_API_KEY)
+#                        npm run secrets:set-internal-secret  (ATLAS_INTERNAL_SECRET)
+# See docs/cloudflare-vars-secrets.md for the full secrets reference.
 # ---------------------------------------------------------------------------
 [vars]
-ATLAS_AI_ENDPOINT = "https://api.openai.com/v1/chat/completions"
+ATLAS_AI_ENDPOINT  = "https://api.openai.com/v1/chat/completions"
+OPENAI_MODEL       = "gpt-4o-mini"
+AI_PROVIDER        = "openai"
+APP_ENV            = "production"
+FORUM_AI_ENABLED   = "true"
+DEBATE_AI_ENABLED  = "true"
+PAYPAL_ENV         = "sandbox"
+# Set to your production origin (e.g. "https://forge-atlas.io") to restrict
+# sensitive CORS endpoints.  Leave as the placeholder during local dev.
+ALLOWED_ORIGIN     = "https://forge-atlas.io"
+
+# ---------------------------------------------------------------------------
+# KV namespace for persistent profile and purchase storage.
+# Create the namespace: wrangler kv:namespace create ATLAS_KV
+# Then replace YOUR_KV_NAMESPACE_ID with the returned id.
+# ---------------------------------------------------------------------------
+[[kv_namespaces]]
+binding = "ATLAS_KV"
+id      = "YOUR_KV_NAMESPACE_ID"
+
+# ---------------------------------------------------------------------------
+# D1 database — persistent relational storage.
+# Create the database: wrangler d1 create forge-core
+# Then replace YOUR_D1_DATABASE_ID with the returned id.
+# ---------------------------------------------------------------------------
+[[d1_databases]]
+binding       = "DB"
+database_name = "forge-core"
+database_id   = "YOUR_D1_DATABASE_ID"
+
+# ---------------------------------------------------------------------------
+# Future Cloudflare resources — add when ready to scale
+# ---------------------------------------------------------------------------
+# Cloudflare Queues — async digital delivery after successful payment
+# [[queues.producers]]
+# binding  = "DELIVERY_QUEUE"
+# queue    = "atlas-delivery"
+#
+# [[queues.consumers]]
+# queue                  = "atlas-delivery"
+# max_batch_size         = 10
+# max_batch_timeout      = 30
+#
+# Cloudflare R2 — store and serve downloadable digital assets
+# [[r2_buckets]]
+# binding = "ATLAS_ASSETS"
+# bucket_name = "atlas-digital-assets"
+#
+# Cloudflare AI Gateway — model routing, cost monitoring, caching
+# Set ATLAS_AI_ENDPOINT to your AI Gateway URL:
+# https://gateway.ai.cloudflare.com/v1/<account_id>/<gateway_id>/openai
+#
+# Cloudflare Turnstile — anti-bot protection for forms and AI endpoints
+# Add TURNSTILE_SECRET_KEY as a wrangler secret and validate tokens
+# server-side before processing any user-submitted request.
 
 # ---------------------------------------------------------------------------
 # Local dev server settings
@@ -30,10 +86,10 @@ port           = 8787
 local_protocol = "http"
 
 # ---------------------------------------------------------------------------
-# Production route & account settings (fill in before deploying)
+# Production route & account settings (fill in via wrangler.toml before deploying)
 # ---------------------------------------------------------------------------
-# account_id = "YOUR_CLOUDFLARE_ACCOUNT_ID"
+# account_id = "<your-cloudflare-account-id>"
 #
 # [[routes]]
-# pattern  = "YOUR_DOMAIN/*"
-# zone_id  = "YOUR_ZONE_ID"
+# pattern  = "<your-domain>/*"
+# zone_id  = "<your-zone-id>"

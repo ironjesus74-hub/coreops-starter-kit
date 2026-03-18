@@ -1,0 +1,270 @@
+name: Repo Health
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"  # weekly Monday 06:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  issues: write
+  actions: read
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1 · Broken / failing workflows
+  # ---------------------------------------------------------------------------
+  workflow-health:
+    name: Workflow Health
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for recent workflow failures
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            const wfList = await github.rest.actions.listRepoWorkflows({ owner, repo, per_page: 100 });
+            const workflows = wfList.data.workflows || [];
+
+            const failures = [];
+            for (const wf of workflows) {
+              const runs = await github.rest.actions.listWorkflowRuns({
+                owner, repo, workflow_id: wf.id, per_page: 1,
+                branch: "main"
+              });
+              const latest = (runs.data.workflow_runs || [])[0];
+              if (latest && latest.conclusion === "failure") {
+                failures.push(`- **${wf.name}** — [run #${latest.run_number}](${latest.html_url}) failed at ${latest.updated_at}`);
+              }
+            }
+
+            if (failures.length > 0) {
+              core.warning(`${failures.length} workflow(s) failing on main:\n${failures.join('\n')}`);
+            } else {
+              core.info("All workflows green on main.");
+            }
+
+  # ---------------------------------------------------------------------------
+  # 2 · Outdated dependencies (Dependabot alerts)
+  # ---------------------------------------------------------------------------
+  dependency-health:
+    name: Dependency Health
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for outdated npm packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f "package.json" ] && [ -f "package-lock.json" ]; then
+            echo "package-lock.json found — dependency manifest present."
+          else
+            echo "::warning::No package-lock.json — skipping npm audit."
+          fi
+
+      - name: Run npm audit (non-blocking)
+        shell: bash
+        run: |
+          set -euo pipefail
+          if command -v npm &>/dev/null && [ -f "package-lock.json" ]; then
+            # Capture output then parse; multi-line Python inside run: | is not
+            # YAML-safe (content at column 0 ends the block scalar).
+            audit_json=$(npm audit --audit-level=high --json 2>/dev/null || true)
+            [ -n "$audit_json" ] && echo "$audit_json" \
+              | python3 -c "import json,sys;d=json.load(sys.stdin);v=d.get('metadata',{}).get('vulnerabilities',{});t=sum(v.values());print('::warning::npm audit: '+str(t)+' vulnerabilities: '+str(v)) if t>0 else print('npm audit: no high/critical vulnerabilities.')" \
+              || echo "::warning::npm audit encountered an error or no lock file."
+          else
+            echo "npm not available or no lock file — skipping."
+          fi
+
+  # ---------------------------------------------------------------------------
+  # 3 · Required health files
+  # ---------------------------------------------------------------------------
+  health-files:
+    name: Health Files
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check required health files
+        shell: bash
+        run: |
+          set -euo pipefail
+          fail=0
+          for f in \
+            README.md \
+            LICENSE \
+            SECURITY.md \
+            SUPPORT.md \
+            CODE_OF_CONDUCT.md \
+            CONTRIBUTING.md \
+            .github/PULL_REQUEST_TEMPLATE.md \
+            .github/ISSUE_TEMPLATE/bug_report.md \
+            .github/ISSUE_TEMPLATE/feature_request.md; do
+            if [ -f "$f" ]; then
+              echo "  ✔  $f"
+            else
+              echo "::warning::Missing health file: $f"
+              fail=1
+            fi
+          done
+          [ "$fail" -eq 0 ] && echo "All required health files present."
+
+  # ---------------------------------------------------------------------------
+  # 4 · Worker security headers
+  # ---------------------------------------------------------------------------
+  security-headers:
+    name: Security Headers
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify security headers in worker
+        shell: bash
+        run: |
+          set -euo pipefail
+          worker="src/worker.js"
+          [ -f "$worker" ] || { echo "::warning::$worker not found."; exit 0; }
+          fail=0
+          for header in \
+            "Content-Security-Policy" \
+            "Strict-Transport-Security" \
+            "X-Frame-Options" \
+            "X-Content-Type-Options" \
+            "Referrer-Policy"; do
+            if grep -q "\"${header}\"" "$worker"; then
+              echo "  ✔  $header"
+            else
+              echo "::warning::Missing security header: $header"
+              fail=1
+            fi
+          done
+          [ "$fail" -eq 0 ] && echo "All security headers present."
+
+      - name: Check for wildcard CORS on sensitive endpoints
+        shell: bash
+        run: |
+          set -euo pipefail
+          worker="src/worker.js"
+          [ -f "$worker" ] || exit 0
+          if grep -A5 "function sensitiveHeaders" "$worker" \
+               | grep -q '"Access-Control-Allow-Origin"[[:space:]]*:[[:space:]]*"\*"'; then
+            echo "::warning::sensitiveHeaders() uses wildcard origin — fix before deploying."
+          else
+            echo "  ✔  No wildcard origin on sensitive endpoints."
+          fi
+
+  # ---------------------------------------------------------------------------
+  # 5 · Secret / credential exposure scan
+  # ---------------------------------------------------------------------------
+  secret-scan:
+    name: Secret Exposure Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan for common secret patterns
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Patterns that should never appear in tracked files
+          fail=0
+          declare -a patterns=(
+            "AKIA[0-9A-Z]{16}"
+            "sk-[a-zA-Z0-9]{32,}"
+            "ghp_[a-zA-Z0-9]{36}"
+            "ghs_[a-zA-Z0-9]{36}"
+            "-----BEGIN RSA PRIVATE KEY-----"
+            "-----BEGIN EC PRIVATE KEY-----"
+            "-----BEGIN OPENSSH PRIVATE KEY-----"
+          )
+          for pat in "${patterns[@]}"; do
+            if git grep -qrE "$pat" -- ':!*.md' 2>/dev/null; then
+              echo "::warning::Possible secret pattern found matching: $pat"
+              fail=1
+            fi
+          done
+          [ "$fail" -eq 0 ] && echo "  ✔  No common secret patterns detected."
+
+  # ---------------------------------------------------------------------------
+  # 6 · Stale branches
+  # ---------------------------------------------------------------------------
+  stale-branches:
+    name: Stale Branches
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: List branches inactive > 60 days
+        shell: bash
+        run: |
+          set -euo pipefail
+          cutoff=$(date -d "60 days ago" +%s)
+          stale=()
+          while IFS= read -r branch; do
+            branch="${branch#  }"
+            branch="${branch# }"
+            [ -z "$branch" ] && continue
+            [ "$branch" = "main" ] && continue
+            last=$(git log -1 --format="%ct" "origin/$branch" 2>/dev/null || echo 0)
+            if [ "$last" -lt "$cutoff" ]; then
+              date_fmt=$(date -d "@$last" "+%Y-%m-%d" 2>/dev/null || echo "unknown")
+              stale+=("  $branch (last commit: $date_fmt)")
+            fi
+          done < <(git branch -r | grep -v "HEAD" | sed 's|origin/||')
+          if [ "${#stale[@]}" -gt 0 ]; then
+            echo "::warning::${#stale[@]} stale branch(es) found (>60 days inactive):"
+            printf '%s\n' "${stale[@]}"
+          else
+            echo "  ✔  No stale branches."
+          fi
+
+  # ---------------------------------------------------------------------------
+  # 7 · Summary
+  # ---------------------------------------------------------------------------
+  health-summary:
+    name: Health Summary
+    runs-on: ubuntu-latest
+    needs:
+      - workflow-health
+      - dependency-health
+      - health-files
+      - security-headers
+      - secret-scan
+      - stale-branches
+    if: always()
+    steps:
+      - name: Print health summary
+        shell: bash
+        env:
+          WF: ${{ needs.workflow-health.result }}
+          DEP: ${{ needs.dependency-health.result }}
+          FILES: ${{ needs.health-files.result }}
+          HEADERS: ${{ needs.security-headers.result }}
+          SECRETS: ${{ needs.secret-scan.result }}
+          BRANCHES: ${{ needs.stale-branches.result }}
+        run: |
+          set -euo pipefail
+          check_names=("Workflow Health" "Dependency Health" "Health Files" "Security Headers" "Secret Scan" "Stale Branches")
+          check_results=("$WF" "$DEP" "$FILES" "$HEADERS" "$SECRETS" "$BRANCHES")
+          echo "┌────────────────────────────────────┬──────────┐"
+          echo "│ Check                              │ Result   │"
+          echo "├────────────────────────────────────┼──────────┤"
+          for i in "${!check_names[@]}"; do
+            result="${check_results[$i]}"
+            if [ "$result" = "success" ]; then
+              icon="✔ PASS"
+            elif [ "$result" = "skipped" ]; then
+              icon="- SKIP"
+            else
+              icon="⚠ WARN"
+            fi
+            printf "│ %-34s │ %-8s │\n" "${check_names[$i]}" "$icon"
+          done
+          echo "└────────────────────────────────────┴──────────┘"
+          echo "Repo health check complete. See individual job warnings for details."

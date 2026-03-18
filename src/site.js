@@ -1,16 +1,21 @@
 /* Atlas AI — Floating Chat UI
- * Connects to POST /api/atlas
+ * Connects to POST /api/atlas (Cloudflare Worker, src/worker.js)
+ * No local shell mode — all AI responses come from the real worker route.
  * Branding: "Atlas AI — Built Different."
+ *
+ * SOURCE OF TRUTH: this file is the canonical source.
+ * Deployed as: assets/atlas.js (copied by npm run build).
+ * Keep both files in sync.
  */
 (function () {
   "use strict";
 
   // ── Markdown rendering — module-level regex constants ────────────────────
   // Compiled once when the script loads rather than on every message render.
-  const _RE_FENCED_CODE  = /```[\w]*\n?([\s\S]*?)```/g;
-  const _RE_INLINE_CODE  = /`([^`\n]+)`/g;
-  const _RE_BOLD         = /\*\*([^*\n]+)\*\*/g;
-  const _RE_NEWLINE      = /\n/g;
+  const _RE_FENCED_CODE   = /```[\w]*\n?([\s\S]*?)```/g;
+  const _RE_INLINE_CODE   = /`([^`\n]+)`/g;
+  const _RE_BOLD          = /\*\*([^*\n]+)\*\*/g;
+  const _RE_NEWLINE       = /\n/g;
   const _RE_RESTORE_BLOCK = /\x00BLOCK(\d+)\x00/g;
 
   // ── Homepage-only guard ──────────────────────────────────────────────────
@@ -82,8 +87,8 @@
   const sendBtn  = document.getElementById("atlas-send");
   const closeBtn = document.getElementById("atlas-close");
 
-  let isOpen    = false;
-  let isBusy    = false;
+  let isOpen = false;
+  let isBusy = false;
 
   // ── Toggle open/close ────────────────────────────────────────────────────
   toggle.addEventListener("click", () => {
@@ -92,9 +97,8 @@
     toggle.setAttribute("aria-expanded", String(isOpen));
 
     if (isOpen) {
-      // Show welcome message once
       if (messages.childElementCount === 0) {
-        appendBotMsg("Hello. I'm Atlas AI — your intelligent build assistant. Ask me about architecture, CLI tools, infrastructure, automation, or anything ops-related. Let's build something great.");
+        appendBotMsg("Hey there! I'm **Atlas**, your DevOps assistant for CoreOps. Ask me about CLI commands, networking, TLS, shell scripting, or anything ops-related.");
       }
       input.focus();
       scrollToBottom();
@@ -133,7 +137,7 @@
     input.style.height = Math.min(input.scrollHeight, 100) + "px";
   });
 
-  // ── Send message ─────────────────────────────────────────────────────────
+  // ── Send message — calls real worker route POST /api/atlas ────────────────
   async function send() {
     const text = input.value.trim();
     if (!text) return;
@@ -232,6 +236,8 @@
   }
 
   // Minimal markdown rendering: **bold**, `code`, ```code blocks```, newlines
+  // Safety: escapeHtml runs on the full string first, so all regex matches
+  // operate on already-escaped content — no XSS vector from code blocks.
   function renderMarkdown(text) {
     let html = escapeHtml(text);
     // Extract fenced code blocks first so newline conversion leaves them intact

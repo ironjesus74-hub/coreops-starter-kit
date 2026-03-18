@@ -1,6 +1,12 @@
 snapshot_*.txt
 *.zip
 
+# Backup / scratch files
+*.backup
+*.backup.html
+*.bak
+*.bak.*
+
 # Cloudflare / Wrangler build artifacts
 .wrangler/
 dist/

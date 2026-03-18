@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prompt Library — Forge Atlas</title>
+  <meta name="description" content="Forge Atlas prompt library — curated DevOps, network intelligence, and shell automation prompts for Atlas AI.">
+  <meta name="theme-color" content="#080a0e">
+
+  <!-- Open Graph / social sharing -->
+  <meta property="og:type"        content="website">
+  <meta property="og:url"         content="https://forge-atlas.io/prompts.html">
+  <meta property="og:title"       content="Prompt Library — Forge Atlas">
+  <meta property="og:description" content="Curated DevOps, network diagnostics, and shell automation prompts for Atlas AI. Copy and run instantly.">
+  <meta property="og:image"       content="https://forge-atlas.io/coreops-live-dashboard.png">
+  <meta name="twitter:card"       content="summary_large_image">
+  <meta name="twitter:title"      content="Prompt Library — Forge Atlas">
+  <meta name="twitter:description" content="Curated DevOps and network prompts for Atlas AI. Copy-paste ready.">
+  <meta name="twitter:image"      content="https://forge-atlas.io/coreops-live-dashboard.png">
+
+  <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%230d1117' stroke='%2300d4ff' stroke-width='1.5'/%3E%3Ctext x='16' y='21' text-anchor='middle' fill='%2300d4ff' font-family='monospace' font-size='11' font-weight='900'%3ECO%3C/text%3E%3C/svg%3E">
+
+  <link rel="stylesheet" href="assets/platform.css">
+  <link rel="stylesheet" href="assets/atlas.css">
+
+  <style>
+    /* ===== Reset & base ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-deep:     #080a0e;
+      --bg-dark:     #0d1117;
+      --bg-card:     #111620;
+      --bg-panel:    #161b22;
+      --border:      #1e2633;
+      --border-sub:  #161c27;
+      --cyan:        #00d4ff;
+      --cyan-dim:    rgba(0, 212, 255, 0.18);
+      --magenta:     #ff2d78;
+      --gold:        #f0a32a;
+      --white:       #e6edf3;
+      --muted:       #8b949e;
+      --faint:       #484f58;
+      --radius:      12px;
+      --glow-c:      0 0 24px rgba(0, 212, 255, 0.35), 0 0 48px rgba(0, 212, 255, 0.10);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+                   "Liberation Mono", monospace;
+      background: var(--bg-deep);
+      color: var(--white);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ===== Page header ===== */
+    .page-header {
+      padding: 2.5rem 2rem 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .page-badge {
+      display: inline-block;
+      font-size: 0.55rem;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      border: 1px solid rgba(0, 212, 255, 0.3);
+      padding: 0.2rem 0.75rem;
+      border-radius: 2em;
+      margin-bottom: 0.9rem;
+    }
+
+    .page-title {
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--white);
+      margin-bottom: 0.4rem;
+    }
+
+    .page-title .accent { color: var(--cyan); }
+
+    .page-sub {
+      font-size: 0.7rem;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+      line-height: 1.6;
+    }
+
+    /* ===== Section ===== */
+    .section {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 2rem 4rem;
+    }
+
+    .section-label {
+      font-size: 0.58rem;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--faint);
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+
+    /* ===== Divider ===== */
+    .divider {
+      max-width: 1200px;
+      margin: 0 auto 3rem;
+      padding: 0 2rem;
+    }
+
+    .divider-line {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border), transparent);
+    }
+
+    .divider-label {
+      text-align: center;
+      margin-top: -0.55rem;
+    }
+
+    .divider-label span {
+      background: var(--bg-deep);
+      padding: 0 0.75rem;
+      font-size: 0.58rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--faint);
+    }
+
+    /* ===== Prompt grid ===== */
+    .prompt-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+
+    .prompt-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-sub);
+      border-radius: var(--radius);
+      padding: 1.4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      transition: border-color 0.25s, box-shadow 0.25s;
+      position: relative;
+    }
+
+    .prompt-card:hover {
+      border-color: rgba(0, 212, 255, 0.3);
+      box-shadow: 0 0 18px rgba(0, 212, 255, 0.07);
+    }
+
+    .prompt-category {
+      display: inline-block;
+      font-size: 0.55rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      padding: 0.15rem 0.55rem;
+      border-radius: 2em;
+      background: rgba(0, 212, 255, 0.08);
+      color: var(--cyan);
+      border: 1px solid rgba(0, 212, 255, 0.2);
+      align-self: flex-start;
+    }
+
+    .prompt-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--white);
+      line-height: 1.3;
+    }
+
+    .prompt-desc {
+      font-size: 0.65rem;
+      color: var(--muted);
+      line-height: 1.6;
+      flex: 1;
+    }
+
+    .prompt-text {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.75rem;
+      font-size: 0.65rem;
+      color: var(--cyan);
+      line-height: 1.65;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .prompt-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .btn-copy,
+    .btn-try {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.4rem 0.9rem;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 0.6rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: box-shadow 0.2s, opacity 0.2s;
+      border: none;
+    }
+
+    .btn-copy {
+      background: transparent;
+      color: var(--cyan);
+      border: 1px solid rgba(0, 212, 255, 0.35);
+    }
+
+    .btn-copy:hover {
+      border-color: var(--cyan);
+      box-shadow: var(--glow-c);
+    }
+
+    .btn-copy.copied {
+      color: var(--muted);
+      border-color: var(--border);
+    }
+
+    .btn-try {
+      background: var(--cyan);
+      color: var(--bg-dark);
+    }
+
+    .btn-try:hover {
+      box-shadow: var(--glow-c);
+      opacity: 0.9;
+    }
+
+    /* ===== Category filter bar ===== */
+    .filter-bar {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      padding: 0 2rem 1.5rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .filter-btn {
+      padding: 0.35rem 1rem;
+      border-radius: 2em;
+      font-family: inherit;
+      font-size: 0.58rem;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+
+    .filter-btn:hover {
+      color: var(--white);
+      border-color: rgba(0, 212, 255, 0.4);
+    }
+
+    .filter-btn[aria-pressed="true"] {
+      background: rgba(0, 212, 255, 0.12);
+      color: var(--cyan);
+      border-color: rgba(0, 212, 255, 0.5);
+      box-shadow: 0 0 10px rgba(0, 212, 255, 0.12);
+    }
+
+    /* Hidden card when filter is active */
+    .prompt-card[hidden] { display: none; }
+
+    /* ===== Search bar ===== */
+    .search-wrap {
+      display: flex;
+      justify-content: center;
+      padding: 0 2rem 2.5rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .search-input {
+      width: 100%;
+      max-width: 480px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 2em;
+      padding: 0.5rem 1.1rem;
+      font-family: inherit;
+      font-size: 0.68rem;
+      color: var(--white);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .search-input::placeholder { color: var(--faint); }
+
+    .search-input:focus {
+      border-color: rgba(0, 212, 255, 0.5);
+      box-shadow: 0 0 12px rgba(0, 212, 255, 0.1);
+    }
+
+    /* ===== No-results message ===== */
+    .no-results {
+      text-align: center;
+      padding: 3rem 2rem;
+      color: var(--faint);
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      display: none;
+    }
+
+    /* ===== Compose section ===== */
+    .compose-wrap {
+      background: var(--bg-card);
+      border: 1px solid var(--border-sub);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .compose-label {
+      font-size: 0.62rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .compose-textarea {
+      width: 100%;
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.85rem;
+      font-family: inherit;
+      font-size: 0.65rem;
+      color: var(--white);
+      line-height: 1.65;
+      resize: vertical;
+      min-height: 90px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .compose-textarea::placeholder { color: var(--faint); }
+
+    .compose-textarea:focus {
+      border-color: rgba(0, 212, 255, 0.45);
+      box-shadow: 0 0 12px rgba(0, 212, 255, 0.08);
+    }
+
+    .compose-actions {
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    .btn-clear {
+      background: transparent;
+      color: var(--faint);
+      border: 1px solid var(--border);
+      padding: 0.4rem 0.9rem;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 0.6rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .btn-clear:hover {
+      color: var(--muted);
+      border-color: var(--border-sub);
+    }
+
+    .compose-count {
+      font-size: 0.58rem;
+      color: var(--faint);
+      text-align: right;
+      letter-spacing: 0.06em;
+      margin-top: -0.25rem;
+    }
+
+    /* ===== Footer ===== */
+    .footer {
+      border-top: 1px solid var(--border);
+      padding: 1.5rem 2rem;
+      text-align: center;
+      font-size: 0.62rem;
+      color: var(--faint);
+      letter-spacing: 0.1em;
+    }
+
+    .footer a { color: var(--faint); text-decoration: none; }
+    .footer a:hover { color: var(--cyan); }
+
+    /* ===== Screen-reader only ===== */
+    .sr-only {
+      position: absolute;
+      width: 1px; height: 1px;
+      padding: 0; margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 640px) {
+      .page-header { padding: 2rem 1rem 1.5rem; }
+      .section { padding: 0 1rem 3rem; }
+      .divider { padding: 0 1rem; }
+      .prompt-grid { grid-template-columns: 1fr; }
+      .search-wrap { padding: 0 1rem 2rem; }
+    }
+  </style>
+</head>
+<body data-page="prompts">
+
+  <!-- ===== PLATFORM NAV ===== -->
+  <nav class="platform-nav" aria-label="Platform sections">
+    <ul>
+      <li><a href="index.html">Home</a></li>
+      <li class="sep" aria-hidden="true">›</li>
+      <li><a href="gauntlet.html">Atlas Gauntlet</a></li>
+      <li class="sep" aria-hidden="true">›</li>
+      <li><a href="forum.html">Signal Feed</a></li>
+      <li class="sep" aria-hidden="true">›</li>
+      <li><a href="market.html">Market</a></li>
+      <li class="sep" aria-hidden="true">›</li>
+      <li><a href="debate.html">Arena</a></li>
+      <li class="sep" aria-hidden="true">›</li>
+      <li><a href="prompts.html" aria-current="page">Prompts</a></li>
+      <li class="sep" aria-hidden="true">›</li>
+      <li><a href="profile.html">Atlas ID</a></li>
+    </ul>
+  </nav>
+
+  <!-- ===== PAGE HEADER ===== -->
+  <div class="page-header">
+    <div class="page-badge">⚡ Prompt Library · Atlas AI</div>
+    <h1 class="page-title"><span class="accent">Atlas</span> Prompts</h1>
+    <p class="page-sub">Curated prompts for DevOps, network intelligence, and shell automation. Copy any prompt, or send it directly to Atlas AI.</p>
+  </div>
+
+  <!-- ===== FILTER BAR ===== -->
+  <div class="filter-bar" role="toolbar" aria-label="Filter prompts by category">
+    <button class="filter-btn" data-filter="all"      aria-pressed="true">All</button>
+    <button class="filter-btn" data-filter="devops"   aria-pressed="false">DevOps</button>
+    <button class="filter-btn" data-filter="network"  aria-pressed="false">Network</button>
+    <button class="filter-btn" data-filter="shell"    aria-pressed="false">Shell</button>
+    <button class="filter-btn" data-filter="audit"    aria-pressed="false">Audit</button>
+    <button class="filter-btn" data-filter="operator" aria-pressed="false">Operator</button>
+  </div>
+
+  <!-- ===== SEARCH BAR ===== -->
+  <div class="search-wrap">
+    <label class="sr-only" for="prompt-search">Search prompts</label>
+    <input
+      id="prompt-search"
+      type="search"
+      class="search-input"
+      placeholder="Search prompts…"
+      autocomplete="off"
+      spellcheck="false"
+      aria-label="Search prompts by keyword"
+    >
+  </div>
+
+  <!-- ===== DEVOPS CORE ===== -->
+  <div class="divider" role="separator">
+    <div class="divider-line"></div>
+    <div class="divider-label"><span>DevOps Core</span></div>
+  </div>
+
+  <section class="section" aria-labelledby="devops-heading">
+    <h2 id="devops-heading" class="section-label">DevOps &amp; Infrastructure</h2>
+    <div class="prompt-grid">
+
+      <div class="prompt-card" data-group="devops">
+        <span class="prompt-category">CI/CD</span>
+        <div class="prompt-title">Deployment Checklist Generator</div>
+        <div class="prompt-desc">Generate a step-by-step pre-deployment checklist for a given service.</div>
+        <pre class="prompt-text">Generate a pre-deployment checklist for a [Node.js / Python / Go] service deploying to [Cloudflare Workers / VPS / Kubernetes]. Include: dependency freeze, env var audit, rollback plan, and smoke test steps.</pre>
+        <div class="prompt-actions">
+          <button class="btn-copy" data-target="0" aria-label="Copy prompt text">Copy</button>
+          <button class="btn-try" data-target="0" aria-label="Open in Atlas AI">Try in Atlas</button>
+        </div>
+      </div>
+
+      <div class="prompt-card" data-group="devops">
+        <span class="prompt-category">Incidents</span>
+        <div class="prompt-title">Incident Runbook Builder</div>
+        <div class="prompt-desc">Turn a raw alert or error into a structured incident runbook.</div>
+        <pre class="prompt-text">I have this alert/error: [paste your alert here]. Create a structured incident runbook with: immediate triage steps, escalation path, root cause hypotheses, and prevention recommendations.</pre>
+        <div class="prompt-actions">
+          <button class="btn-copy" data-target="1" aria-label="Copy prompt text">Copy</button>
+          <button class="btn-try" data-target="1" aria-label="Open in Atlas AI">Try in Atlas</button>
+        </div>
+      </div>
+
+      <div class="prompt-card" data-group="devops">
+        <span class="prompt-category">Architecture</span>
+        <div class="prompt-title">Worker / Edge Service Audit</div>
+        <div class="prompt-desc">Review a Cloudflare Worker or edge function for security and performance gaps.</div>
+        <pre class="prompt-text">Audit this Cloudflare Worker code for: CORS misconfigurations, missing security headers, input validation gaps, rate limiting, and any secret exposure. Suggest fixes for each issue found.
+
+[paste worker code here]</pre>
+        <div class="prompt-actions">
+          <button class="btn-copy" data-target="2" aria-label="Copy prompt text">Copy</button>
+          <button class="btn-try" data-target="2" aria-label="Open in Atlas AI">Try in Atlas</button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===== NETWORK INTELLIGENCE ===== -->
+  <div class="divider" role="separator">
+    <div class="divider-line"></div>
+    <div class="divider-label"><span>Network Intelligence</span></div>
+  </div>
+
+  <section class="section" aria-labelledby="network-heading">
+    <h2 id="network-heading" class="section-label">Network &amp; TLS Diagnostics</h2>
+    <div class="prompt-grid">
+
+      <div class="prompt-card" data-group="network">
+        <span class="prompt-category">TLS</span>
+        <div class="prompt-title">TLS Certificate Risk Assessment</div>
+        <div class="prompt-desc">Interpret raw TLS/SSL cert data and surface actionable risks.</div>
+        <pre class="prompt-text">Here is the output from an openssl s_client check on [hostname]:
+
+[paste openssl output here]
+
+Identify: cert expiry risk, weak cipher suites, chain issues, HSTS presence, and any misconfigurations. Give a risk rating (low/medium/high) and fix steps.</pre>
+        <div class="prompt-actions">
+          <button class="btn-copy" data-target="3" aria-label="Copy prompt text">Copy</button>
+          <button class="btn-try" data-target="3" aria-label="Open in Atlas AI">Try in Atlas</button>
+        </div>
+      </div>
+
+      <div class="prompt-card" data-group="network">
+        <span class="prompt-category">DNS</span>
+        <div class="prompt-title">DNS Anomaly Detector</div>
+        <div class="prompt-desc">Analyze DNS records for misconfigurations and spoofing risks.</div>
+        <pre class="prompt-text">Analyze these DNS records for [domain]:
+
+[paste dig / nslookup output here]
+
+Check for: SPF/DKIM/DMARC completeness, dangling CNAME risks, TTL anomalies, and any records that could enable subdomain takeover.</pre>
+        <div class="prompt-actions">
+          <button class="btn-copy" data-target="4" aria-label="Copy prompt text">Copy</button>
+          <button class="btn-try" data-target="4" aria-label="Open in Atlas AI">Try in Atlas</button>
+        </div>
+      </div>
+
+      <div class="prompt-card" data-group="network">
+        <span class="prompt-category">Connectivity</span>
+        <div class="prompt-title">Network Path Debugger</div>
+        <div class="prompt-desc">Diagnose a broken or slow connection from traceroute/ping output.</div>
+        <pre class="prompt-text">I'm seeing connectivity issues to [host/IP]. Here is my traceroute and ping output:
+
+[paste output here]
+
+Identify the likely failure point, whether it is packet loss, high latency, a firewall block, or routing loop. Suggest diagnostic next steps for Termux/Linux.</pre>
+        <div class="prompt-actions">
+          <button class="btn-copy" data-target="5" aria-label="Copy prompt text">Copy</button>
+          <button class="btn-try" data-target="5" aria-label="Open in Atlas AI">Try in Atlas</button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===== SHELL CRAFT ===== -->
+  <div class="divider" role="separator">
+    <div class="divider-line"></div>
+    <div class="divider-label"><span>Shell Craft</span></div>
+  </div>
+
+  <section class="section" aria-labelledby="shell-heading">
+    <h2 id="shell-heading" class="section-label">Shell &amp; Scripting</h2>
+    <div class="prompt-grid">
+
+      <div class="prompt-card" data-group="shell">
+        <span class="prompt-category">Bash</span>
+        <div class="prompt-title">Script Safety Reviewer</div>
+        <div class="prompt-desc">Audit a shell script for common safety and portability issues.</div>
+        <pre class="prompt-text">Review this shell script for: unquoted variables, missing set -euo pipefail, unsafe use of eval or backticks, hardcoded paths that break on Termux, and any logic that could silently fail. Suggest a corrected version.
+
+[paste script here]</pre>
+        <div class="prompt-actions">
+          <button class="btn-copy" data-target="6" aria-label="Copy prompt text">Copy</button>
+          <button class="btn-try" data-target="6" aria-label="Open in Atlas AI">Try in Atlas</button>
+        </div>
+      </div>
+
+      <div class="prompt-card" data-group="shell">
+        <span class="prompt-category">Termux</span>
+        <div class="prompt-title">Termux Setup Optimizer</div>
+        <div class="prompt-desc">Get a minimal, portable setup script for a given dev workflow on Termux.</div>
+        <pre class="prompt-text">I use Termux on Android for [describe your workflow: e.g., "Node.js development + git + shell automation"]. Give me a minimal bootstrap script using only pkg / pip / npm that sets up my environment reliably. Flag any packages that behave differently on Termux vs Linux.</pre>
+        <div class="prompt-actions">
+          <button class="btn-copy" data-target="7" aria-label="Copy prompt text">Copy</button>
+          <button class="btn-try" data-target="7" aria-label="Open in Atlas AI">Try in Atlas</button>
+        </div>
+      </div>
+
+      <div class="prompt-card" data-group="shell">
+        <span class="prompt-category">Automation</span>
+        <div class="prompt-title">Bot / Watcher Script Builder</div>
+        <div class="prompt-desc">Design a supervisor loop with auto-restart and crash detection.</div>
+        <pre class="prompt-text">Write a Bash supervisor script that: starts [N] background worker scripts, monitors their PIDs, restarts any that crash within 5 seconds, limits restarts to 3 per hour to prevent thrashing, and logs all events to a timestamped file. Must work on Termux and standard Linux.</pre>
+        <div class="prompt-actions">
+          <button class="btn-copy" data-target="8" aria-label="Copy prompt text">Copy</button>
+          <button class="btn-try" data-target="8" aria-label="Open in Atlas AI">Try in Atlas</button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===== SYSTEM AUDIT ===== -->
+  <div class="divider" role="separator">
+    <div class="divider-line"></div>
+    <div class="divider-label"><span>System Audit</span></div>
+  </div>
+
+  <section class="section" aria-labelledby="audit-heading">
+    <h2 id="audit-heading" class="section-label">System &amp; Security Audit</h2>
+    <div class="prompt-grid">
+
+      <div class="prompt-card" data-group="audit">
+        <span class="prompt-category">Security</span>
+        <div class="prompt-title">HTTP Headers Security Grader</div>
+        <div class="prompt-desc">Grade a site's HTTP response headers against current best practices.</div>
+        <pre class="prompt-text">Grade the security of these HTTP response headers from [URL]:
+
+[paste curl -I output here]
+
+Score each of: Content-Security-Policy, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy. Give an overall grade (A–F) and a prioritized fix list.</pre>
+        <div class="prompt-actions">
+          <button class="btn-copy" data-target="9" aria-label="Copy prompt text">Copy</button>
+          <button class="btn-try" data-target="9" aria-label="Open in Atlas AI">Try in Atlas</button>
+        </div>
+      </div>
+
+      <div class="prompt-card" data-group="audit">
+        <span class="prompt-category">Snapshot</span>
+        <div class="prompt-title">System State Interpreter</div>
+        <div class="prompt-desc">Interpret a system snapshot and flag anomalies.</div>
+        <pre class="prompt-text">Here is a system snapshot (open ports, running processes, IPs, disk usage):
+
+[paste coreops snapshot output here]
+
+Identify: unexpected open ports, unusual processes, disk pressure, and any patterns that suggest misconfiguration or compromise. Summarize findings in order of priority.</pre>
+        <div class="prompt-actions">
+          <button class="btn-copy" data-target="10" aria-label="Copy prompt text">Copy</button>
+          <button class="btn-try" data-target="10" aria-label="Open in Atlas AI">Try in Atlas</button>
+        </div>
+      </div>
+
+      <div class="prompt-card" data-group="audit">
+        <span class="prompt-category">Dependency</span>
+        <div class="prompt-title">Dependency Risk Scanner</div>
+        <div class="prompt-desc">Review a package manifest for outdated or risky dependencies.</div>
+        <pre class="prompt-text">Review this package manifest for dependency risk:
+
+[paste package.json / requirements.txt / etc. here]
+
+Flag: packages with known CVEs, major version drift from latest stable, abandoned packages (no recent commits), and any packages that pull in excessive transitive dependencies. Give a risk tier (critical / high / medium / low) per finding.</pre>
+        <div class="prompt-actions">
+          <button class="btn-copy" data-target="11" aria-label="Copy prompt text">Copy</button>
+          <button class="btn-try" data-target="11" aria-label="Open in Atlas AI">Try in Atlas</button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===== OPERATOR TOOLKIT ===== -->
+  <div class="divider" role="separator">
+    <div class="divider-line"></div>
+    <div class="divider-label"><span>Operator Toolkit</span></div>
+  </div>
+
+  <section class="section" aria-labelledby="operator-heading">
+    <h2 id="operator-heading" class="section-label">Operator &amp; System Prompts</h2>
+    <div class="prompt-grid">
+
+      <div class="prompt-card" data-group="operator">
+        <span class="prompt-category">Release</span>
+        <div class="prompt-title">Deployment Readiness Gatekeeper</div>
+        <div class="prompt-desc">Run a strict go/no-go check before any production deploy.</div>
+        <pre class="prompt-text">You are a deployment gatekeeper for a [Cloudflare Worker / Node.js API / static site]. Here is the current state:
+
+- Branch: [name]
+- Last commit: [message]
+- Env vars confirmed: [list]
+- Secrets confirmed: [list]
+- Wrangler / deploy config: [paste relevant lines]
+
+Evaluate readiness. Flag any blocker (missing secret, placeholder value, untested path, rollback gap). Output: GO / NO-GO with reasons.</pre>
+        <div class="prompt-actions">
+          <button class="btn-copy" data-target="12" aria-label="Copy prompt text">Copy</button>
+          <button class="btn-try" data-target="12" aria-label="Open in Atlas AI">Try in Atlas</button>
+        </div>
+      </div>
+
+      <div class="prompt-card" data-group="operator">
+        <span class="prompt-category">Post-Mortem</span>
+        <div class="prompt-title">Incident Post-Mortem Generator</div>
+        <div class="prompt-desc">Turn an incident timeline into a structured blameless post-mortem.</div>
+        <pre class="prompt-text">Write a blameless post-mortem for this incident:
+
+- What happened: [brief description]
+- Timeline: [paste events with timestamps]
+- Services affected: [list]
+- Duration: [start → end]
+- Root cause: [known or suspected]
+
+Include: executive summary, timeline table, contributing factors, impact assessment, corrective actions (short-term + long-term), and a "lessons learned" section.</pre>
+        <div class="prompt-actions">
+          <button class="btn-copy" data-target="13" aria-label="Copy prompt text">Copy</button>
+          <button class="btn-try" data-target="13" aria-label="Open in Atlas AI">Try in Atlas</button>
+        </div>
+      </div>
+
+      <div class="prompt-card" data-group="operator">
+        <span class="prompt-category">Config Review</span>
+        <div class="prompt-title">Wrangler / Worker Config Auditor</div>
+        <div class="prompt-desc">Audit a wrangler.toml for security, correctness, and deploy-readiness.</div>
+        <pre class="prompt-text">Audit this wrangler.toml for production-readiness:
+
+[paste wrangler.toml here]
+
+Check for: placeholder values (YOUR_*), missing KV / D1 bindings, insecure ALLOWED_ORIGIN, missing secrets documentation, routes pointing to wrong zones, and any pattern that would cause a silent deploy failure. List issues by severity.</pre>
+        <div class="prompt-actions">
+          <button class="btn-copy" data-target="14" aria-label="Copy prompt text">Copy</button>
+          <button class="btn-try" data-target="14" aria-label="Open in Atlas AI">Try in Atlas</button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===== NO RESULTS ===== -->
+  <p class="no-results" id="no-results" role="status" aria-live="polite">
+    No prompts match — try a different search or category.
+  </p>
+
+  <!-- ===== COMPOSE PROMPT MODE ===== -->
+  <div class="divider" role="separator">
+    <div class="divider-line"></div>
+    <div class="divider-label"><span>Compose</span></div>
+  </div>
+
+  <section class="section" aria-labelledby="compose-heading">
+    <h2 id="compose-heading" class="section-label">Build Your Own Prompt</h2>
+    <div class="compose-wrap">
+      <label class="compose-label" for="compose-input">
+        Write or paste a custom prompt, then copy or send it to Atlas AI
+      </label>
+      <textarea
+        id="compose-input"
+        class="compose-textarea"
+        placeholder="Type your prompt here…"
+        aria-label="Custom prompt composer"
+        spellcheck="false"
+      ></textarea>
+      <p class="compose-count" id="compose-count" aria-live="polite" aria-atomic="false">0 chars</p>
+      <div class="compose-actions">
+        <button class="btn-copy" id="compose-copy" aria-label="Copy composed prompt">Copy</button>
+        <button class="btn-try" id="compose-try" aria-label="Send composed prompt to Atlas AI">Try in Atlas</button>
+        <button class="btn-clear" id="compose-clear" aria-label="Clear compose area">Clear</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="footer">
+    <a href="https://github.com/ironjesus74-hub/coreops-starter-kit">
+      ironjesus74-hub/coreops-starter-kit
+    </a>
+    &nbsp;·&nbsp; Forge Atlas Prompt Library &nbsp;·&nbsp; MIT License
+  </footer>
+
+  <script src="assets/atlas.js" defer></script>
+
+  <!-- ===== PROMPT COPY + TRY IN ATLAS + SEARCH + COMPOSE ===== -->
+  <script>
+  (function () {
+    "use strict";
+
+    // Collect all prompt text elements in DOM order — index matches data-target
+    const promptTexts = Array.from(document.querySelectorAll(".prompt-text"));
+
+    function getPromptText(index) {
+      const el = promptTexts[index];
+      return el ? el.textContent.trim() : "";
+    }
+
+    // ── Clipboard helper ────────────────────────────────────────────────────
+    function copyTextToClipboard(text, btn) {
+      if (!text) return;
+      const original = btn.textContent;
+      navigator.clipboard.writeText(text).then(function () {
+        btn.textContent = "Copied!";
+        btn.classList.add("copied");
+        setTimeout(function () {
+          btn.textContent = original;
+          btn.classList.remove("copied");
+        }, 1600);
+      }).catch(function () {
+        btn.textContent = "Copy failed";
+        setTimeout(function () { btn.textContent = original; }, 1600);
+      });
+    }
+
+    // ── Send to Atlas helper ─────────────────────────────────────────────────
+    function sendToAtlas(text) {
+      if (!text) return;
+      const toggle = document.getElementById("atlas-toggle");
+      const panel  = document.getElementById("atlas-panel");
+      const input  = document.getElementById("atlas-input");
+      if (!toggle || !panel || !input) return;
+      if (panel.hidden) { toggle.click(); }
+      input.value = text;
+      input.style.height = "auto";
+      input.style.height = Math.min(input.scrollHeight, 100) + "px";
+      input.focus();
+    }
+
+    // ── Copy button handler ──────────────────────────────────────────────────
+    document.addEventListener("click", function (e) {
+      const btn = e.target.closest(".btn-copy");
+      if (!btn) return;
+
+      // Compose copy
+      if (btn.id === "compose-copy") {
+        const ta = document.getElementById("compose-input");
+        if (ta) copyTextToClipboard(ta.value.trim(), btn);
+        return;
+      }
+
+      // Library prompt copy
+      const idx = parseInt(btn.dataset.target, 10);
+      copyTextToClipboard(getPromptText(idx), btn);
+    });
+
+    // ── Try in Atlas handler ─────────────────────────────────────────────────
+    document.addEventListener("click", function (e) {
+      const btn = e.target.closest(".btn-try");
+      if (!btn) return;
+
+      // Compose try
+      if (btn.id === "compose-try") {
+        const ta = document.getElementById("compose-input");
+        if (ta) sendToAtlas(ta.value.trim());
+        return;
+      }
+
+      // Library prompt try
+      const idx = parseInt(btn.dataset.target, 10);
+      sendToAtlas(getPromptText(idx));
+    });
+
+    // ── Compose: char counter + clear ────────────────────────────────────────
+    (function () {
+      const ta    = document.getElementById("compose-input");
+      const count = document.getElementById("compose-count");
+      const clear = document.getElementById("compose-clear");
+
+      // Update the counter with a short debounce so screen readers aren't
+      // flooded with announcements on every keystroke.
+      var _countTimer;
+      if (ta && count) {
+        ta.addEventListener("input", function () {
+          clearTimeout(_countTimer);
+          _countTimer = setTimeout(function () {
+            var len = ta.value.length;
+            count.textContent = len === 1 ? "1 char" : len + " chars";
+          }, 400);
+        });
+      }
+
+      if (ta && clear) {
+        clear.addEventListener("click", function () {
+          ta.value = "";
+          clearTimeout(_countTimer);
+          if (count) count.textContent = "0 chars";
+          ta.focus();
+        });
+      }
+    })();
+
+    // ===== Category filter + search =====
+    const filterBtns  = Array.from(document.querySelectorAll(".filter-btn"));
+    const allCards     = Array.from(document.querySelectorAll(".prompt-card[data-group]"));
+    const searchInput  = document.getElementById("prompt-search");
+    const noResults    = document.getElementById("no-results");
+    let   activeFilter = "all";
+
+    function applyFilter(filter) {
+      activeFilter = filter;
+      filterBtns.forEach(function (b) {
+        b.setAttribute("aria-pressed", b.dataset.filter === filter ? "true" : "false");
+      });
+      applySearch();
+    }
+
+    function applySearch() {
+      const query = searchInput ? searchInput.value.trim().toLowerCase() : "";
+      const terms  = query ? query.split(/\s+/) : [];
+      let visible  = 0;
+
+      allCards.forEach(function (card) {
+        const groupMatch = activeFilter === "all" || card.dataset.group === activeFilter;
+        let textMatch = true;
+        if (terms.length > 0) {
+          const haystack = card.textContent.toLowerCase();
+          textMatch = terms.every(function (t) { return haystack.indexOf(t) !== -1; });
+        }
+        const show = groupMatch && textMatch;
+        card.hidden = !show;
+        if (show) visible++;
+      });
+
+      // Hide prompt sections (and their preceding dividers) when all their cards
+      // are hidden by the active filter or search. Sections without a .prompt-grid
+      // (e.g. the Compose section) are never hidden.
+      document.querySelectorAll("section.section").forEach(function (section) {
+        if (!section.querySelector(".prompt-grid")) return;
+        var anyVisible = !!section.querySelector(".prompt-card:not([hidden])");
+        section.hidden = !anyVisible;
+        var prev = section.previousElementSibling;
+        if (prev && prev.classList.contains("divider")) {
+          prev.hidden = !anyVisible;
+        }
+      });
+
+      if (noResults) {
+        noResults.style.display = visible === 0 ? "block" : "none";
+      }
+    }
+
+    filterBtns.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        applyFilter(btn.dataset.filter);
+      });
+    });
+
+    if (searchInput) {
+      searchInput.addEventListener("input", applySearch);
+    }
+  })();
+  </script>
+</body>
+</html>

@@ -1,9 +1,8 @@
 # CoreOps Starter Kit ⚡
 
-## 🔴 Live Monitor Dashboard
-
-![CoreOps Live Monitor](assets/coreops-live-dashboard.png)
-
+[![ShellCheck](https://github.com/ironjesus74-hub/coreops-starter-kit/actions/workflows/shellcheck.yml/badge.svg)](https://github.com/ironjesus74-hub/coreops-starter-kit/actions/workflows/shellcheck.yml)
+[![Repo Guard](https://github.com/ironjesus74-hub/coreops-starter-kit/actions/workflows/repo-guard.yml/badge.svg)](https://github.com/ironjesus74-hub/coreops-starter-kit/actions/workflows/repo-guard.yml)
+[![CodeQL](https://github.com/ironjesus74-hub/coreops-starter-kit/actions/workflows/codeql.yml/badge.svg)](https://github.com/ironjesus74-hub/coreops-starter-kit/actions/workflows/codeql.yml)
 ![Shell](https://img.shields.io/badge/language-bash-blue)
 ![Platform](https://img.shields.io/badge/platform-Termux%20%7C%20Linux-green)
 ![License](https://img.shields.io/badge/license-MIT-yellow)
@@ -12,6 +11,10 @@ Mobile-first DevOps & automation CLI built for Termux + minimal Linux.
 
 **Fast. Portable. No bloat.**  
 Run network + TLS checks, quick diagnostics, and generate a system snapshot in seconds.
+
+## 🔴 Live Monitor Dashboard
+
+![CoreOps Live Monitor](assets/coreops-live-dashboard.png)
 
 ---
 

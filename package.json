@@ -5,13 +5,21 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "build": "vite build && mkdir -p dist/assets && cp assets/*.js dist/assets/ && cp coreops-live-dashboard.png dist/",
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "deploy:pages": "wrangler pages deploy .",
-    "secrets:set-atlas-key": "wrangler secret put ATLAS_AI_API_KEY"
+    "secrets:set-atlas-key": "wrangler secret put ATLAS_AI_API_KEY",
+    "secrets:set-internal-secret": "wrangler secret put ATLAS_INTERNAL_SECRET",
+    "secrets:set-paypal-client-id": "wrangler secret put PAYPAL_CLIENT_ID",
+    "secrets:set-paypal-client-secret": "wrangler secret put PAYPAL_CLIENT_SECRET",
+    "secrets:set-paypal-webhook-id": "wrangler secret put PAYPAL_WEBHOOK_ID",
+    "secrets:set-contact-webhook": "wrangler secret put CONTACT_WEBHOOK_URL",
+    "check:worker": "node --input-type=module < src/worker.js && echo 'worker.js syntax OK'"
   },
   "devDependencies": {
-    "wrangler": "^3.101.0"
+    "vite": "^8.0.0",
+    "wrangler": "^4.74.0"
   },
   "engines": {
     "node": ">=18"
