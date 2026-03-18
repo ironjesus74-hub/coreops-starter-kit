@@ -124,12 +124,48 @@ The `deploy.yml` workflow skips deploy automatically when placeholder values are
 | `shellcheck.yml` | Shell scripts — error-level only (bin/, modules/, lib/, bots/) |
 | `repo-audit.yml` | Health files, CodeQL config, worker security, wrangler, dependabot, required workflows |
 | `repo-guard.yml` | Basic repo health: required files, shellcheck (non-blocking), python syntax |
-| `codeql.yml` | JavaScript static analysis (push + PR + weekly) |
+| `codeql.yml` | JavaScript-only static analysis (push to main + PR + weekly) |
 | `deploy.yml` | Cloudflare Worker deploy on push to `main` (skips if placeholders present) |
 
 ---
 
+## CodeQL Configuration Requirements
+
+`codeql.yml` **must** scan JavaScript only. This repo contains no Python, Go, Ruby, Java, or other languages. Adding other languages to the `languages:` field will cause CodeQL to fail with a "no source code found" error.
+
+Correct configuration:
+```yaml
+- name: Initialize CodeQL
+  uses: github/codeql-action/init@v4
+  with:
+    languages: ['javascript']
+```
+
+Incorrect (causes CI failure):
+```yaml
+- uses: github/codeql-action/init@v4
+  with:
+    languages: javascript,python   # ← python not present → CodeQL fails
+```
+
+The `repo-audit.yml` `CodeQL Config` check enforces this — it rejects both quoted (`'python'`) and unquoted (`python`) non-JavaScript language entries.
+
+Additional requirements for `codeql.yml`:
+- **`on:` trigger**: use `push: branches: ["main"]` and `pull_request: branches: ["main"]` — not `push: {}` (too broad, wastes runner minutes)
+- **`concurrency`**: set `cancel-in-progress: false` — cancelling in-progress runs marks them as "failure" with 0 jobs, which pollutes the check history
+- **No `autobuild` step for JavaScript**: JavaScript does not require a build step; omit `github/codeql-action/autobuild` to avoid spurious failures
+- **`timeout-minutes: 60`**: prevents runaway jobs from consuming Actions quota
+
+---
+
 ## Common Fixes
+
+### CodeQL fails — "no source code found for Python"
+```bash
+# Check what languages are configured in codeql.yml
+grep -i "languages:" .github/workflows/codeql.yml
+# Fix: set languages: ['javascript'] (JavaScript only)
+```
 
 ### ShellCheck fails
 ```bash
