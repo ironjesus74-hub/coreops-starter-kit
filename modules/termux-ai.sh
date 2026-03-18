@@ -2,7 +2,8 @@
 # =============================================================
 # CoreOps Module — termux-ai
 # Launches the AI wrapper from the coreops CLI.
-# Usage: coreops termux-ai [--agent] [--fix] [--task "desc"]
+# Usage: coreops termux-ai [wrapper-args...]
+#        (all arguments are passed through to termux-ai-wrapper.sh)
 # =============================================================
 set -uo pipefail
 
