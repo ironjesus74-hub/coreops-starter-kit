@@ -684,37 +684,47 @@ coreops help</code>
   </footer>
 
   <script>
+    function showCopyFeedback(btn, success) {
+      // btn.dataset.orig was already set (and button disabled) at click time.
+      btn.textContent = success ? '✓ Copied' : '✗ Failed';
+      btn.style.color = success ? 'var(--cyan)' : 'var(--magenta)';
+      setTimeout(function() {
+        btn.innerHTML = btn.dataset.orig;
+        btn.style.color = '';
+        btn.disabled = false;
+        btn.removeAttribute('data-orig');
+      }, 2000);
+    }
+
     function copyInstall(btn) {
+      // Capture and lock the button before any async work to prevent double-click race.
+      btn.dataset.orig = btn.innerHTML;
+      btn.disabled = true;
+
       var code = document.getElementById('install-code');
       var text = code.textContent;
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(function() {
-          var orig = btn.innerHTML;
-          btn.textContent = '✓ Copied';
-          btn.style.color = 'var(--cyan)';
-          setTimeout(function() { btn.innerHTML = orig; btn.style.color = ''; }, 2000);
-        }).catch(function() { fallbackCopy(btn, code); });
+        navigator.clipboard.writeText(text)
+          .then(function()  { showCopyFeedback(btn, true);  })
+          .catch(function() { fallbackCopy(btn, code);      });
       } else {
         fallbackCopy(btn, code);
       }
     }
+
     function fallbackCopy(btn, el) {
       var range = document.createRange();
       range.selectNode(el);
       var sel = window.getSelection();
       sel.removeAllRanges();
       sel.addRange(range);
+      var ok = false;
       try {
-        document.execCommand('copy');
-        btn.textContent = '✓ Copied';
-        btn.style.color = 'var(--cyan)';
-        setTimeout(function() {
-          btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="2"/></svg> Copy';
-          btn.style.color = '';
-        }, 2000);
+        ok = document.execCommand('copy');
       } catch (e) {
-        /* Selection remains highlighted as visual feedback */
+        ok = false;
       }
+      showCopyFeedback(btn, ok);
     }
   </script>
 
